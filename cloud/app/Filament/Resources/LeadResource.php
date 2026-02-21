@@ -8,6 +8,7 @@ use App\Filament\Exporters\LeadExporter;
 use App\Filament\Resources\LeadResource\Pages;
 use App\Models\Lead;
 use BackedEnum;
+use Filament\Actions;
 use Filament\Actions\ExportAction;
 use Filament\Actions\Exports\Enums\ExportFormat;
 use Filament\Resources\Resource;
@@ -57,12 +58,12 @@ class LeadResource extends Resource
                         ->toArray()),
             ])
             ->actions([
-                Tables\Actions\DeleteAction::make(),
+                Actions\DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ExportBulkAction::make()
+                Actions\BulkActionGroup::make([
+                    Actions\DeleteBulkAction::make(),
+                    Actions\ExportBulkAction::make()
                         ->exporter(LeadExporter::class)
                         ->formats([ExportFormat::Csv, ExportFormat::Xlsx]),
                 ]),
