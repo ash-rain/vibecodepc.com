@@ -29,6 +29,10 @@
 
     {{-- Hero --}}
     <section class="relative overflow-hidden pt-32 pb-20 sm:pt-40 sm:pb-28">
+        {{-- Logo background overlay --}}
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <img src="{{ asset('storage/logo1.png') }}" alt="" class="w-[800px] max-w-none opacity-10 blur-sm" />
+        </div>
         {{-- Grid background --}}
         <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:64px_64px]"></div>
         {{-- Glow --}}
