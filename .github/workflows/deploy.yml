@@ -1,0 +1,84 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'cloud/**'
+      - '.github/workflows/deploy.yml'
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add server to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to server
+        env:
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          ssh ${SERVER_USER}@${SERVER_HOST} << 'ENDSSH'
+            cd ${DEPLOY_PATH}
+            
+            # Maintenance mode
+            php artisan down || true
+            
+            # Pull latest code
+            git fetch origin main
+            git reset --hard origin/main
+            
+            # Install/update dependencies
+            cd cloud
+            composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+            
+            # Build frontend assets
+            npm ci --production
+            npm run build
+            
+            # Run migrations
+            php artisan migrate --force
+            
+            # Clear and cache config
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            
+            # Restart queue workers (if using Horizon)
+            php artisan horizon:terminate || true
+            
+            # Exit maintenance mode
+            php artisan up
+            
+            # Restart services
+            sudo systemctl reload php8.4-fpm
+            sudo systemctl restart nginx
+          ENDSSH
+
+      - name: Health check
+        run: |
+          sleep 5
+          curl -f https://vibecodepc.com/health || exit 1
+
+      - name: Notify deployment
+        if: always()
+        run: |
+          echo "Deployment status: ${{ job.status }}"
+          # Add your notification service here (Slack, Discord, etc.)

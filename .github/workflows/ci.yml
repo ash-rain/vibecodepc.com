@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  tests:
+    name: Tests (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.2', '8.3', '8.4']
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv
+          coverage: xdebug
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: cloud/package-lock.json
+
+      - name: Install Composer dependencies
+        working-directory: ./cloud
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Copy .env.example to .env
+        working-directory: ./cloud
+        run: cp .env.example .env
+
+      - name: Generate application key
+        working-directory: ./cloud
+        run: php artisan key:generate
+
+      - name: Create SQLite database
+        working-directory: ./cloud
+        run: touch database/database.sqlite
+
+      - name: Run database migrations
+        working-directory: ./cloud
+        run: php artisan migrate --force
+
+      - name: Install npm dependencies
+        working-directory: ./cloud
+        run: npm ci
+
+      - name: Build assets
+        working-directory: ./cloud
+        run: npm run build
+
+      - name: Execute tests
+        working-directory: ./cloud
+        run: php artisan test --coverage --min=80
+
+  code-style:
+    name: Code Style (Pint)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: dom, curl, libxml, mbstring, zip
+
+      - name: Install Composer dependencies
+        working-directory: ./cloud
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Run Laravel Pint
+        working-directory: ./cloud
+        run: ./vendor/bin/pint --test
+
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+
+      - name: Install Composer dependencies
+        working-directory: ./cloud
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Check for security vulnerabilities
+        working-directory: ./cloud
+        run: composer audit
