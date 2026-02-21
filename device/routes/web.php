@@ -1,6 +1,7 @@
 <?php
 
 use App\Livewire\Pairing\PairingScreen;
+use App\Livewire\Wizard\WizardController;
 use App\Services\DeviceStateService;
 use Illuminate\Support\Facades\Route;
 
@@ -16,11 +17,10 @@ Route::get('/', function (DeviceStateService $stateService) {
 // Pairing screen
 Route::get('/pairing', PairingScreen::class)->name('pairing');
 
-// Placeholder routes for wizard and dashboard (to be built in later phases)
-Route::get('/wizard', function () {
-    return view('welcome');
-})->name('wizard');
+// Setup wizard
+Route::get('/wizard', WizardController::class)->name('wizard');
 
+// Placeholder route for dashboard (to be built in later phases)
 Route::get('/dashboard', function () {
     return view('welcome');
 })->name('dashboard');

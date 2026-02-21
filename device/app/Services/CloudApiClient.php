@@ -32,6 +32,16 @@ class CloudApiClient
         $response->throw();
     }
 
+    public function checkSubdomainAvailability(string $subdomain): bool
+    {
+        $response = $this->http()
+            ->get("/api/subdomains/{$subdomain}/availability");
+
+        $response->throw();
+
+        return $response->json('available', false);
+    }
+
     private function http(): PendingRequest
     {
         return Http::baseUrl($this->cloudUrl)
