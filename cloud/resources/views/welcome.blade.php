@@ -129,7 +129,7 @@
     <section id="features" class="relative overflow-hidden border-t border-white/5 py-24">
         {{-- Logo background overlay --}}
         <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <img src="{{ asset('storage/logo1.png') }}" alt="" class="w-[900px] max-w-none opacity-50 blur-sm" />
+            <img src="{{ asset('storage/logo1.png') }}" alt="" class="w-[900px] max-w-none opacity-25 blur-sm" />
         </div>
         <div class="relative mx-auto max-w-6xl px-6">
             <div class="text-center">
@@ -321,7 +321,7 @@
         <div class="absolute inset-0 bg-gradient-to-t from-emerald-500/5 to-transparent"></div>
         {{-- Logo background overlay --}}
         <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <img src="{{ asset('storage/logo1.png') }}" alt="" class="w-[700px] max-w-none opacity-50 blur-sm" />
+            <img src="{{ asset('storage/logo1.png') }}" alt="" class="w-[700px] max-w-none opacity-25 blur-sm" />
         </div>
         <div class="relative mx-auto max-w-2xl px-6 text-center">
             <h2 class="text-3xl font-bold tracking-tight sm:text-4xl">Ready to vibe?</h2>
