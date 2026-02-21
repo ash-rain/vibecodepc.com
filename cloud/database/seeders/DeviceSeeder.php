@@ -9,20 +9,27 @@ class DeviceSeeder extends Seeder
 {
     public function run(): void
     {
-        // Create a few unclaimed test devices
-        Device::factory()->count(3)->create();
-
         // Create a device with a known UUID for manual testing
-        Device::factory()->create([
-            'uuid' => '00000000-0000-0000-0000-000000000001',
-            'hardware_serial' => 'test-serial-001',
-            'firmware_version' => '1.0.0',
-        ]);
+        Device::firstOrCreate(
+            ['uuid' => '00000000-0000-0000-0000-000000000001'],
+            Device::factory()->make([
+                'hardware_serial' => 'test-serial-001',
+                'firmware_version' => '1.0.0',
+            ])->toArray(),
+        );
 
         // Create a claimed device
-        Device::factory()->claimed()->create([
-            'uuid' => '00000000-0000-0000-0000-000000000002',
-            'hardware_serial' => 'test-serial-002',
-        ]);
+        if (! Device::where('uuid', '00000000-0000-0000-0000-000000000002')->exists()) {
+            Device::factory()->claimed()->create([
+                'uuid' => '00000000-0000-0000-0000-000000000002',
+                'hardware_serial' => 'test-serial-002',
+            ]);
+        }
+
+        // Create a few unclaimed test devices (only if we have fewer than 5 total)
+        $remaining = 5 - Device::count();
+        if ($remaining > 0) {
+            Device::factory()->count($remaining)->create();
+        }
     }
 }

@@ -10,6 +10,7 @@
 **/public/build/
 **/*.sqlite
 **/*.sqlite-journal
+**/storage/device.json
 
 # IDE
 .idea/

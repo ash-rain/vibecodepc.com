@@ -12,11 +12,11 @@ The on-device Laravel application that powers the VibeCodePC Raspberry Pi 5. Run
 ## Quick Start
 
 ```bash
-bin/setup
+composer setup
 php artisan serve
 ```
 
-The setup script handles everything: dependencies, environment, database, frontend build, and device identity generation.
+This installs dependencies, creates `.env`, generates the app key, runs migrations, generates a device identity, and builds frontend assets.
 
 ## Development
 

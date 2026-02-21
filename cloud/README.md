@@ -14,11 +14,11 @@ For production: MySQL and Redis (local dev uses SQLite + database drivers by def
 ## Quick Start
 
 ```bash
-bin/setup
+composer setup
 php artisan serve
 ```
 
-The setup script handles dependencies, environment (SQLite by default), database, seeding, frontend build, and Filament setup.
+This installs dependencies, creates `.env`, generates the app key, runs migrations, seeds test data, and builds frontend assets.
 
 ## Development
 
@@ -35,12 +35,10 @@ php artisan test
 
 ## Admin Panel
 
-Filament admin panel is available at `/admin`. To access it, create an admin user:
+Filament admin panel is available at `/admin`. The seeder creates an admin user automatically:
 
-```bash
-php artisan tinker
-> User::factory()->create(['is_admin' => true, 'email' => 'admin@example.com'])
-```
+- **Email:** `admin@vibecodepc.com`
+- **Password:** `password`
 
 The panel provides CRUD management for:
 - **Devices** — view/edit registered devices, status, pairing info
@@ -97,7 +95,7 @@ Key variables in `.env` (see `.env.example` for the full list):
 | `CACHE_STORE` | `database` | `redis` | Cache driver |
 | `MAIL_MAILER` | `log` | `smtp` | Mail driver |
 
-> The setup script automatically configures `.env` for SQLite local development. For MySQL/Redis, edit `.env` manually.
+> For local dev, set `DB_CONNECTION=sqlite` and swap Redis drivers to `database`/`sync`. For production, use MySQL + Redis as shown in `.env.example`.
 
 ## Seeded Test Data
 

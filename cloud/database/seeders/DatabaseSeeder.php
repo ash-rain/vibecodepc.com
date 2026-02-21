@@ -15,13 +15,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::factory()->create([
-            'name' => 'Admin',
-            'username' => 'admin',
-            'email' => 'admin@vibecodepc.com',
-            'password' => bcrypt('password'),
-            'is_admin' => true,
-        ]);
+        User::firstOrCreate(
+            ['email' => 'admin@vibecodepc.com'],
+            [
+                'name' => 'Admin',
+                'username' => 'admin',
+                'password' => bcrypt('password'),
+                'is_admin' => true,
+            ],
+        );
 
         $this->call(DeviceSeeder::class);
     }
