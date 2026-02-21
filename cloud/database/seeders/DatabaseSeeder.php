@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
         User::factory()->create([
             'name' => 'Admin',
             'email' => 'admin@vibecodepc.com',
+            'password' => bcrypt('password'), // Change this to a secure password in production
             'is_admin' => true,
         ]);
     }
