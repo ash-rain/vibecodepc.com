@@ -13,28 +13,28 @@ Two codebases:
 ## Phase 0: Foundation & Tooling (Week 1–2)
 
 ### 0.1 Repository Structure
-- Monorepo with two Laravel apps: `device/` and `cloud/`
-- Shared package `packages/vibecodepc-common/` for DTOs, enums, API contracts
-- Unified `docker-compose.yml` for local development (simulates Pi + cloud)
+- [x] Monorepo with two Laravel apps: `device/` and `cloud/`
+- [x] Shared package `packages/vibecodepc-common/` for DTOs, enums, API contracts
+- [x] Unified `docker-compose.yml` for local development (simulates Pi + cloud)
 
 ### 0.2 Device App Scaffolding
-- [ ] `laravel new device` — Laravel 12, PHP 8.4
-- [ ] Install Livewire 3, Tailwind CSS 4, Alpine.js
-- [ ] SQLite as default DB
-- [ ] Configure Vite for RPi-optimized builds (minimal JS bundles)
-- [ ] Set up Pest PHP testing
+- [x] `laravel new device` — Laravel 12, PHP 8.4
+- [x] Install Livewire 3, Tailwind CSS 4, Alpine.js
+- [x] SQLite as default DB
+- [x] Configure Vite for RPi-optimized builds (minimal JS bundles)
+- [x] Set up Pest PHP testing
 
 ### 0.3 Cloud Edge Scaffolding
-- [ ] `laravel new cloud` — Laravel 12, PHP 8.4
-- [ ] MySQL database, Redis cache/queue
-- [ ] Install Laravel Sanctum (API auth for device ↔ cloud)
+- [x] `laravel new cloud` — Laravel 12, PHP 8.4
+- [x] MySQL database, Redis cache/queue
+- [x] Install Laravel Sanctum (API auth for device ↔ cloud)
 - [ ] DNS wildcard setup: `*.vibecodepc.com` → cloud edge
 - [ ] Cloudflare integration for tunnel management
 
 ### 0.4 Device Identity System
-- [ ] Script to generate unique Device ID (UUID v4) and write to `/etc/vibecodepc/device.json`
-- [ ] QR code generation (printed label / on-screen during first boot)
-- [ ] `device.json` schema: `{ id, hardware_serial, manufactured_at, firmware_version }`
+- [x] Script to generate unique Device ID (UUID v4) and write to `/etc/vibecodepc/device.json`
+- [x] QR code generation (printed label / on-screen during first boot)
+- [x] `device.json` schema: `{ id, hardware_serial, manufactured_at, firmware_version }`
 
 ---
 

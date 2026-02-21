@@ -1,17 +1,19 @@
-# Laravel
-/vendor/
-/node_modules/
-/.env
-/.env.backup
-/.env.production
-/storage/*.key
-/public/hot
-/public/storage
-/public/build/
+# Laravel (both apps)
+**/vendor/
+**/node_modules/
+**/.env
+**/.env.backup
+**/.env.production
+**/storage/*.key
+**/public/hot
+**/public/storage
+**/public/build/
+**/*.sqlite
+**/*.sqlite-journal
 
 # IDE
-/.idea/
-/.vscode/
+.idea/
+.vscode/
 *.swp
 *.swo
 

@@ -1,0 +1,16 @@
+{
+    "name": "vibecodepc/common",
+    "description": "Shared DTOs, enums, and API contracts for VibeCodePC device and cloud apps.",
+    "type": "library",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "VibecodePC\\Common\\": "src/"
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
