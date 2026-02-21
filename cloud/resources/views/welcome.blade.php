@@ -29,10 +29,6 @@
 
     {{-- Hero --}}
     <section class="relative overflow-hidden pt-32 pb-20 sm:pt-40 sm:pb-28">
-        {{-- Logo background overlay --}}
-        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <img src="{{ asset('storage/logo1.png') }}" alt="" class="w-[800px] max-w-none opacity-10 blur-sm" />
-        </div>
         {{-- Grid background --}}
         <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:64px_64px]"></div>
         {{-- Glow --}}
@@ -130,8 +126,12 @@
     </section>
 
     {{-- Features --}}
-    <section id="features" class="relative border-t border-white/5 py-24">
-        <div class="mx-auto max-w-6xl px-6">
+    <section id="features" class="relative overflow-hidden border-t border-white/5 py-24">
+        {{-- Logo background overlay --}}
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <img src="{{ asset('storage/logo1.png') }}" alt="" class="w-[900px] max-w-none opacity-[0.07] blur-sm" />
+        </div>
+        <div class="relative mx-auto max-w-6xl px-6">
             <div class="text-center">
                 <h2 class="text-3xl font-bold tracking-tight sm:text-4xl">Everything you need to build</h2>
                 <p class="mt-4 text-gray-400 text-lg">Pre-configured, always-on, and entirely yours.</p>
@@ -317,8 +317,12 @@
     </section>
 
     {{-- Final CTA --}}
-    <section class="relative border-t border-white/5 py-24">
+    <section class="relative overflow-hidden border-t border-white/5 py-24">
         <div class="absolute inset-0 bg-gradient-to-t from-emerald-500/5 to-transparent"></div>
+        {{-- Logo background overlay --}}
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <img src="{{ asset('storage/logo1.png') }}" alt="" class="w-[700px] max-w-none opacity-[0.07] blur-sm" />
+        </div>
         <div class="relative mx-auto max-w-2xl px-6 text-center">
             <h2 class="text-3xl font-bold tracking-tight sm:text-4xl">Ready to vibe?</h2>
             <p class="mt-4 text-gray-400 text-lg">Join the waitlist and be first to get your VibeCodePC when we launch.</p>
