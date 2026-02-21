@@ -17,9 +17,12 @@ class DatabaseSeeder extends Seeder
     {
         User::factory()->create([
             'name' => 'Admin',
+            'username' => 'admin',
             'email' => 'admin@vibecodepc.com',
-            'password' => bcrypt('password'), // Change this to a secure password in production
+            'password' => bcrypt('password'),
             'is_admin' => true,
         ]);
+
+        $this->call(DeviceSeeder::class);
     }
 }
