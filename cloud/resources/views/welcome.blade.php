@@ -57,6 +57,17 @@
                 A Raspberry Pi 5 that comes ready to code with AI. Scan the QR code, connect ChatGPT, Copilot &amp; more, and deploy your projects to the web — all from a tiny box on your desk.
             </p>
 
+            <div class="mx-auto mt-10 max-w-2xl">
+                <img
+                    src="{{ asset('storage/pcs1.png') }}"
+                    alt="Two VibeCodePC devices — a Raspberry Pi 5 in a custom case with green LED accents and visible ports"
+                    class="w-full rounded-2xl border border-white/10 shadow-2xl shadow-emerald-500/10"
+                    width="1024"
+                    height="682"
+                    loading="eager"
+                >
+            </div>
+
             <div class="mt-10 flex justify-center" id="waitlist">
                 <livewire:waitlist-form />
             </div>
@@ -101,6 +112,21 @@
                     </p>
                 </div>
             </div>
+        </div>
+    </section>
+
+    {{-- Product Showcase --}}
+    <section class="relative border-t border-white/5 py-24">
+        <div class="mx-auto max-w-5xl px-6">
+            <img
+                src="{{ asset('storage/pcs2.png') }}"
+                alt="Three VibeCodePC devices in different sizes — Raspberry Pi 5 units in custom armored cases with green LED lighting"
+                class="w-full rounded-2xl border border-white/10 shadow-2xl shadow-emerald-500/10"
+                width="1024"
+                height="682"
+                loading="lazy"
+            >
+            <p class="mt-6 text-center text-sm text-gray-500">Custom-designed enclosures. Serious hardware. Tiny footprint.</p>
         </div>
     </section>
 
