@@ -1,59 +1,110 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# VibeCodePC — Cloud Edge
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+The cloud-side Laravel application that powers `vibecodepc.com`. Handles device registration, QR-based pairing, user accounts, tunnel ingress, and the admin panel (Filament).
 
-## About Laravel
+## Prerequisites
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- PHP 8.2+ with SQLite extension
+- Composer
+- Node.js & npm
+- The `vibecodepc/common` package (at `../packages/vibecodepc-common/`)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+For production: MySQL and Redis (local dev uses SQLite + database drivers by default).
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Quick Start
 
-## Learning Laravel
+```bash
+bin/setup
+php artisan serve
+```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+The setup script handles dependencies, environment (SQLite by default), database, seeding, frontend build, and Filament setup.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Development
 
-## Laravel Sponsors
+```bash
+# Dev server with queue worker, log streaming, and Vite HMR
+composer run dev
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+# Run tests
+php artisan test
 
-### Premium Partners
+# Lint / format
+./vendor/bin/pint
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## Admin Panel
 
-## Contributing
+Filament admin panel is available at `/admin`. To access it, create an admin user:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+php artisan tinker
+> User::factory()->create(['is_admin' => true, 'email' => 'admin@example.com'])
+```
 
-## Code of Conduct
+The panel provides CRUD management for:
+- **Devices** — view/edit registered devices, status, pairing info
+- **Leads** — manage waitlist signups, export to CSV
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Device Pairing Flow
 
-## Security Vulnerabilities
+1. QR code on device encodes `https://vibecodepc.com/id/{uuid}`
+2. User scans QR, gets redirected to login/register if not authenticated
+3. User claims the unclaimed device
+4. Cloud generates an encrypted Sanctum API token for the device
+5. Device polls `GET /api/devices/{uuid}/status` to retrieve pairing token
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## API Endpoints
 
-## License
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/devices/{uuid}/status` | — | Device status and pending pairing token |
+| `POST` | `/api/devices/{uuid}/claim` | Sanctum | Claim a device for the authenticated user |
+| `GET` | `/api/user` | Sanctum | Current authenticated user |
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Project Structure
+
+```
+app/
+├── Filament/
+│   ├── Resources/            # DeviceResource, LeadResource (admin CRUD)
+│   ├── Exporters/            # LeadExporter (CSV export)
+│   └── Widgets/
+├── Http/
+│   ├── Controllers/
+│   │   ├── DevicePairingController.php   # QR pairing web flow
+│   │   └── Api/DeviceController.php      # Device API endpoints
+│   └── Requests/
+├── Livewire/
+│   └── WaitlistForm.php      # Landing page email capture
+├── Models/                   # User, Device, Lead
+├── Services/
+│   └── DeviceRegistryService.php  # Device lookup, claiming, registration
+├── Exceptions/               # DeviceNotFoundException, DeviceAlreadyClaimedException
+└── Providers/
+    └── Filament/AdminPanelProvider.php
+```
+
+## Environment Variables
+
+Key variables in `.env` (see `.env.example` for the full list):
+
+| Variable | Local Default | Production | Description |
+|---|---|---|---|
+| `DB_CONNECTION` | `sqlite` | `mysql` | Database driver |
+| `SESSION_DRIVER` | `database` | `redis` | Session storage |
+| `QUEUE_CONNECTION` | `sync` | `redis` | Queue driver |
+| `CACHE_STORE` | `database` | `redis` | Cache driver |
+| `MAIL_MAILER` | `log` | `smtp` | Mail driver |
+
+> The setup script automatically configures `.env` for SQLite local development. For MySQL/Redis, edit `.env` manually.
+
+## Seeded Test Data
+
+The `DeviceSeeder` creates test devices for local development:
+
+| UUID | Status |
+|---|---|
+| `00000000-0000-0000-0000-000000000001` | Unclaimed (known test device) |
+| `00000000-0000-0000-0000-000000000002` | Claimed |
+| 3 random UUIDs | Unclaimed |
