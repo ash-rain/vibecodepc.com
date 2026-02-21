@@ -1,5 +1,13 @@
 <?php
 
+use App\Livewire\Dashboard\AiServicesHub;
+use App\Livewire\Dashboard\CodeEditor;
+use App\Livewire\Dashboard\Overview;
+use App\Livewire\Dashboard\ProjectCreate;
+use App\Livewire\Dashboard\ProjectDetail;
+use App\Livewire\Dashboard\ProjectList;
+use App\Livewire\Dashboard\SystemSettings;
+use App\Livewire\Dashboard\TunnelManager;
 use App\Livewire\Pairing\PairingScreen;
 use App\Livewire\Wizard\WizardController;
 use App\Services\DeviceStateService;
@@ -20,7 +28,12 @@ Route::get('/pairing', PairingScreen::class)->name('pairing');
 // Setup wizard
 Route::get('/wizard', WizardController::class)->name('wizard');
 
-// Placeholder route for dashboard (to be built in later phases)
-Route::get('/dashboard', function () {
-    return view('welcome');
-})->name('dashboard');
+// Dashboard
+Route::get('/dashboard', Overview::class)->name('dashboard');
+Route::get('/dashboard/projects', ProjectList::class)->name('dashboard.projects');
+Route::get('/dashboard/projects/create', ProjectCreate::class)->name('dashboard.projects.create');
+Route::get('/dashboard/projects/{project}', ProjectDetail::class)->name('dashboard.projects.show');
+Route::get('/dashboard/ai-services', AiServicesHub::class)->name('dashboard.ai-services');
+Route::get('/dashboard/code-editor', CodeEditor::class)->name('dashboard.code-editor');
+Route::get('/dashboard/tunnels', TunnelManager::class)->name('dashboard.tunnels');
+Route::get('/dashboard/settings', SystemSettings::class)->name('dashboard.settings');

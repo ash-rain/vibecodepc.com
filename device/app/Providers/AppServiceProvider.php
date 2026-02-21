@@ -7,9 +7,14 @@ namespace App\Providers;
 use App\Services\AiProviders\AiProviderResolverService;
 use App\Services\CloudApiClient;
 use App\Services\CodeServer\CodeServerService;
+use App\Services\DeviceHealthService;
 use App\Services\DeviceRegistry\DeviceIdentityService;
 use App\Services\DeviceStateService;
+use App\Services\Docker\ProjectContainerService;
 use App\Services\GitHub\GitHubDeviceFlowService;
+use App\Services\NetworkService;
+use App\Services\Projects\PortAllocatorService;
+use App\Services\Projects\ProjectScaffoldService;
 use App\Services\SystemService;
 use App\Services\Tunnel\TunnelService;
 use App\Services\WizardProgressService;
@@ -52,6 +57,18 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(TunnelService::class, function () {
             return new TunnelService(
                 configPath: config('vibecodepc.tunnel.config_path'),
+            );
+        });
+
+        $this->app->singleton(DeviceHealthService::class);
+        $this->app->singleton(NetworkService::class);
+        $this->app->singleton(ProjectContainerService::class);
+        $this->app->singleton(PortAllocatorService::class);
+
+        $this->app->singleton(ProjectScaffoldService::class, function () {
+            return new ProjectScaffoldService(
+                basePath: config('vibecodepc.projects.base_path'),
+                portAllocator: app(PortAllocatorService::class),
             );
         });
     }

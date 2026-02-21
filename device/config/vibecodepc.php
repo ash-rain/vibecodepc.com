@@ -16,4 +16,13 @@ return [
     'tunnel' => [
         'config_path' => env('CLOUDFLARED_CONFIG', '/etc/cloudflared/config.yml'),
     ],
+
+    'projects' => [
+        'base_path' => env('VIBECODEPC_PROJECTS_PATH', '/home/vibecodepc/projects'),
+        'max_projects' => (int) env('VIBECODEPC_MAX_PROJECTS', 10),
+    ],
+
+    'docker' => [
+        'socket' => env('DOCKER_HOST', 'unix:///var/run/docker.sock'),
+    ],
 ];
