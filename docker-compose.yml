@@ -17,6 +17,12 @@ services:
       - "${DOCKER_GID:-0}"
     ports:
       - "8081:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/up"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     environment:
       APP_NAME: VibeCodePC
       APP_ENV: local
@@ -39,8 +45,10 @@ services:
       - tunnel-data:/tunnel:ro
     network_mode: "service:device"
     depends_on:
-      - device
-    restart: unless-stopped
+      device:
+        condition: service_healthy
+        restart: true
+    restart: always
 
   device-scheduler:
     image: serversideup/php:8.4-fpm-nginx
