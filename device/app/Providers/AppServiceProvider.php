@@ -48,8 +48,10 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(CodeServerService::class, function () {
+            $port = config('vibecodepc.code_server.port');
+
             return new CodeServerService(
-                port: config('vibecodepc.code_server.port'),
+                port: $port ?: null,
                 configPath: config('vibecodepc.code_server.config_path'),
             );
         });

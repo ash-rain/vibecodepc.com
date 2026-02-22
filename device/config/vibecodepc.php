@@ -5,8 +5,8 @@ return [
     'device_json_path' => env('VIBECODEPC_DEVICE_JSON', storage_path('device.json')),
 
     'code_server' => [
-        'port' => (int) env('CODE_SERVER_PORT', 8443),
-        'config_path' => env('CODE_SERVER_CONFIG', '/home/vibecodepc/.config/code-server/config.yaml'),
+        'port' => env('CODE_SERVER_PORT') ? (int) env('CODE_SERVER_PORT') : null,
+        'config_path' => env('CODE_SERVER_CONFIG', ($_SERVER['HOME'] ?? '/home/vibecodepc').'/.config/code-server/config.yaml'),
     ],
 
     'github' => [

@@ -14,32 +14,56 @@ use Livewire\Component;
 #[Title('Code Editor — VibeCodePC')]
 class CodeEditor extends Component
 {
+    public bool $isInstalled = false;
+
     public bool $isRunning = false;
 
     public ?string $version = null;
 
-    public string $editorUrl = '';
-
     public bool $hasCopilot = false;
+
+    public string $error = '';
 
     public function mount(CodeServerService $codeServerService): void
     {
+        $this->isInstalled = $codeServerService->isInstalled();
         $this->isRunning = $codeServerService->isRunning();
         $this->version = $codeServerService->getVersion();
-        $this->editorUrl = $codeServerService->getUrl();
 
         $github = GitHubCredential::current();
         $this->hasCopilot = $github?->hasCopilot() ?? false;
     }
 
-    public function restart(CodeServerService $codeServerService): void
+    public function start(CodeServerService $codeServerService): void
     {
-        $codeServerService->restart();
+        $this->error = '';
+
+        $error = $codeServerService->start();
+
         $this->isRunning = $codeServerService->isRunning();
+
+        if ($error !== null) {
+            $this->error = $error;
+        }
     }
 
-    public function render()
+    public function restart(CodeServerService $codeServerService): void
     {
-        return view('livewire.dashboard.code-editor');
+        $this->error = '';
+
+        $error = $codeServerService->restart();
+
+        $this->isRunning = $codeServerService->isRunning();
+
+        if ($error !== null) {
+            $this->error = $error;
+        }
+    }
+
+    public function render(CodeServerService $codeServerService)
+    {
+        return view('livewire.dashboard.code-editor', [
+            'editorUrl' => $codeServerService->getUrl(),
+        ]);
     }
 }

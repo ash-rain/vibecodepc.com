@@ -8,8 +8,10 @@ use Illuminate\Support\Facades\Process;
 
 class CodeServerService
 {
+    private ?array $parsedConfig = null;
+
     public function __construct(
-        private readonly int $port = 8443,
+        private readonly ?int $port = null,
         private readonly string $configPath = '/home/vibecodepc/.config/code-server/config.yaml',
     ) {}
 
@@ -18,12 +20,63 @@ class CodeServerService
         return $this->getVersion() !== null;
     }
 
+    public function getPort(): int
+    {
+        if ($this->port !== null) {
+            return $this->port;
+        }
+
+        $config = $this->parseConfig();
+
+        return $config['port'] ?? 8443;
+    }
+
+    public function getPassword(): ?string
+    {
+        $config = $this->parseConfig();
+
+        return $config['password'] ?? null;
+    }
+
+    /**
+     * @return array{port?: int, password?: string}
+     */
+    private function parseConfig(): array
+    {
+        if ($this->parsedConfig !== null) {
+            return $this->parsedConfig;
+        }
+
+        $this->parsedConfig = [];
+
+        $result = Process::run(sprintf('cat %s 2>/dev/null', escapeshellarg($this->configPath)));
+
+        if (! $result->successful()) {
+            return $this->parsedConfig;
+        }
+
+        $output = $result->output();
+
+        if (preg_match('/^bind-addr:\s*[\w.:]+:(\d+)/m', $output, $matches)) {
+            $this->parsedConfig['port'] = (int) $matches[1];
+        }
+
+        if (preg_match('/^password:\s*(.+)$/m', $output, $matches)) {
+            $this->parsedConfig['password'] = trim($matches[1]);
+        }
+
+        return $this->parsedConfig;
+    }
+
     public function isRunning(): bool
     {
+        $port = $this->getPort();
+
         $result = Process::run(sprintf(
-            'lsof -iTCP:%d -sTCP:LISTEN -t 2>/dev/null || ss -tlnp sport = :%d 2>/dev/null | grep -q LISTEN',
-            $this->port,
-            $this->port,
+            '/usr/sbin/lsof -iTCP:%d -sTCP:LISTEN -t 2>/dev/null || lsof -iTCP:%d -sTCP:LISTEN -t 2>/dev/null || ss -tlnp sport = :%d 2>/dev/null | grep -q LISTEN',
+            $port,
+            $port,
+            $port,
         ));
 
         return $result->successful();
@@ -31,13 +84,12 @@ class CodeServerService
 
     public function getVersion(): ?string
     {
-        $result = Process::run('code-server --version 2>/dev/null');
+        $result = Process::run($this->shell('code-server --version 2>/dev/null'));
 
         if (! $result->successful()) {
             return null;
         }
 
-        // code-server outputs debug lines (starting with "[") before the version
         foreach (explode("\n", trim($result->output())) as $line) {
             if (preg_match('/^\d+\.\d+\.\d+/', $line)) {
                 return $line;
@@ -57,7 +109,7 @@ class CodeServerService
 
         foreach ($extensions as $extension) {
             $result = Process::timeout(120)->run(
-                sprintf('code-server --install-extension %s 2>&1', escapeshellarg($extension)),
+                $this->shell(sprintf('code-server --install-extension %s 2>&1', escapeshellarg($extension))),
             );
 
             if (! $result->successful() && ! str_contains($result->output(), 'already installed')) {
@@ -100,13 +152,99 @@ class CodeServerService
 
     public function getUrl(): string
     {
-        return "http://localhost:{$this->port}";
+        $base = "http://localhost:{$this->getPort()}";
+        $password = $this->getPassword();
+
+        return $password ? "{$base}?tkn={$password}" : $base;
     }
 
-    public function restart(): bool
+    /**
+     * Start code-server. Returns null on success, or an error message on failure.
+     */
+    public function start(): ?string
     {
-        $result = Process::run('sudo systemctl restart code-server@vibecodepc 2>/dev/null || true');
+        if ($this->isRunning()) {
+            return null;
+        }
 
-        return $result->successful();
+        if (! $this->isInstalled()) {
+            return 'code-server is not installed.';
+        }
+
+        // Try systemd first (production RPi), then direct launch (dev/macOS)
+        $result = Process::run('sudo systemctl start code-server@vibecodepc 2>&1');
+
+        if ($result->successful()) {
+            sleep(1);
+
+            return $this->isRunning() ? null : 'Service started but code-server is not responding on port '.$this->getPort().'.';
+        }
+
+        // Direct launch as background process
+        $port = $this->getPort();
+        $result = Process::run($this->shell(sprintf(
+            'nohup code-server --bind-addr 127.0.0.1:%d > /tmp/code-server.log 2>&1 & echo $!',
+            $port,
+        )));
+
+        if (! $result->successful()) {
+            return 'Failed to start code-server: '.$result->errorOutput();
+        }
+
+        // Wait for it to become responsive
+        for ($i = 0; $i < 10; $i++) {
+            usleep(500_000);
+
+            if ($this->isRunning()) {
+                return null;
+            }
+        }
+
+        $logResult = Process::run('tail -5 /tmp/code-server.log 2>/dev/null');
+        $logTail = trim($logResult->output());
+
+        return 'code-server started but not responding on port '.$port.($logTail ? ".\n".$logTail : '.');
+    }
+
+    /**
+     * Stop code-server. Returns null on success, or an error message on failure.
+     */
+    public function stop(): ?string
+    {
+        if (! $this->isRunning()) {
+            return null;
+        }
+
+        $result = Process::run('sudo systemctl stop code-server@vibecodepc 2>/dev/null');
+
+        if (! $result->successful()) {
+            Process::run('pkill -f "code-server" 2>/dev/null');
+        }
+
+        sleep(1);
+
+        return $this->isRunning() ? 'Failed to stop code-server.' : null;
+    }
+
+    /**
+     * Restart code-server. Returns null on success, or an error message on failure.
+     */
+    public function restart(): ?string
+    {
+        $stopError = $this->stop();
+
+        if ($stopError !== null) {
+            return $stopError;
+        }
+
+        return $this->start();
+    }
+
+    /**
+     * Wrap a command in a login shell so binaries like code-server are found in PATH.
+     */
+    private function shell(string $command): string
+    {
+        return sprintf('bash -lc %s', escapeshellarg($command));
     }
 }

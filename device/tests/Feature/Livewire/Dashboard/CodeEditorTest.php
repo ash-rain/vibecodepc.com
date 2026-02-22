@@ -3,33 +3,103 @@
 declare(strict_types=1);
 
 use App\Livewire\Dashboard\CodeEditor;
-use Illuminate\Support\Facades\Process;
+use App\Services\CodeServer\CodeServerService;
 use Livewire\Livewire;
 
-beforeEach(function () {
-    Process::fake([
-        'code-server --version*' => Process::result(output: '4.23.1'),
-        'lsof*' => Process::result(output: '12345'),
-        'ss*' => Process::result(output: 'LISTEN'),
-        '*' => Process::result(),
-    ]);
-});
-
 it('renders the code editor page', function () {
+    $mock = Mockery::mock(CodeServerService::class);
+    $mock->shouldReceive('isInstalled')->andReturn(true);
+    $mock->shouldReceive('isRunning')->andReturn(true);
+    $mock->shouldReceive('getVersion')->andReturn('4.23.1');
+    $mock->shouldReceive('getUrl')->andReturn('http://localhost:8443');
+    app()->instance(CodeServerService::class, $mock);
+
     Livewire::test(CodeEditor::class)
         ->assertStatus(200)
         ->assertSee('Code Editor');
 });
 
-it('shows running status', function () {
+it('shows running status and version', function () {
+    $mock = Mockery::mock(CodeServerService::class);
+    $mock->shouldReceive('isInstalled')->andReturn(true);
+    $mock->shouldReceive('isRunning')->andReturn(true);
+    $mock->shouldReceive('getVersion')->andReturn('4.23.1');
+    $mock->shouldReceive('getUrl')->andReturn('http://localhost:8443');
+    app()->instance(CodeServerService::class, $mock);
+
     Livewire::test(CodeEditor::class)
         ->assertSee('Running')
         ->assertSee('4.23.1');
 });
 
-it('can restart the editor', function () {
-    Livewire::test(CodeEditor::class)
-        ->call('restart');
+it('shows stopped status when not running', function () {
+    $mock = Mockery::mock(CodeServerService::class);
+    $mock->shouldReceive('isInstalled')->andReturn(true);
+    $mock->shouldReceive('isRunning')->andReturn(false);
+    $mock->shouldReceive('getVersion')->andReturn('4.23.1');
+    $mock->shouldReceive('getUrl')->andReturn('http://localhost:8443');
+    app()->instance(CodeServerService::class, $mock);
 
-    Process::assertRan(fn ($process) => str_contains($process->command, 'restart') && str_contains($process->command, 'code-server'));
+    Livewire::test(CodeEditor::class)
+        ->assertSee('Stopped')
+        ->assertSee('Start Editor');
+});
+
+it('shows not installed state', function () {
+    $mock = Mockery::mock(CodeServerService::class);
+    $mock->shouldReceive('isInstalled')->andReturn(false);
+    $mock->shouldReceive('isRunning')->andReturn(false);
+    $mock->shouldReceive('getVersion')->andReturn(null);
+    $mock->shouldReceive('getUrl')->andReturn('http://localhost:8443');
+    app()->instance(CodeServerService::class, $mock);
+
+    Livewire::test(CodeEditor::class)
+        ->assertSee('Not Installed')
+        ->assertSee('code-server is not installed');
+});
+
+it('can start the editor', function () {
+    $mock = Mockery::mock(CodeServerService::class);
+    $mock->shouldReceive('isInstalled')->andReturn(true);
+    $mock->shouldReceive('isRunning')->andReturn(false, true);
+    $mock->shouldReceive('getVersion')->andReturn('4.23.1');
+    $mock->shouldReceive('getUrl')->andReturn('http://localhost:8443');
+    $mock->shouldReceive('start')->once()->andReturn(null);
+    app()->instance(CodeServerService::class, $mock);
+
+    Livewire::test(CodeEditor::class)
+        ->assertSee('Stopped')
+        ->call('start')
+        ->assertSet('isRunning', true)
+        ->assertSet('error', '');
+});
+
+it('shows error when start fails', function () {
+    $mock = Mockery::mock(CodeServerService::class);
+    $mock->shouldReceive('isInstalled')->andReturn(true);
+    $mock->shouldReceive('isRunning')->andReturn(false, false);
+    $mock->shouldReceive('getVersion')->andReturn('4.23.1');
+    $mock->shouldReceive('getUrl')->andReturn('http://localhost:8443');
+    $mock->shouldReceive('start')->once()->andReturn('code-server started but not responding on port 8443.');
+    app()->instance(CodeServerService::class, $mock);
+
+    Livewire::test(CodeEditor::class)
+        ->call('start')
+        ->assertSet('isRunning', false)
+        ->assertSee('code-server started but not responding');
+});
+
+it('can restart the editor', function () {
+    $mock = Mockery::mock(CodeServerService::class);
+    $mock->shouldReceive('isInstalled')->andReturn(true);
+    $mock->shouldReceive('isRunning')->andReturn(true, true);
+    $mock->shouldReceive('getVersion')->andReturn('4.23.1');
+    $mock->shouldReceive('getUrl')->andReturn('http://localhost:8443');
+    $mock->shouldReceive('restart')->once()->andReturn(null);
+    app()->instance(CodeServerService::class, $mock);
+
+    Livewire::test(CodeEditor::class)
+        ->call('restart')
+        ->assertSet('isRunning', true)
+        ->assertSet('error', '');
 });
