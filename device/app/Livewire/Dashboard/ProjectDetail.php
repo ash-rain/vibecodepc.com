@@ -109,6 +109,11 @@ class ProjectDetail extends Component
         $this->redirect(route('dashboard.projects'), navigate: false);
     }
 
+    public function openInEditor(): void
+    {
+        $this->redirect(route('dashboard.code-editor', ['folder' => $this->project->path]), navigate: false);
+    }
+
     public function refreshLogs(ProjectContainerService $containerService): void
     {
         $this->containerLogs = $containerService->getLogs($this->project, 30);

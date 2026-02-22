@@ -12,8 +12,10 @@ use App\Services\DeviceRegistry\DeviceIdentityService;
 use App\Services\DeviceStateService;
 use App\Services\Docker\ProjectContainerService;
 use App\Services\GitHub\GitHubDeviceFlowService;
+use App\Services\GitHub\GitHubRepoService;
 use App\Services\NetworkService;
 use App\Services\Projects\PortAllocatorService;
+use App\Services\Projects\ProjectCloneService;
 use App\Services\Projects\ProjectScaffoldService;
 use App\Services\SystemService;
 use App\Services\Tunnel\TunnelService;
@@ -72,6 +74,16 @@ class AppServiceProvider extends ServiceProvider
             return new ProjectScaffoldService(
                 basePath: config('vibecodepc.projects.base_path'),
                 portAllocator: app(PortAllocatorService::class),
+            );
+        });
+
+        $this->app->singleton(GitHubRepoService::class);
+
+        $this->app->singleton(ProjectCloneService::class, function () {
+            return new ProjectCloneService(
+                basePath: config('vibecodepc.projects.base_path'),
+                portAllocator: app(PortAllocatorService::class),
+                scaffoldService: app(ProjectScaffoldService::class),
             );
         });
     }

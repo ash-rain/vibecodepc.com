@@ -27,6 +27,7 @@ class ProjectFactory extends Factory
             'status' => ProjectStatus::Created,
             'path' => config('vibecodepc.projects.base_path').'/'.Str::slug($name),
             'port' => fake()->numberBetween(3000, 9000),
+            'clone_url' => null,
             'container_id' => null,
             'tunnel_subdomain_path' => null,
             'tunnel_enabled' => false,
@@ -50,6 +51,13 @@ class ProjectFactory extends Factory
         return $this->state(fn () => [
             'status' => ProjectStatus::Stopped,
             'last_stopped_at' => now(),
+        ]);
+    }
+
+    public function cloned(): static
+    {
+        return $this->state(fn () => [
+            'clone_url' => 'https://github.com/'.fake()->userName().'/'.fake()->slug(2).'.git',
         ]);
     }
 

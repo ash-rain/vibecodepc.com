@@ -22,6 +22,7 @@ class Project extends Model
         'status',
         'path',
         'port',
+        'clone_url',
         'container_id',
         'tunnel_subdomain_path',
         'tunnel_enabled',

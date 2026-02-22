@@ -60,3 +60,33 @@ it('can remove environment variables', function () {
 
     expect($project->fresh()->env_vars)->not->toHaveKey('FOO');
 });
+
+it('shows preview button for running project', function () {
+    $project = Project::factory()->running()->create(['port' => 3000]);
+
+    Livewire::test(ProjectDetail::class, ['project' => $project])
+        ->assertSeeHtml('http://localhost:3000')
+        ->assertSee('Preview');
+});
+
+it('does not show preview button for stopped project', function () {
+    $project = Project::factory()->stopped()->create(['port' => 3000]);
+
+    Livewire::test(ProjectDetail::class, ['project' => $project])
+        ->assertDontSee('Preview');
+});
+
+it('shows open editor button', function () {
+    $project = Project::factory()->create();
+
+    Livewire::test(ProjectDetail::class, ['project' => $project])
+        ->assertSee('Open Editor');
+});
+
+it('can open the editor', function () {
+    $project = Project::factory()->create();
+
+    Livewire::test(ProjectDetail::class, ['project' => $project])
+        ->call('openInEditor')
+        ->assertRedirect(route('dashboard.code-editor', ['folder' => $project->path]));
+});

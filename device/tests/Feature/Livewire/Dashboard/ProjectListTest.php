@@ -48,3 +48,18 @@ it('can stop a project', function () {
 
     Process::assertRan('docker compose down');
 });
+
+it('shows preview button for running projects', function () {
+    Project::factory()->running()->create(['name' => 'Running App', 'port' => 8000]);
+
+    Livewire::test(ProjectList::class)
+        ->assertSeeHtml('http://localhost:8000')
+        ->assertSee('Preview');
+});
+
+it('does not show preview button for stopped projects', function () {
+    Project::factory()->stopped()->create(['name' => 'Stopped App', 'port' => 8000]);
+
+    Livewire::test(ProjectList::class)
+        ->assertDontSee('Preview');
+});

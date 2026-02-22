@@ -58,6 +58,13 @@
                                 wire:loading.attr="disabled"
                                 class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs rounded-lg transition-colors"
                             >Stop</button>
+                            @if ($project->port)
+                                <a
+                                    href="http://localhost:{{ $project->port }}"
+                                    target="_blank"
+                                    class="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-xs rounded-lg transition-colors"
+                                >Preview</a>
+                            @endif
                         @else
                             <button
                                 wire:click="startProject({{ $project->id }})"

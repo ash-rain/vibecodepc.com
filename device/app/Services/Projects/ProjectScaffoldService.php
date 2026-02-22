@@ -142,7 +142,7 @@ HTML;
         return true;
     }
 
-    private function generateDockerCompose(Project $project): void
+    public function generateDockerCompose(Project $project): void
     {
         $compose = match ($project->framework) {
             ProjectFramework::Laravel => $this->laravelCompose($project),
@@ -157,7 +157,7 @@ HTML;
         $this->log($project, 'scaffold', 'Generated docker-compose.yml');
     }
 
-    private function injectAiConfigs(Project $project): void
+    public function injectAiConfigs(Project $project): void
     {
         $providers = AiProviderConfig::whereNotNull('validated_at')->get();
 

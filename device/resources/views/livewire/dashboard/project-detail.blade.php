@@ -17,11 +17,19 @@
         </div>
         <div class="flex items-center gap-2">
             @if ($project->isRunning())
+                @if ($project->port)
+                    <a
+                        href="http://localhost:{{ $project->port }}"
+                        target="_blank"
+                        class="px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-sm rounded-lg transition-colors"
+                    >Preview</a>
+                @endif
                 <button wire:click="stop" wire:loading.attr="disabled" class="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm rounded-lg transition-colors">Stop</button>
                 <button wire:click="restart" wire:loading.attr="disabled" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm rounded-lg transition-colors">Restart</button>
             @else
                 <button wire:click="start" wire:loading.attr="disabled" class="px-4 py-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 text-sm rounded-lg transition-colors">Start</button>
             @endif
+            <button wire:click="openInEditor" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm rounded-lg transition-colors">Open Editor</button>
         </div>
     </div>
 
