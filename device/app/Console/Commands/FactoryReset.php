@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Models\AiProviderConfig;
-use App\Models\CloudCredential;
 use App\Models\GitHubCredential;
 use App\Models\Project;
 use App\Models\ProjectLog;
@@ -40,7 +39,6 @@ class FactoryReset extends Command
 
         $this->info('Clearing database...');
         TunnelConfig::truncate();
-        CloudCredential::truncate();
         AiProviderConfig::truncate();
         GitHubCredential::truncate();
         ProjectLog::truncate();

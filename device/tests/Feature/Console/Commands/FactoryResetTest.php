@@ -31,8 +31,24 @@ it('resets all data with --force flag', function () {
         ->assertSuccessful()
         ->expectsOutputToContain('Factory reset complete');
 
-    expect(TunnelConfig::count())->toBe(0)
-        ->and(CloudCredential::count())->toBe(0);
+    expect(TunnelConfig::count())->toBe(0);
+});
+
+it('preserves device identity after reset', function () {
+    CloudCredential::create([
+        'pairing_token_encrypted' => 'token',
+        'cloud_username' => 'user',
+        'cloud_email' => 'user@example.com',
+        'cloud_url' => 'https://vibecodepc.com',
+        'is_paired' => true,
+        'paired_at' => now(),
+    ]);
+
+    $this->artisan('device:factory-reset', ['--force' => true])
+        ->assertSuccessful();
+
+    expect(CloudCredential::count())->toBe(1)
+        ->and(CloudCredential::current()->cloud_username)->toBe('user');
 });
 
 it('reseeds wizard progress after reset', function () {
