@@ -123,4 +123,16 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Tunnel Domain
+    |--------------------------------------------------------------------------
+    |
+    | The base domain used for tunnel subdomain routing. Subdomains like
+    | {username}.vibecodepc.com are resolved to device tunnels.
+    |
+    */
+
+    'tunnel_domain' => env('TUNNEL_DOMAIN', 'vibecodepc.com'),
+
 ];

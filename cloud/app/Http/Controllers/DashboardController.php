@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\Device;
+use App\Models\TunnelRequestLog;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -42,9 +44,22 @@ class DashboardController extends Controller
             ->limit(60)
             ->get();
 
+        $routeIds = $device->tunnelRoutes->pluck('id');
+        $trafficStats = TunnelRequestLog::query()
+            ->select(
+                'tunnel_route_id',
+                DB::raw('COUNT(*) as total_requests'),
+                DB::raw('ROUND(AVG(response_time_ms)) as avg_response_time'),
+            )
+            ->whereIn('tunnel_route_id', $routeIds)
+            ->groupBy('tunnel_route_id')
+            ->get()
+            ->keyBy('tunnel_route_id');
+
         return view('dashboard.devices.show', [
             'device' => $device,
             'recentHeartbeats' => $recentHeartbeats,
+            'trafficStats' => $trafficStats,
         ]);
     }
 }

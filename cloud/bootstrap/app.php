@@ -12,8 +12,14 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(prepend: [
+            \App\Http\Middleware\TunnelProxyMiddleware::class,
+        ]);
+
         $middleware->alias([
             'device.owner' => \App\Http\Middleware\VerifyDeviceOwnership::class,
+            'subdomain.rate' => \App\Http\Middleware\SubdomainRateLimiter::class,
+            'tunnel.log' => \App\Http\Middleware\LogTunnelRequest::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

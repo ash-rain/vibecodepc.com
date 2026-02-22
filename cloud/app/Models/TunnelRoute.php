@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TunnelRoute extends Model
 {
@@ -33,6 +34,11 @@ class TunnelRoute extends Model
     public function device(): BelongsTo
     {
         return $this->belongsTo(Device::class);
+    }
+
+    public function requestLogs(): HasMany
+    {
+        return $this->hasMany(TunnelRequestLog::class);
     }
 
     /** @param Builder<self> $query */

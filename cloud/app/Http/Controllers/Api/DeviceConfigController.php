@@ -21,6 +21,7 @@ class DeviceConfigController extends Controller
                 'tunnel_url' => $device->tunnel_url,
                 'firmware_version' => $device->firmware_version,
                 'heartbeat_interval_seconds' => 60,
+                'config_version' => $device->config_version ?? 1,
             ],
         ]);
     }

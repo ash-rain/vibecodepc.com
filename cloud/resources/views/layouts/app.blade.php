@@ -49,7 +49,7 @@
 
                     <div class="flex items-center gap-4">
                         <div class="hidden sm:flex items-center gap-2">
-                            <code class="rounded-md bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 text-xs font-mono text-emerald-400">{{ Auth::user()->username }}.vibecodepc.com</code>
+                            <a href="{{ route('dashboard.subdomain.edit') }}" class="rounded-md bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 text-xs font-mono text-emerald-400 transition hover:bg-emerald-500/20" title="Subdomain settings">{{ Auth::user()->username }}.vibecodepc.com</a>
                         </div>
 
                         <div class="flex items-center gap-3 pl-3 border-l border-white/10">

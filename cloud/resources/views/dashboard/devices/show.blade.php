@@ -173,6 +173,36 @@
                 </div>
             </div>
 
+            {{-- Traffic Stats --}}
+            @if ($device->tunnelRoutes->isNotEmpty() && $trafficStats->isNotEmpty())
+                <div class="rounded-2xl border border-white/5 bg-white/[0.02] p-6">
+                    <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-5">Traffic Stats</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-white/5">
+                                    @foreach (['Route', 'Total Requests', 'Avg Response Time'] as $col)
+                                        <th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">{{ $col }}</th>
+                                    @endforeach
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-white/[0.03]">
+                                @foreach ($device->tunnelRoutes as $route)
+                                    @php $stats = $trafficStats->get($route->id); @endphp
+                                    @if ($stats)
+                                        <tr class="transition hover:bg-white/[0.02]">
+                                            <td class="px-3 py-2.5 text-xs font-mono text-emerald-500/70">{{ $route->full_url }}</td>
+                                            <td class="px-3 py-2.5 text-xs font-mono text-gray-300">{{ number_format($stats->total_requests) }}</td>
+                                            <td class="px-3 py-2.5 text-xs font-mono text-gray-300">{{ $stats->avg_response_time ?? '-' }} ms</td>
+                                        </tr>
+                                    @endif
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            @endif
+
             {{-- Recent Heartbeats --}}
             @if ($recentHeartbeats->isNotEmpty())
                 <div class="rounded-2xl border border-white/5 bg-white/[0.02] p-6">

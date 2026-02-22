@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\DeviceConfigController;
 use App\Http\Controllers\Api\DeviceController;
+use App\Http\Controllers\Api\DeviceDeregisterController;
 use App\Http\Controllers\Api\DeviceHeartbeatController;
 use App\Http\Controllers\Api\DeviceTunnelController;
 use Illuminate\Http\Request;
@@ -42,4 +43,7 @@ Route::middleware(['auth:sanctum', 'device.owner'])
 
         Route::get('/config', [DeviceConfigController::class, 'show'])
             ->name('config.show');
+
+        Route::post('/deregister', DeviceDeregisterController::class)
+            ->name('deregister');
     });
