@@ -52,41 +52,40 @@
                     </div>
 
                     <div class="flex items-center gap-2 mt-auto pt-3 border-t border-gray-800">
-                        @if ($project->isRunning())
-                            <button
-                                wire:click="stopProject({{ $project->id }})"
-                                wire:loading.attr="disabled"
-                                class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs rounded-lg transition-colors"
-                            >Stop</button>
-                            @if ($project->port)
-                                <a
-                                    href="http://localhost:{{ $project->port }}"
-                                    target="_blank"
-                                    class="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-xs rounded-lg transition-colors"
-                                >Preview</a>
-                            @endif
-                        @else
-                            <button
-                                wire:click="startProject({{ $project->id }})"
-                                wire:loading.attr="disabled"
-                                class="px-3 py-1.5 bg-green-500/10 hover:bg-green-500/20 text-green-400 text-xs rounded-lg transition-colors"
-                            >Start</button>
-                        @endif
-
                         <a href="{{ route('dashboard.projects.show', $project) }}" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white text-xs rounded-lg transition-colors">
                             Details
                         </a>
 
-                        <button
-                            wire:click="openInVsCode({{ $project->id }})"
-                            class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white text-xs rounded-lg transition-colors"
-                        >Editor</button>
+                        <div x-data="{ open: false }" class="relative ml-auto">
+                            <button @click="open = !open" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white text-xs rounded-lg transition-colors flex items-center gap-1">
+                                Actions
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                            </button>
 
-                        <button
-                            wire:click="deleteProject({{ $project->id }})"
-                            wire:confirm="Are you sure you want to delete this project? This cannot be undone."
-                            class="ml-auto px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs rounded-lg transition-colors"
-                        >Delete</button>
+                            <div
+                                x-show="open"
+                                @click.outside="open = false"
+                                x-transition:enter="transition ease-out duration-100"
+                                x-transition:enter-start="opacity-0 scale-95"
+                                x-transition:enter-end="opacity-100 scale-100"
+                                x-transition:leave="transition ease-in duration-75"
+                                x-transition:leave-start="opacity-100 scale-100"
+                                x-transition:leave-end="opacity-0 scale-95"
+                                class="absolute right-0 bottom-full mb-1 w-40 bg-gray-800 border border-gray-700 rounded-lg shadow-lg py-1 z-10"
+                            >
+                                @if ($project->isRunning())
+                                    <button wire:click="stopProject({{ $project->id }})" wire:loading.attr="disabled" @click="open = false" class="w-full text-left px-3 py-1.5 text-xs text-red-400 hover:bg-gray-700 transition-colors">Stop</button>
+                                    @if ($project->port)
+                                        <a href="http://localhost:{{ $project->port }}" target="_blank" class="block px-3 py-1.5 text-xs text-amber-400 hover:bg-gray-700 transition-colors">Preview</a>
+                                    @endif
+                                @else
+                                    <button wire:click="startProject({{ $project->id }})" wire:loading.attr="disabled" @click="open = false" class="w-full text-left px-3 py-1.5 text-xs text-green-400 hover:bg-gray-700 transition-colors">Start</button>
+                                @endif
+                                <button wire:click="openInVsCode({{ $project->id }})" @click="open = false" class="w-full text-left px-3 py-1.5 text-xs text-white hover:bg-gray-700 transition-colors">Open in Editor</button>
+                                <div class="border-t border-gray-700 my-1"></div>
+                                <button wire:click="deleteProject({{ $project->id }})" wire:confirm="Are you sure you want to delete this project? This cannot be undone." @click="open = false" class="w-full text-left px-3 py-1.5 text-xs text-red-400 hover:bg-gray-700 transition-colors">Delete</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             @endforeach

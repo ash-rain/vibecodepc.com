@@ -75,17 +75,17 @@ Two codebases:
 The wizard is the core UX. Each step is a **Livewire component** with validation, skip capability, and progress persistence.
 
 ### 2.1 Wizard Framework
-- [ ] `WizardController` — manages step order, progress, skip logic
-- [ ] `wizard_progress` table: `step, status (pending|completed|skipped), data_json, completed_at`
-- [ ] Progress bar component (top of every step)
-- [ ] "Skip for now" on every optional step (come back from dashboard later)
-- [ ] State persisted to SQLite — survives reboot mid-wizard
+- [x] `WizardController` — manages step order, progress, skip logic
+- [x] `wizard_progress` table: `step, status (pending|completed|skipped), data_json, completed_at`
+- [x] Progress bar component (top of every step)
+- [x] "Skip for now" on every optional step (come back from dashboard later)
+- [x] State persisted to SQLite — survives reboot mid-wizard
 
 ### 2.2 Step 1: Welcome & Account Confirmation
-- [ ] Confirm device is paired (show username from cloud)
-- [ ] Set local admin password (for SSH + sudo)
-- [ ] Set timezone / locale
-- [ ] Accept terms of service
+- [x] Confirm device is paired (show username from cloud)
+- [x] Set local admin password (for SSH + sudo)
+- [x] Set timezone / locale
+- [x] Accept terms of service
 
 ### 2.3 Step 2: AI Services — API Keys
 Each provider is a sub-step with:
@@ -96,135 +96,135 @@ Each provider is a sub-step with:
 - Visual status indicator (connected / not connected / error)
 
 Providers:
-- [ ] **OpenAI** (ChatGPT / GPT API) — validate with `GET /v1/models`
-- [ ] **Anthropic** (Claude API) — validate with `GET /v1/models`
-- [ ] **OpenRouter** — validate with `GET /api/v1/models`
-- [ ] **HuggingFace** — validate with `GET /api/whoami-v2`
-- [ ] **Custom / Other** — name + base URL + API key (OpenAI-compatible)
+- [x] **OpenAI** (ChatGPT / GPT API) — validate with `GET /v1/models`
+- [x] **Anthropic** (Claude API) — validate with `GET /v1/models`
+- [x] **OpenRouter** — validate with `GET /api/v1/models`
+- [x] **HuggingFace** — validate with `GET /api/whoami-v2`
+- [x] **Custom / Other** — name + base URL + API key (OpenAI-compatible)
 
 Storage:
-- [ ] All keys encrypted via `Crypt::encryptString()`
-- [ ] Stored in `ai_providers` table: `provider, api_key_encrypted, validated_at, status`
-- [ ] Service class per provider in `app/Services/AiProviders/`
+- [x] All keys encrypted via `Crypt::encryptString()`
+- [x] Stored in `ai_providers` table: `provider, api_key_encrypted, validated_at, status`
+- [x] Service class per provider in `app/Services/AiProviders/`
 
 ### 2.4 Step 3: GitHub Account & Copilot
-- [ ] GitHub OAuth device flow (no redirect needed — works on headless Pi)
-- [ ] Verify GitHub account has Copilot subscription
-- [ ] If no Copilot → show signup link + skip option
-- [ ] Store GitHub token (encrypted) for Copilot + git operations
-- [ ] Configure git identity (`user.name`, `user.email`) from GitHub profile
+- [x] GitHub OAuth device flow (no redirect needed — works on headless Pi)
+- [x] Verify GitHub account has Copilot subscription
+- [x] If no Copilot → show signup link + skip option
+- [x] Store GitHub token (encrypted) for Copilot + git operations
+- [x] Configure git identity (`user.name`, `user.email`) from GitHub profile
 
 ### 2.5 Step 4: VS Code (code-server) Setup
-- [ ] Install/verify code-server is running
-- [ ] Install essential extensions:
+- [x] Install/verify code-server is running
+- [x] Install essential extensions:
   - GitHub Copilot + Copilot Chat
   - Appropriate language extensions (auto-detected or user-selected)
   - Tailwind CSS IntelliSense, ESLint, Prettier
-- [ ] Configure code-server auth (tie to device local password)
-- [ ] Set theme (user choice: dark/light, 3-4 popular themes)
-- [ ] Preview: show embedded code-server frame to confirm it works
+- [x] Configure code-server auth (tie to device local password)
+- [x] Set theme (user choice: dark/light, 3-4 popular themes)
+- [x] Preview: show embedded code-server frame to confirm it works
 
 ### 2.6 Step 5: Subdomain & Tunnel Setup
-- [ ] User chooses subdomain: `{username}.vibecodepc.com` (pre-filled from cloud account)
-- [ ] Validate subdomain availability via cloud API
-- [ ] Generate cloudflared tunnel credentials
-- [ ] Test tunnel connectivity (device → cloud edge → public)
-- [ ] Show success: "Your VibeCodePC is live at https://username.vibecodepc.com"
+- [x] User chooses subdomain: `{username}.vibecodepc.com` (pre-filled from cloud account)
+- [x] Validate subdomain availability via cloud API
+- [x] Generate cloudflared tunnel credentials
+- [x] Test tunnel connectivity (device → cloud edge → public)
+- [x] Show success: "Your VibeCodePC is live at https://username.vibecodepc.com"
 
 ### 2.7 Step 6: Completion
-- [ ] Summary of everything configured
-- [ ] Quick-action cards: "Create First Project", "Open VS Code", "View Dashboard"
-- [ ] Mark wizard as complete → redirect to Dashboard on next visit
+- [x] Summary of everything configured
+- [x] Quick-action cards: "Create First Project", "Open VS Code", "View Dashboard"
+- [x] Mark wizard as complete → redirect to Dashboard on next visit
 
 ---
 
 ## Phase 3: Dashboard (Week 8–12)
 
 ### 3.1 Dashboard Layout
-- [ ] Sidebar navigation (collapsible on mobile)
-- [ ] Top bar: device health indicators (CPU, RAM, disk, temp)
-- [ ] Main content area: context-dependent panels
-- [ ] Responsive design (works on phone, tablet, desktop)
+- [x] Sidebar navigation (collapsible on mobile)
+- [x] Top bar: device health indicators (CPU, RAM, disk, temp)
+- [x] Main content area: context-dependent panels
+- [x] Responsive design (works on phone, tablet, desktop)
 
 ### 3.2 Projects Panel
-- [ ] "New Project" button → project creation modal/flow
-- [ ] Project templates:
+- [x] "New Project" button → project creation modal/flow
+- [x] Project templates:
   - **Laravel** (full-stack PHP)
   - **Next.js** (React SSR)
   - **Astro** (static site)
   - **Python/FastAPI** (API/ML)
   - **Static HTML** (plain site)
   - **Custom** (empty directory + git init)
-- [ ] Each template: scaffolded with AI service configs pre-injected
-- [ ] Project list: name, framework, status (running/stopped), port, public URL
-- [ ] Project actions: start, stop, open in VS Code, open terminal, view logs, delete
+- [x] Each template: scaffolded with AI service configs pre-injected
+- [x] Project list: name, framework, status (running/stopped), port, public URL
+- [x] Project actions: start, stop, open in VS Code, open terminal, view logs, delete
 
 ### 3.3 Project Detail View
-- [ ] Resource usage (CPU/RAM for this project's container)
-- [ ] Environment variables editor
-- [ ] Domain/tunnel settings (assign subdomain path or separate subdomain)
-- [ ] Deployment log / history
-- [ ] One-click "Open in VS Code" (opens code-server to project directory)
+- [x] Resource usage (CPU/RAM for this project's container)
+- [x] Environment variables editor
+- [x] Domain/tunnel settings (assign subdomain path or separate subdomain)
+- [x] Deployment log / history
+- [x] One-click "Open in VS Code" (opens code-server to project directory)
 
 ### 3.4 Deployments & Tunnels
-- [ ] Each project can be exposed via tunnel
-- [ ] Routing: `username.vibecodepc.com` → default project, `username.vibecodepc.com/projectname` → specific project
+- [x] Each project can be exposed via tunnel
+- [x] Routing: `username.vibecodepc.com` → default project, `username.vibecodepc.com/projectname` → specific project
 - [ ] Or: `projectname-username.vibecodepc.com` (subdomain per project)
-- [ ] HTTPS automatic via Cloudflare
-- [ ] Toggle tunnel on/off per project
+- [x] HTTPS automatic via Cloudflare
+- [x] Toggle tunnel on/off per project
 - [ ] Bandwidth/request stats from cloud edge
 
 ### 3.5 AI Services Hub
-- [ ] View connected AI providers and their status
-- [ ] Add/remove/update API keys (re-enter wizard step)
-- [ ] Quick test: send a prompt to each provider and show response
+- [x] View connected AI providers and their status
+- [x] Add/remove/update API keys (re-enter wizard step)
+- [x] Quick test: send a prompt to each provider and show response
 - [ ] Usage hints: which projects are using which API keys
 
 ### 3.6 VS Code Integration
-- [ ] Embedded code-server iframe (full-screen option)
-- [ ] Or: direct link to `vibecodepc.local:8443`
+- [x] Embedded code-server iframe (full-screen option)
+- [x] Or: direct link to `vibecodepc.local:8443`
 - [ ] Extension management from dashboard
 - [ ] Copilot status indicator
 
 ### 3.7 System Settings
-- [ ] Network settings (Wi-Fi, static IP)
-- [ ] Storage usage + cleanup tools
-- [ ] System update (pull latest device firmware/app)
-- [ ] Factory reset (re-run wizard)
-- [ ] SSH access toggle
+- [x] Network settings (Wi-Fi, static IP)
+- [x] Storage usage + cleanup tools
+- [x] System update (pull latest device firmware/app)
+- [x] Factory reset (re-run wizard)
+- [x] SSH access toggle
 - [ ] Backup / restore configuration
-- [ ] Power: restart / shutdown device
+- [x] Power: restart / shutdown device
 
 ---
 
 ## Phase 4: Cloud Edge Platform (Week 10–14)
 
 ### 4.1 Marketing Site
-- [ ] Landing page at `vibecodepc.com`
-- [ ] Product description, pricing, buy button
-- [ ] "How it works" animation / video
-- [ ] Testimonials / use cases
-- [ ] FAQ
+- [x] Landing page at `vibecodepc.com`
+- [x] Product description, pricing, buy button
+- [x] "How it works" animation / video
+- [x] Testimonials / use cases
+- [x] FAQ
 
 ### 4.2 User Dashboard (Cloud)
-- [ ] Login at `vibecodepc.com/login`
-- [ ] View claimed devices
-- [ ] Manage subdomain(s)
+- [x] Login at `vibecodepc.com/login`
+- [x] View claimed devices
+- [x] Manage subdomain(s)
 - [ ] Billing / subscription management
-- [ ] View tunnel traffic stats
+- [x] View tunnel traffic stats
 
 ### 4.3 Tunnel Ingress
-- [ ] Wildcard DNS: `*.vibecodepc.com` → cloud edge server
-- [ ] Reverse proxy (Caddy or Nginx) routes `username.vibecodepc.com` → device tunnel
-- [ ] Cloudflare Tunnel orchestration: cloud edge manages tunnel routing table
-- [ ] Rate limiting and basic DDoS protection
-- [ ] Custom domain support (CNAME to `username.vibecodepc.com`)
+- [x] Wildcard DNS: `*.vibecodepc.com` → cloud edge server
+- [x] Reverse proxy (Caddy or Nginx) routes `username.vibecodepc.com` → device tunnel
+- [x] Cloudflare Tunnel orchestration: cloud edge manages tunnel routing table
+- [x] Rate limiting and basic DDoS protection
+- [x] Custom domain support (CNAME to `username.vibecodepc.com`)
 
 ### 4.4 Device Management API
-- [ ] `POST /api/devices/{uuid}/heartbeat` — device health telemetry
-- [ ] `POST /api/devices/{uuid}/tunnel/register` — register tunnel endpoint
-- [ ] `GET /api/devices/{uuid}/config` — pull remote config updates
-- [ ] `POST /api/devices/{uuid}/tunnel/routes` — update routing table
+- [x] `POST /api/devices/{uuid}/heartbeat` — device health telemetry
+- [x] `POST /api/devices/{uuid}/tunnel/register` — register tunnel endpoint
+- [x] `GET /api/devices/{uuid}/config` — pull remote config updates
+- [x] `POST /api/devices/{uuid}/tunnel/routes` — update routing table
 - [ ] Webhook: notify device of config changes
 
 ---
