@@ -72,6 +72,7 @@ class TunnelManager extends Component
         $stopError = $tunnelService->stop();
 
         if ($stopError !== null) {
+            $tunnelService->cleanup();
             $this->error = $stopError;
             $this->tunnelRunning = $tunnelService->isRunning();
 
@@ -85,6 +86,7 @@ class TunnelManager extends Component
         }
 
         $this->tunnelRunning = $tunnelService->isRunning();
+        $this->tunnelConfigured = $tunnelService->hasCredentials();
     }
 
     private function syncIngressConfig(CloudApiClient $cloudApi, DeviceIdentityService $identity): void

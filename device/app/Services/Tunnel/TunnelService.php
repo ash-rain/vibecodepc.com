@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Tunnel;
 
 use App\Models\TunnelConfig;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 use Symfony\Component\Yaml\Yaml;
 
@@ -33,9 +34,7 @@ class TunnelService
             return file_exists($this->tokenFilePath) && filesize($this->tokenFilePath) > 0;
         }
 
-        $result = Process::run('pgrep -x cloudflared 2>/dev/null');
-
-        return $result->successful();
+        return $this->findCloudflaredPids() !== [];
     }
 
     /**
@@ -111,19 +110,27 @@ class TunnelService
             return null;
         }
 
-        // Try systemd first (production RPi) — write token to env file for the service
-        $envDir = dirname($this->configPath);
-        $envFile = $envDir.'/tunnel.env';
-        @mkdir($envDir, 0755, true);
-        file_put_contents($envFile, "TUNNEL_TOKEN={$token}\n");
-        chmod($envFile, 0600);
+        // Try systemd first (Linux production) — write token to env file for the service
+        if ($this->hasSystemd()) {
+            $envDir = dirname($this->configPath);
+            $envFile = $envDir . '/tunnel.env';
+            @mkdir($envDir, 0755, true);
+            file_put_contents($envFile, "TUNNEL_TOKEN={$token}\n");
+            chmod($envFile, 0600);
 
-        $result = Process::run('sudo systemctl start cloudflared 2>&1');
+            $result = Process::run('sudo systemctl start cloudflared 2>&1');
 
-        if ($result->successful()) {
-            sleep(1);
+            if ($result->successful()) {
+                sleep(1);
 
-            return $this->isRunning() ? null : 'Service started but cloudflared is not responding.';
+                if ($this->isRunning()) {
+                    return null;
+                }
+
+                $this->cleanup();
+
+                return 'Service started but cloudflared is not responding.';
+            }
         }
 
         // Direct launch as background process (dev/fallback)
@@ -144,7 +151,9 @@ class TunnelService
         $logResult = Process::run('tail -5 /tmp/cloudflared.log 2>/dev/null');
         $logTail = trim($logResult->output());
 
-        return 'Failed to start cloudflared.'.($logTail ? "\n".$logTail : '');
+        $this->cleanup();
+
+        return 'Failed to start cloudflared.' . ($logTail ? "\n" . $logTail : '');
     }
 
     /**
@@ -163,11 +172,16 @@ class TunnelService
             return null;
         }
 
-        // Try systemd first (production RPi)
-        $result = Process::run('sudo systemctl stop cloudflared 2>/dev/null');
+        // Try systemd first (Linux production)
+        if ($this->hasSystemd()) {
+            Process::run('sudo systemctl stop cloudflared 2>/dev/null');
+        }
 
-        if (! $result->successful()) {
-            Process::run('pkill -x cloudflared 2>/dev/null');
+        // Graceful kill via PIDs (works on macOS and Linux)
+        $pids = $this->findCloudflaredPids();
+
+        if ($pids !== []) {
+            Process::run('kill ' . implode(' ', $pids) . ' 2>/dev/null');
         }
 
         // Wait for shutdown
@@ -179,11 +193,21 @@ class TunnelService
             }
         }
 
-        // Force kill
-        Process::run('pkill -9 -x cloudflared 2>/dev/null');
-        usleep(500_000);
+        // Force kill survivors
+        $survivors = $this->findCloudflaredPids();
 
-        return $this->isRunning() ? 'Failed to stop cloudflared.' : null;
+        if ($survivors !== []) {
+            Process::run('kill -9 ' . implode(' ', $survivors) . ' 2>/dev/null');
+            usleep(500_000);
+        }
+
+        if ($this->isRunning()) {
+            $this->cleanup();
+
+            return 'Failed to stop cloudflared.';
+        }
+
+        return null;
     }
 
     /**
@@ -223,6 +247,105 @@ class TunnelService
             $this->configPath,
             Yaml::dump(['ingress' => $ingress], 3, 2),
         );
+    }
+
+    /**
+     * Force-cleanup all tunnel artifacts: kill processes, remove token/env files,
+     * and mark the TunnelConfig as errored. Works on both macOS and Linux.
+     */
+    public function cleanup(): void
+    {
+        $cleaned = [];
+
+        // Token-file mode: truncate the token to signal the container to stop
+        if ($this->tokenFilePath !== null) {
+            if (file_exists($this->tokenFilePath)) {
+                file_put_contents($this->tokenFilePath, '');
+                $cleaned[] = 'token file truncated';
+            }
+        } else {
+            // Try systemd stop first (Linux production only)
+            if ($this->hasSystemd()) {
+                Process::run('sudo systemctl stop cloudflared 2>/dev/null');
+                $cleaned[] = 'systemctl stop attempted';
+            }
+
+            // Kill all cloudflared processes with escalating force
+            $pids = $this->findCloudflaredPids();
+
+            if ($pids !== []) {
+                $pidList = implode(' ', $pids);
+
+                // Graceful SIGTERM first
+                Process::run("kill {$pidList} 2>/dev/null");
+                usleep(1_000_000);
+
+                // Check survivors and SIGKILL them
+                $survivors = $this->findCloudflaredPids();
+
+                if ($survivors !== []) {
+                    Process::run('kill -9 ' . implode(' ', $survivors) . ' 2>/dev/null');
+                    usleep(500_000);
+                }
+
+                $cleaned[] = 'killed PIDs: ' . $pidList;
+            }
+
+            // Remove stale env file
+            $envFile = dirname($this->configPath) . '/tunnel.env';
+
+            if (file_exists($envFile)) {
+                @unlink($envFile);
+                $cleaned[] = 'env file removed';
+            }
+
+            // Remove stale log file
+            if (file_exists('/tmp/cloudflared.log')) {
+                @unlink('/tmp/cloudflared.log');
+                $cleaned[] = 'log file removed';
+            }
+        }
+
+        // Mark tunnel config as errored so the UI reflects the broken state
+        $config = TunnelConfig::current();
+
+        if ($config && $config->status !== 'error') {
+            $config->update(['status' => 'error']);
+            $cleaned[] = 'config marked as error';
+        }
+
+        Log::warning('Tunnel cleanup executed', ['actions' => $cleaned]);
+    }
+
+    /**
+     * Find all cloudflared process IDs. Works on macOS and Linux.
+     *
+     * @return list<int>
+     */
+    private function findCloudflaredPids(): array
+    {
+        // pgrep works on both macOS and Linux; -f matches the full command line
+        $result = Process::run('pgrep -f cloudflared 2>/dev/null');
+
+        if (! $result->successful() || trim($result->output()) === '') {
+            return [];
+        }
+
+        $myPid = getmypid();
+
+        return collect(explode("\n", trim($result->output())))
+            ->map(fn (string $line) => (int) trim($line))
+            ->filter(fn (int $pid) => $pid > 0 && $pid !== $myPid)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Check if systemd is available (Linux only).
+     */
+    private function hasSystemd(): bool
+    {
+        return Process::run('command -v systemctl 2>/dev/null')->successful();
     }
 
     /**

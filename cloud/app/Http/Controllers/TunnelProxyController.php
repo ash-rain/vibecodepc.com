@@ -48,6 +48,10 @@ class TunnelProxyController extends Controller
         $device = $route->device;
 
         if (! $device || ! $device->tunnel_url || ! $device->is_online) {
+            if ($device) {
+                $this->routingService->recordProxyFailure($device);
+            }
+
             abort(502, 'Device is offline or tunnel is not active.');
         }
 
@@ -65,6 +69,15 @@ class TunnelProxyController extends Controller
                     'body' => $request->getContent(),
                 ]);
 
+            // 502/503/504 from the tunnel itself means cloudflared is broken
+            if ($proxyResponse->status() >= 502 && $proxyResponse->status() <= 504) {
+                $this->routingService->recordProxyFailure($device);
+
+                abort($proxyResponse->status(), 'Tunnel returned an error.');
+            }
+
+            $this->routingService->clearProxyFailures($device);
+
             return response($proxyResponse->body(), $proxyResponse->status())
                 ->withHeaders(
                     collect($proxyResponse->headers())
@@ -72,6 +85,8 @@ class TunnelProxyController extends Controller
                         ->all()
                 );
         } catch (\Exception) {
+            $this->routingService->recordProxyFailure($device);
+
             abort(502, 'Unable to reach the device tunnel.');
         }
     }

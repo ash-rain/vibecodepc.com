@@ -12,6 +12,12 @@
 
         <div class="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
+            @if (session('status'))
+                <div class="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm font-medium text-emerald-400">
+                    {{ session('status') }}
+                </div>
+            @endif
+
             @if ($devices->isNotEmpty())
                 {{-- Welcome Header --}}
                 <div class="flex items-start justify-between">

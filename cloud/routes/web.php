@@ -40,6 +40,8 @@ Route::get('/health', function () {
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/devices/{device}', [DashboardController::class, 'showDevice'])->name('dashboard.devices.show');
+    Route::get('/dashboard/devices/{device}/heartbeats', [DashboardController::class, 'deviceHeartbeats'])->name('dashboard.devices.heartbeats');
+    Route::delete('/dashboard/devices/{device}', [DashboardController::class, 'destroyDevice'])->name('dashboard.devices.destroy');
 
     Route::get('/dashboard/subdomain', [SubdomainController::class, 'edit'])->name('dashboard.subdomain.edit');
     Route::put('/dashboard/subdomain', [SubdomainController::class, 'update'])->name('dashboard.subdomain.update');
@@ -61,6 +63,11 @@ Route::middleware('auth')->group(function () {
 Route::get('/pair/{uuid}', [DevicePairingController::class, 'show'])->name('pairing.show');
 Route::post('/pair/{uuid}/claim', [DevicePairingController::class, 'claim'])->name('pairing.claim');
 Route::get('/pair/{uuid}/success', [DevicePairingController::class, 'success'])->name('pairing.success');
+
+// Post-pairing tunnel setup (requires auth)
+Route::get('/pair/{uuid}/setup', [DevicePairingController::class, 'setup'])->middleware('auth')->name('pairing.setup');
+Route::post('/pair/{uuid}/setup', [DevicePairingController::class, 'provisionAndSetup'])->middleware('auth')->name('pairing.provision');
+Route::get('/pair/{uuid}/tunnel-status', [DevicePairingController::class, 'checkTunnelStatus'])->middleware('auth')->name('pairing.tunnel-status');
 
 // Stripe webhook (Cashier handles this route automatically via service provider)
 // Configure STRIPE_WEBHOOK_SECRET in .env

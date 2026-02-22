@@ -7,7 +7,7 @@
                 <p class="text-gray-400 text-sm mt-0.5">Manage internet access to your projects.</p>
             </div>
             <div class="flex items-center gap-3">
-                @if (! $tunnelConfigured)
+                @if (!$tunnelConfigured)
                     <span class="text-xs bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full">Not Configured</span>
                 @elseif ($tunnelRunning)
                     <span class="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">Running</span>
@@ -15,11 +15,8 @@
                     <span class="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full">Stopped</span>
                 @endif
                 @if ($tunnelConfigured)
-                    <button
-                        wire:click="restartTunnel"
-                        wire:loading.attr="disabled"
-                        class="px-3 py-1.5 bg-white/[0.06] hover:bg-white/10 disabled:opacity-50 text-white text-xs rounded-lg transition-colors"
-                    >
+                    <button wire:click="restartTunnel" wire:loading.attr="disabled"
+                        class="px-3 py-1.5 bg-white/[0.06] hover:bg-white/10 disabled:opacity-50 text-white text-xs rounded-lg transition-colors">
                         <span wire:loading.remove wire:target="restartTunnel">Restart</span>
                         <span wire:loading wire:target="restartTunnel">Restarting...</span>
                     </button>
@@ -36,10 +33,12 @@
         @if ($subdomain)
             <div class="bg-white/[0.03] rounded-lg p-3 text-sm">
                 <span class="text-gray-500">Device URL:</span>
-                <span class="text-emerald-400 font-mono ml-1">https://{{ $subdomain }}.{{ config('vibecodepc.cloud_domain') }}</span>
+                <span
+                    class="text-emerald-400 font-mono ml-1">https://{{ $subdomain }}.{{ config('vibecodepc.cloud_domain') }}</span>
             </div>
         @else
-            <p class="text-gray-500 text-sm">No tunnel configured. Complete the setup wizard to configure tunnel access.</p>
+            <p class="text-gray-500 text-sm">No tunnel configured. Complete the setup wizard to configure tunnel access.
+            </p>
         @endif
     </div>
 
@@ -58,18 +57,17 @@
                             @if ($project['tunnel_enabled'] && $subdomain)
                                 <div class="text-xs text-gray-500 font-mono mt-0.5 space-y-0.5">
                                     <div>/{{ $project['slug'] }} &rarr; localhost:{{ $project['port'] }}</div>
-                                    <div class="text-emerald-400/70">{{ $project['slug'] }}--{{ $subdomain }}.{{ config('vibecodepc.cloud_domain') }}</div>
+                                    <div class="text-emerald-400/70">
+                                        {{ $project['slug'] }}--{{ $subdomain }}.{{ config('vibecodepc.cloud_domain') }}
+                                    </div>
                                 </div>
                             @endif
                         </div>
-                        <button
-                            wire:click="toggleProjectTunnel({{ $project['id'] }})"
-                            @class([
-                                'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200',
-                                'bg-emerald-500' => $project['tunnel_enabled'],
-                                'bg-gray-700' => !$project['tunnel_enabled'],
-                            ])
-                        >
+                        <button wire:click="toggleProjectTunnel({{ $project['id'] }})" @class([
+                            'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200',
+                            'bg-emerald-500' => $project['tunnel_enabled'],
+                            'bg-gray-700' => !$project['tunnel_enabled'],
+                        ])>
                             <span @class([
                                 'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow ring-0 transition-transform duration-200',
                                 'translate-x-5' => $project['tunnel_enabled'],

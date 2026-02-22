@@ -262,54 +262,308 @@
                 </div>
             @endif
 
-            {{-- Recent Heartbeats --}}
+            {{-- Heartbeat History Chart --}}
             @if ($recentHeartbeats->isNotEmpty())
-                <div class="rounded-2xl border border-white/5 bg-white/[0.02] p-6">
-                    <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-5">Heartbeat History</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead>
-                                <tr class="border-b border-white/5">
-                                    @foreach (['Time', 'CPU', 'Temp', 'RAM', 'Disk', 'Projects', 'Tunnel'] as $col)
-                                        <th class="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">{{ $col }}</th>
-                                    @endforeach
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-white/[0.03]">
-                                @foreach ($recentHeartbeats->take(20) as $hb)
-                                    <tr class="transition hover:bg-white/[0.02]">
-                                        <td class="px-3 py-2.5 text-gray-500 whitespace-nowrap font-mono text-xs">{{ $hb->created_at?->diffForHumans(short: true) }}</td>
-                                        <td class="px-3 py-2.5 font-mono text-xs">
-                                            @if ($hb->cpu_percent !== null)
-                                                <span @class(['text-red-400' => $hb->cpu_percent > 80, 'text-amber-400' => $hb->cpu_percent > 60 && $hb->cpu_percent <= 80, 'text-gray-300' => $hb->cpu_percent <= 60])>{{ number_format($hb->cpu_percent, 1) }}%</span>
-                                            @else
-                                                <span class="text-gray-700">-</span>
-                                            @endif
-                                        </td>
-                                        <td class="px-3 py-2.5 font-mono text-xs">
-                                            @if ($hb->cpu_temp !== null)
-                                                <span @class(['text-red-400' => $hb->cpu_temp > 70, 'text-amber-400' => $hb->cpu_temp > 55 && $hb->cpu_temp <= 70, 'text-gray-300' => $hb->cpu_temp <= 55])>{{ number_format($hb->cpu_temp, 1) }}&deg;</span>
-                                            @else
-                                                <span class="text-gray-700">-</span>
-                                            @endif
-                                        </td>
-                                        <td class="px-3 py-2.5 font-mono text-xs text-gray-300">{{ $hb->ram_used_mb !== null ? number_format($hb->ram_used_mb / 1024, 1) . '/' . number_format($hb->ram_total_mb / 1024, 1) . 'G' : '-' }}</td>
-                                        <td class="px-3 py-2.5 font-mono text-xs text-gray-300">{{ $hb->disk_used_gb !== null ? number_format($hb->disk_used_gb, 0) . '/' . number_format($hb->disk_total_gb, 0) . 'G' : '-' }}</td>
-                                        <td class="px-3 py-2.5 font-mono text-xs text-gray-300">{{ $hb->running_projects }}</td>
-                                        <td class="px-3 py-2.5">
-                                            @if ($hb->tunnel_active)
-                                                <span class="inline-flex h-5 items-center rounded-full bg-emerald-500/10 px-2 text-[10px] font-medium text-emerald-400">Active</span>
-                                            @else
-                                                <span class="inline-flex h-5 items-center rounded-full bg-white/5 px-2 text-[10px] font-medium text-gray-600">Off</span>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                @php
+                    $chartHeartbeats = $recentHeartbeats->reverse()->values();
+                @endphp
+                <div class="rounded-2xl border border-white/5 bg-white/[0.02] p-6"
+                     x-data="{
+                        chart: null,
+                        loading: false,
+                        period: 'today',
+                        customFrom: '',
+                        customTo: '',
+                        visible: { cpu: true, temp: true, ram: true, disk: true },
+                        url: @js(route('dashboard.devices.heartbeats', $device)),
+                        datasetConfig: [
+                            { label: 'CPU %', key: 'cpu', borderColor: 'rgb(52, 211, 153)', backgroundColor: 'rgba(52, 211, 153, 0.08)' },
+                            { label: 'Temp °C', key: 'temp', borderColor: 'rgb(251, 191, 36)', backgroundColor: 'rgba(251, 191, 36, 0.08)' },
+                            { label: 'RAM %', key: 'ram', borderColor: 'rgb(96, 165, 250)', backgroundColor: 'rgba(96, 165, 250, 0.08)' },
+                            { label: 'Disk %', key: 'disk', borderColor: 'rgb(192, 132, 252)', backgroundColor: 'rgba(192, 132, 252, 0.08)' },
+                        ],
+                        init() {
+                            const ctx = this.$refs.canvas.getContext('2d');
+                            this.chart = new Chart(ctx, {
+                                type: 'line',
+                                data: {
+                                    labels: @js($chartHeartbeats->map(fn ($hb) => $hb->created_at?->format('H:i'))),
+                                    datasets: this.datasetConfig.map((cfg, idx) => ({
+                                        label: cfg.label,
+                                        data: @js([
+                                            $chartHeartbeats->map(fn ($hb) => $hb->cpu_percent),
+                                            $chartHeartbeats->map(fn ($hb) => $hb->cpu_temp),
+                                            $chartHeartbeats->map(fn ($hb) => $hb->ram_total_mb > 0 ? round(($hb->ram_used_mb / $hb->ram_total_mb) * 100, 1) : null),
+                                            $chartHeartbeats->map(fn ($hb) => $hb->disk_total_gb > 0 ? round(($hb->disk_used_gb / $hb->disk_total_gb) * 100, 1) : null),
+                                        ])[idx],
+                                        borderColor: cfg.borderColor,
+                                        backgroundColor: cfg.backgroundColor,
+                                        fill: true, tension: 0.35, pointRadius: 0, pointHoverRadius: 4, borderWidth: 2,
+                                    })),
+                                },
+                                options: this.chartOptions(),
+                            });
+                        },
+                        chartOptions() {
+                            return {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                interaction: { mode: 'index', intersect: false },
+                                plugins: {
+                                    legend: { display: false },
+                                    tooltip: {
+                                        backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                                        borderWidth: 1,
+                                        titleColor: 'rgba(255, 255, 255, 0.7)',
+                                        bodyColor: 'rgba(255, 255, 255, 0.9)',
+                                        titleFont: { family: 'JetBrains Mono, monospace', size: 11 },
+                                        bodyFont: { family: 'JetBrains Mono, monospace', size: 12 },
+                                        padding: 10,
+                                        cornerRadius: 8,
+                                        callbacks: {
+                                            label: (ctx) => {
+                                                const val = ctx.parsed.y;
+                                                if (val === null) return null;
+                                                const unit = ctx.dataset.label.includes('Temp') ? '°C' : '%';
+                                                return ` ${ctx.dataset.label}: ${val.toFixed(1)}${unit}`;
+                                            }
+                                        }
+                                    },
+                                },
+                                scales: {
+                                    x: {
+                                        ticks: { color: 'rgba(255,255,255,0.25)', font: { family: 'JetBrains Mono, monospace', size: 10 }, maxRotation: 0, maxTicksLimit: 10 },
+                                        grid: { color: 'rgba(255,255,255,0.04)' },
+                                        border: { color: 'rgba(255,255,255,0.06)' },
+                                    },
+                                    y: {
+                                        min: 0, max: 100,
+                                        ticks: { color: 'rgba(255,255,255,0.25)', font: { family: 'JetBrains Mono, monospace', size: 10 }, stepSize: 25, callback: (v) => v + '%' },
+                                        grid: { color: 'rgba(255,255,255,0.04)' },
+                                        border: { color: 'rgba(255,255,255,0.06)' },
+                                    },
+                                },
+                            };
+                        },
+                        async setPeriod(p) {
+                            if (p === 'custom') { this.period = 'custom'; return; }
+                            this.period = p;
+                            await this.fetchData();
+                        },
+                        async applyCustom() {
+                            if (!this.customFrom || !this.customTo) return;
+                            await this.fetchData();
+                        },
+                        async fetchData() {
+                            this.loading = true;
+                            try {
+                                const params = new URLSearchParams({ period: this.period });
+                                if (this.period === 'custom') {
+                                    params.set('from', this.customFrom);
+                                    params.set('to', this.customTo);
+                                }
+                                const res = await fetch(`${this.url}?${params}`, {
+                                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                                });
+                                const data = await res.json();
+                                this.chart.data.labels = data.labels;
+                                ['cpu', 'temp', 'ram', 'disk'].forEach((key, idx) => {
+                                    this.chart.data.datasets[idx].data = data[key];
+                                    this.chart.data.datasets[idx].hidden = !this.visible[key];
+                                });
+                                this.chart.update();
+                            } finally {
+                                this.loading = false;
+                            }
+                        },
+                        toggle(key, idx) {
+                            this.visible[key] = !this.visible[key];
+                            this.chart.data.datasets[idx].hidden = !this.visible[key];
+                            this.chart.update();
+                        },
+                     }">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+                        <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500">Heartbeat History</h3>
+
+                        <div class="flex flex-wrap items-center gap-2">
+                            {{-- Period selector --}}
+                            <div class="flex items-center rounded-lg border border-white/[0.06] bg-white/[0.02] p-0.5">
+                                <template x-for="p in [
+                                    { key: 'today', label: 'Today' },
+                                    { key: '48h', label: '48h' },
+                                    { key: 'week', label: 'Week' },
+                                    { key: 'month', label: 'Month' },
+                                    { key: 'custom', label: 'Custom' },
+                                ]" :key="p.key">
+                                    <button
+                                        @click="setPeriod(p.key)"
+                                        class="px-2.5 py-1 rounded-md text-[11px] font-medium transition-all duration-150"
+                                        :class="period === p.key
+                                            ? 'bg-white/[0.1] text-white shadow-sm'
+                                            : 'text-gray-500 hover:text-gray-300'"
+                                        x-text="p.label"
+                                    ></button>
+                                </template>
+                            </div>
+
+                            {{-- Custom date range --}}
+                            <div x-show="period === 'custom'" x-transition.opacity class="flex items-center gap-2" x-cloak>
+                                <input type="date" x-model="customFrom"
+                                       class="h-7 rounded-md border border-white/[0.08] bg-white/[0.04] px-2 text-[11px] font-mono text-gray-300 focus:border-emerald-500/50 focus:outline-none focus:ring-1 focus:ring-emerald-500/30" />
+                                <span class="text-[10px] text-gray-600">to</span>
+                                <input type="date" x-model="customTo"
+                                       class="h-7 rounded-md border border-white/[0.08] bg-white/[0.04] px-2 text-[11px] font-mono text-gray-300 focus:border-emerald-500/50 focus:outline-none focus:ring-1 focus:ring-emerald-500/30" />
+                                <button @click="applyCustom"
+                                        class="h-7 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 text-[11px] font-medium text-emerald-400 transition hover:bg-emerald-500/20"
+                                >Apply</button>
+                            </div>
+
+                            {{-- Dataset toggles --}}
+                            <div class="flex items-center gap-3 sm:ml-2 sm:pl-2 sm:border-l sm:border-white/[0.06]">
+                                <template x-for="(item, idx) in [
+                                    { key: 'cpu', label: 'CPU', color: 'bg-emerald-400' },
+                                    { key: 'temp', label: 'Temp', color: 'bg-amber-400' },
+                                    { key: 'ram', label: 'RAM', color: 'bg-blue-400' },
+                                    { key: 'disk', label: 'Disk', color: 'bg-purple-400' },
+                                ]" :key="item.key">
+                                    <button
+                                        @click="toggle(item.key, idx)"
+                                        class="flex items-center gap-1.5 text-[11px] font-medium transition-opacity"
+                                        :class="visible[item.key] ? 'opacity-100 text-gray-300' : 'opacity-40 text-gray-600 line-through'"
+                                    >
+                                        <span class="h-2 w-2 rounded-full" :class="item.color"></span>
+                                        <span x-text="item.label"></span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Loading overlay --}}
+                    <div class="relative">
+                        <div x-show="loading" x-transition.opacity class="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-gray-950/60 backdrop-blur-sm" x-cloak>
+                            <div class="flex items-center gap-2 text-xs text-gray-400">
+                                <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Loading...
+                            </div>
+                        </div>
+                        <div class="h-64">
+                            <canvas x-ref="canvas"></canvas>
+                        </div>
                     </div>
                 </div>
             @endif
+
+            {{-- Danger Zone --}}
+            <div class="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6"
+                 x-data="{
+                    open: false,
+                    confirmUuid: '',
+                    deviceUuid: @js($device->uuid),
+                    get matches() { return this.confirmUuid === this.deviceUuid; },
+                 }">
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-5">Danger Zone</h3>
+
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                    <div>
+                        <p class="text-sm font-medium text-gray-200">Unpair this device</p>
+                        <p class="mt-1 text-xs text-gray-500">Remove this device from your account, delete all tunnels, DNS records, and monitoring data. This cannot be undone.</p>
+                    </div>
+                    <button
+                        @click="open = true"
+                        class="shrink-0 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/20 hover:border-red-500/30"
+                    >
+                        Unpair Device
+                    </button>
+                </div>
+
+                {{-- Confirmation modal --}}
+                <template x-teleport="body">
+                    <div x-show="open" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center p-4" x-cloak>
+                        <div class="absolute inset-0 bg-gray-950/80 backdrop-blur-sm" @click="open = false; confirmUuid = ''"></div>
+                        <div
+                            x-show="open"
+                            x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0 scale-95"
+                            x-transition:enter-end="opacity-100 scale-100"
+                            x-transition:leave="transition ease-in duration-150"
+                            x-transition:leave-start="opacity-100 scale-100"
+                            x-transition:leave-end="opacity-0 scale-95"
+                            class="relative w-full max-w-md rounded-2xl border border-white/[0.06] bg-gray-950 p-6 shadow-2xl"
+                            @click.stop
+                        >
+                            <h4 class="text-sm font-semibold text-gray-100">Unpair Device</h4>
+                            <p class="mt-1 text-xs text-gray-500">This action is permanent and cannot be undone.</p>
+
+                            <div class="mt-5 space-y-2 text-xs text-gray-400">
+                                <p>This will permanently delete:</p>
+                                <ul class="space-y-1.5 text-gray-500">
+                                    <li class="flex items-center gap-2">
+                                        <span class="h-1 w-1 rounded-full bg-gray-600 shrink-0"></span>
+                                        Cloudflare tunnel and DNS records
+                                    </li>
+                                    <li class="flex items-center gap-2">
+                                        <span class="h-1 w-1 rounded-full bg-gray-600 shrink-0"></span>
+                                        All tunnel routes and traffic logs
+                                    </li>
+                                    <li class="flex items-center gap-2">
+                                        <span class="h-1 w-1 rounded-full bg-gray-600 shrink-0"></span>
+                                        Heartbeat and monitoring history
+                                    </li>
+                                    <li class="flex items-center gap-2">
+                                        <span class="h-1 w-1 rounded-full bg-gray-600 shrink-0"></span>
+                                        Device pairing with your account
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <form method="POST" action="{{ route('dashboard.devices.destroy', $device) }}" class="mt-5">
+                                @csrf
+                                @method('DELETE')
+
+                                <label class="block text-xs text-gray-400 mb-2">
+                                    Type the device UUID to confirm
+                                </label>
+                                <code class="block mb-2 text-[11px] font-mono text-gray-600 select-all">{{ $device->uuid }}</code>
+                                <input
+                                    type="text"
+                                    name="confirm_uuid"
+                                    x-model="confirmUuid"
+                                    autocomplete="off"
+                                    spellcheck="false"
+                                    placeholder="Paste UUID here"
+                                    class="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 font-mono text-sm text-gray-200 placeholder-gray-700 transition focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/10"
+                                />
+
+                                @error('confirm_uuid')
+                                    <p class="mt-1.5 text-xs text-red-400">{{ $message }}</p>
+                                @enderror
+
+                                <div class="mt-5 flex items-center justify-end gap-3 pt-4 border-t border-white/[0.06]">
+                                    <button
+                                        type="button"
+                                        @click="open = false; confirmUuid = ''"
+                                        class="rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2 text-sm font-medium text-gray-400 transition hover:bg-white/[0.08] hover:text-gray-200"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        :disabled="!matches"
+                                        class="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/20 disabled:opacity-30 disabled:cursor-not-allowed"
+                                    >
+                                        Unpair Device
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </template>
+            </div>
 
         </div>
     </div>

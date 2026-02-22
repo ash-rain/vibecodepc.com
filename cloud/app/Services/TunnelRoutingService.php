@@ -6,9 +6,15 @@ namespace App\Services;
 
 use App\Models\Device;
 use App\Models\TunnelRoute;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class TunnelRoutingService
 {
+    private const FAILURE_THRESHOLD = 3;
+
+    private const FAILURE_WINDOW_SECONDS = 120;
+
     public function registerTunnel(Device $device, string $tunnelUrl): void
     {
         $device->update(['tunnel_url' => $tunnelUrl]);
@@ -63,5 +69,48 @@ class TunnelRoutingService
     public function deactivateDeviceRoutes(Device $device): int
     {
         return $device->tunnelRoutes()->update(['is_active' => false]);
+    }
+
+    /**
+     * Record a proxy failure for a device. After consecutive failures exceed the
+     * threshold, mark the tunnel as broken: clear the tunnel URL and deactivate routes.
+     *
+     * Returns true if cleanup was triggered.
+     */
+    public function recordProxyFailure(Device $device): bool
+    {
+        $cacheKey = "tunnel-failures:{$device->id}";
+        $count = (int) Cache::get($cacheKey, 0) + 1;
+        Cache::put($cacheKey, $count, self::FAILURE_WINDOW_SECONDS);
+
+        if ($count < self::FAILURE_THRESHOLD) {
+            return false;
+        }
+
+        $this->markTunnelBroken($device);
+        Cache::forget($cacheKey);
+
+        return true;
+    }
+
+    /**
+     * Clear failure counter after a successful proxy.
+     */
+    public function clearProxyFailures(Device $device): void
+    {
+        Cache::forget("tunnel-failures:{$device->id}");
+    }
+
+    /**
+     * Mark a device's tunnel as broken: clear the tunnel URL and deactivate all routes.
+     */
+    public function markTunnelBroken(Device $device): void
+    {
+        $device->update(['tunnel_url' => null]);
+        $this->deactivateDeviceRoutes($device);
+
+        Log::warning('Tunnel marked as broken after repeated proxy failures', [
+            'device_uuid' => $device->uuid,
+        ]);
     }
 }

@@ -60,7 +60,7 @@ class Tunnel extends Component
                 ? "{$this->subdomain}." . config('vibecodepc.cloud_domain') . ' is available!'
                 : 'This subdomain is taken. Try another.';
         } catch (\Exception $e) {
-            $this->message = 'Could not check availability: '.$e->getMessage();
+            $this->message = 'Could not check availability: ' . $e->getMessage();
             $this->subdomainAvailable = false;
         }
     }
@@ -82,7 +82,7 @@ class Tunnel extends Component
             $result = $cloudApi->provisionTunnel($deviceId, $this->subdomain);
         } catch (\Exception $e) {
             $this->status = 'error';
-            $this->message = 'Failed to provision tunnel: '.$e->getMessage();
+            $this->message = 'Failed to provision tunnel: ' . $e->getMessage();
 
             return;
         }
@@ -102,8 +102,9 @@ class Tunnel extends Component
         $startError = $tunnelService->start();
 
         if ($startError !== null) {
+            $tunnelService->cleanup();
             $this->status = 'error';
-            $this->message = 'Tunnel provisioned but failed to start: '.$startError;
+            $this->message = 'Tunnel provisioned but failed to start: ' . $startError;
 
             return;
         }

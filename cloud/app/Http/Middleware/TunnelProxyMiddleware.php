@@ -44,9 +44,16 @@ class TunnelProxyMiddleware
 
         $startTime = microtime(true);
 
-        $response = app(TunnelProxyController::class)($request);
+        try {
+            $response = app(TunnelProxyController::class)($request);
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            // Proxy controller aborts with 502/503/504 on tunnel errors — re-throw
+            // after logging so the framework renders the error page
+            $this->logRequest($request, response('', $e->getStatusCode()), $startTime);
 
-        // Log the request
+            throw $e;
+        }
+
         $this->logRequest($request, $response, $startTime);
 
         return $response;

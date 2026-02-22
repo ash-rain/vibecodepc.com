@@ -6,9 +6,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Device;
 use App\Models\TunnelRequestLog;
+use App\Services\CloudflareTunnelService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
+use VibecodePC\Common\Enums\DeviceStatus;
 
 class DashboardController extends Controller
 {
@@ -118,6 +123,112 @@ class DashboardController extends Controller
             'statusCodeDistribution' => $statusCodeDistribution,
             'totalRequests24h' => $totalRequests24h,
             'errorRate' => $errorRate,
+        ]);
+    }
+
+    public function destroyDevice(Request $request, Device $device, CloudflareTunnelService $cfService): RedirectResponse
+    {
+        if ($device->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        $request->validate([
+            'confirm_uuid' => ['required', 'string', "in:{$device->uuid}"],
+        ], [
+            'confirm_uuid.in' => 'The confirmation UUID does not match this device.',
+        ]);
+
+        $uuid = $device->uuid;
+
+        // Delete Cloudflare tunnel
+        try {
+            $tunnel = $cfService->findTunnelByName("device-{$uuid}");
+
+            if ($tunnel) {
+                $cfService->deleteTunnel($tunnel['id']);
+            }
+        } catch (\Throwable $e) {
+            Log::warning("Failed to delete CF tunnel for device-{$uuid}", ['error' => $e->getMessage()]);
+        }
+
+        // Delete DNS records for each subdomain
+        $subdomains = $device->tunnelRoutes()->distinct()->pluck('subdomain');
+
+        foreach ($subdomains as $subdomain) {
+            try {
+                $fqdn = "{$subdomain}." . config('app.tunnel_domain', 'vibecodepc.com');
+                $dnsId = $cfService->findDnsRecord($fqdn);
+
+                if ($dnsId) {
+                    $cfService->deleteDnsRecord($dnsId);
+                }
+            } catch (\Throwable $e) {
+                Log::warning("Failed to delete DNS for {$subdomain}", ['error' => $e->getMessage()]);
+            }
+        }
+
+        // Delete all associated data
+        $routeIds = $device->tunnelRoutes()->pluck('id');
+        TunnelRequestLog::whereIn('tunnel_route_id', $routeIds)->delete();
+        $device->tunnelRoutes()->delete();
+        $device->heartbeats()->delete();
+
+        // Unpair: reset to unclaimed so it can be re-paired
+        $device->update([
+            'user_id' => null,
+            'status' => DeviceStatus::Unclaimed,
+            'tunnel_url' => null,
+            'paired_at' => null,
+            'is_online' => false,
+        ]);
+
+        Log::info("Device {$uuid} unpaired and all data purged by user {$request->user()->id}");
+
+        return redirect()->route('dashboard')
+            ->with('status', "Device has been unpaired and all associated data has been deleted.");
+    }
+
+    public function deviceHeartbeats(Request $request, Device $device): JsonResponse
+    {
+        if ($device->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        $request->validate([
+            'period' => 'required|string|in:today,48h,week,month,custom',
+            'from' => 'required_if:period,custom|nullable|date',
+            'to' => 'required_if:period,custom|nullable|date|after_or_equal:from',
+        ]);
+
+        $query = $device->heartbeats()->latest('created_at');
+
+        match ($request->input('period')) {
+            'today' => $query->where('created_at', '>=', now()->startOfDay()),
+            '48h' => $query->where('created_at', '>=', now()->subHours(48)),
+            'week' => $query->where('created_at', '>=', now()->subWeek()),
+            'month' => $query->where('created_at', '>=', now()->subMonth()),
+            'custom' => $query->whereBetween('created_at', [
+                $request->date('from')->startOfDay(),
+                $request->date('to')->endOfDay(),
+            ]),
+        };
+
+        $heartbeats = $query->get()->reverse()->values();
+
+        $timeFormat = in_array($request->input('period'), ['today', '48h'])
+            ? 'H:i'
+            : 'M j H:i';
+
+        return response()->json([
+            'labels' => $heartbeats->map(fn ($hb) => $hb->created_at?->format($timeFormat)),
+            'cpu' => $heartbeats->map(fn ($hb) => $hb->cpu_percent),
+            'temp' => $heartbeats->map(fn ($hb) => $hb->cpu_temp),
+            'ram' => $heartbeats->map(fn ($hb) => $hb->ram_total_mb > 0
+                ? round(($hb->ram_used_mb / $hb->ram_total_mb) * 100, 1)
+                : null),
+            'disk' => $heartbeats->map(fn ($hb) => $hb->disk_total_gb > 0
+                ? round(($hb->disk_used_gb / $hb->disk_total_gb) * 100, 1)
+                : null),
         ]);
     }
 }

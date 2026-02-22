@@ -8,8 +8,8 @@ return [
 
     'code_server' => [
         'port' => env('CODE_SERVER_PORT') ? (int) env('CODE_SERVER_PORT') : null,
-        'config_path' => env('CODE_SERVER_CONFIG', ($_SERVER['HOME'] ?? '/home/vibecodepc').'/.config/code-server/config.yaml'),
-        'settings_path' => env('CODE_SERVER_SETTINGS', ($_SERVER['HOME'] ?? '/home/vibecodepc').'/.local/share/code-server/User/settings.json'),
+        'config_path' => env('CODE_SERVER_CONFIG', ($_SERVER['HOME'] ?? '/home/vibecodepc') . '/.config/code-server/config.yaml'),
+        'settings_path' => env('CODE_SERVER_SETTINGS', ($_SERVER['HOME'] ?? '/home/vibecodepc') . '/.local/share/code-server/User/settings.json'),
     ],
 
     'github' => [
