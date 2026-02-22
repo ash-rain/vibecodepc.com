@@ -150,9 +150,9 @@ it('falls back to nohup with token when systemd fails', function () {
     expect($service->start())->toBeNull();
 });
 
-it('writes ingress rules to the config file', function () {
+it('writes ingress rules to the config file with default device app route', function () {
     $configPath = storage_path('app/test-cloudflared-ingress/config.yml');
-    $service = new TunnelService(configPath: $configPath);
+    $service = new TunnelService(configPath: $configPath, deviceAppPort: 8001);
 
     $service->updateIngress('myuser', [
         'my-project' => 3000,
@@ -163,28 +163,34 @@ it('writes ingress rules to the config file', function () {
 
     $config = Yaml::parseFile($configPath);
 
-    expect($config['ingress'])->toHaveCount(3)
+    expect($config['ingress'])->toHaveCount(4)
         ->and($config['ingress'][0]['hostname'])->toBe('myuser.vibecodepc.com')
         ->and($config['ingress'][0]['path'])->toBe('/my-project(/.*)?$')
         ->and($config['ingress'][0]['service'])->toBe('http://localhost:3000')
         ->and($config['ingress'][1]['hostname'])->toBe('myuser.vibecodepc.com')
         ->and($config['ingress'][1]['path'])->toBe('/blog(/.*)?$')
         ->and($config['ingress'][1]['service'])->toBe('http://localhost:3001')
-        ->and($config['ingress'][2]['service'])->toBe('http_status:404');
+        ->and($config['ingress'][2]['hostname'])->toBe('myuser.vibecodepc.com')
+        ->and($config['ingress'][2]['service'])->toBe('http://localhost:8001')
+        ->and($config['ingress'][2])->not->toHaveKey('path')
+        ->and($config['ingress'][3]['service'])->toBe('http_status:404');
 
     File::deleteDirectory(dirname($configPath));
 });
 
-it('writes only catch-all when no routes are provided', function () {
+it('writes default device app route when no project routes are provided', function () {
     $configPath = storage_path('app/test-cloudflared-empty/config.yml');
-    $service = new TunnelService(configPath: $configPath);
+    $service = new TunnelService(configPath: $configPath, deviceAppPort: 8001);
 
     $service->updateIngress('myuser', []);
 
     $config = Yaml::parseFile($configPath);
 
-    expect($config['ingress'])->toHaveCount(1)
-        ->and($config['ingress'][0]['service'])->toBe('http_status:404');
+    expect($config['ingress'])->toHaveCount(2)
+        ->and($config['ingress'][0]['hostname'])->toBe('myuser.vibecodepc.com')
+        ->and($config['ingress'][0]['service'])->toBe('http://localhost:8001')
+        ->and($config['ingress'][0])->not->toHaveKey('path')
+        ->and($config['ingress'][1]['service'])->toBe('http_status:404');
 
     File::deleteDirectory(dirname($configPath));
 });

@@ -70,7 +70,7 @@ class TunnelProxyTest extends TestCase
         $response->assertOk();
         $response->assertSee('Hello from device!');
         Http::assertSent(function ($request) {
-            return str_contains($request->url(), 'tunnel.example.com:3000');
+            return $request->url() === 'https://tunnel.example.com/';
         });
     }
 

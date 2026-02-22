@@ -12,6 +12,7 @@ class TunnelService
 {
     public function __construct(
         private readonly string $configPath = '/etc/cloudflared/config.yml',
+        private readonly int $deviceAppPort = 8001,
     ) {}
 
     public function isInstalled(): bool
@@ -169,6 +170,12 @@ class TunnelService
                 'service' => "http://localhost:{$port}",
             ];
         }
+
+        // Default route: device app on main URL
+        $ingress[] = [
+            'hostname' => $hostname,
+            'service' => "http://localhost:{$this->deviceAppPort}",
+        ];
 
         // Catch-all rule (required by cloudflared)
         $ingress[] = ['service' => 'http_status:404'];

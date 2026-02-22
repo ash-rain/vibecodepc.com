@@ -51,7 +51,7 @@ class TunnelProxyController extends Controller
             abort(502, 'Device is offline or tunnel is not active.');
         }
 
-        $targetUrl = rtrim($device->tunnel_url, '/').':'.$route->target_port.$path;
+        $targetUrl = rtrim($device->tunnel_url, '/').$path;
 
         try {
             $proxyResponse = Http::timeout(30)

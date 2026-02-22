@@ -62,6 +62,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(TunnelService::class, function () {
             return new TunnelService(
                 configPath: config('vibecodepc.tunnel.config_path'),
+                deviceAppPort: (int) config('vibecodepc.tunnel.device_app_port'),
             );
         });
 
