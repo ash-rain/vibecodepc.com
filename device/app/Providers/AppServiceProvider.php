@@ -99,6 +99,40 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        //
+        $this->ensureTunnelTokenFile();
+    }
+
+    /**
+     * Write the tunnel token to the shared volume file on boot so cloudflared
+     * can connect immediately after a container restart without waiting for
+     * the wizard or dashboard to trigger TunnelService::start().
+     */
+    private function ensureTunnelTokenFile(): void
+    {
+        $tokenFilePath = config('vibecodepc.tunnel.token_file_path');
+
+        if ($tokenFilePath === null) {
+            return;
+        }
+
+        if (file_exists($tokenFilePath) && filesize($tokenFilePath) > 0) {
+            return;
+        }
+
+        $config = \App\Models\TunnelConfig::current();
+
+        if ($config === null || empty($config->tunnel_token_encrypted)) {
+            return;
+        }
+
+        $dir = dirname($tokenFilePath);
+
+        if (! is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+
+        if (is_writable($dir)) {
+            file_put_contents($tokenFilePath, $config->tunnel_token_encrypted);
+        }
     }
 }

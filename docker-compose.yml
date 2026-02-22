@@ -31,8 +31,9 @@ services:
       DOCKER_HOST_PROJECTS_PATH: "${PWD}/device/storage/app/projects"
 
   cloudflared:
-    image: cloudflare/cloudflared:latest
-    entrypoint: ["/entrypoint.sh"]
+    build:
+      context: device/docker
+      dockerfile: cloudflared.Dockerfile
     volumes:
       - ./device/docker/cloudflared-entrypoint.sh:/entrypoint.sh:ro
       - tunnel-data:/tunnel:ro
