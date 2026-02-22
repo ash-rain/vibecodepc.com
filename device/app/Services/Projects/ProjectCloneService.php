@@ -60,7 +60,8 @@ class ProjectCloneService
 
         $this->log($project, 'clone', "Cloned repository (detected: {$framework->label()}).");
 
-        $this->scaffoldService->generateDockerCompose($project);
+        $this->installDependencies($project);
+        $this->generateDockerCompose($project);
         $this->scaffoldService->injectAiConfigs($project);
 
         $this->log($project, 'clone', 'Project cloned successfully.');
@@ -91,6 +92,157 @@ class ProjectCloneService
         }
 
         return ProjectFramework::Custom;
+    }
+
+    private function installDependencies(Project $project): void
+    {
+        $commands = match ($project->framework) {
+            ProjectFramework::Laravel => $this->laravelInstallCommands($project),
+            ProjectFramework::NextJs, ProjectFramework::Astro => $this->nodeInstallCommands($project),
+            default => [],
+        };
+
+        foreach ($commands as $label => $command) {
+            $result = Process::path($project->path)->timeout(300)->run($command);
+
+            if ($result->successful()) {
+                $this->log($project, 'clone', "{$label} completed.");
+            } else {
+                $this->log($project, 'warning', "{$label} failed: {$result->errorOutput()}");
+            }
+        }
+    }
+
+    /** @return array<string, string> */
+    private function laravelInstallCommands(Project $project): array
+    {
+        $commands = [
+            'composer install' => 'composer install --no-interaction --no-progress',
+        ];
+
+        if (! File::exists("{$project->path}/.env")) {
+            $commands['env setup'] = 'cp .env.example .env 2>/dev/null; php artisan key:generate --no-interaction';
+        }
+
+        return $commands;
+    }
+
+    /** @return array<string, string> */
+    private function nodeInstallCommands(Project $project): array
+    {
+        return [
+            'npm install' => 'npm install',
+        ];
+    }
+
+    private function generateDockerCompose(Project $project): void
+    {
+        $compose = match ($project->framework) {
+            ProjectFramework::Laravel => $this->laravelCompose($project),
+            ProjectFramework::NextJs => $this->nextJsCompose($project),
+            ProjectFramework::Astro => $this->astroCompose($project),
+            ProjectFramework::FastApi => $this->fastApiCompose($project),
+            ProjectFramework::StaticHtml => $this->staticHtmlCompose($project),
+            ProjectFramework::Custom => $this->customCompose($project),
+        };
+
+        File::put("{$project->path}/docker-compose.yml", $compose);
+        $this->log($project, 'clone', 'Generated docker-compose.yml');
+    }
+
+    private function laravelCompose(Project $project): string
+    {
+        return <<<YAML
+services:
+  app:
+    image: serversideup/php:8.4-fpm-nginx
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+    ports:
+      - "{$project->port}:8080"
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - AUTORUN_ENABLED=true
+      - AUTORUN_LARAVEL_MIGRATION=true
+YAML;
+    }
+
+    private function nextJsCompose(Project $project): string
+    {
+        return <<<YAML
+services:
+  app:
+    image: node:22-slim
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "{$project->port}:3000"
+    command: >
+      sh -c "npm install && npm run dev"
+YAML;
+    }
+
+    private function astroCompose(Project $project): string
+    {
+        return <<<YAML
+services:
+  app:
+    image: node:22-slim
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "{$project->port}:4321"
+    command: >
+      sh -c "npm install && npm run dev -- --host"
+YAML;
+    }
+
+    private function fastApiCompose(Project $project): string
+    {
+        return <<<YAML
+services:
+  app:
+    image: python:3.12-slim
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "{$project->port}:8000"
+    command: >
+      sh -c "pip install -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+YAML;
+    }
+
+    private function staticHtmlCompose(Project $project): string
+    {
+        return <<<YAML
+services:
+  app:
+    image: nginx:alpine
+    volumes:
+      - .:/usr/share/nginx/html:ro
+    ports:
+      - "{$project->port}:80"
+YAML;
+    }
+
+    private function customCompose(Project $project): string
+    {
+        return <<<YAML
+services:
+  app:
+    image: ubuntu:24.04
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "{$project->port}:8080"
+    command: sleep infinity
+YAML;
     }
 
     private function hasComposerDependency(string $path, string $package): bool
