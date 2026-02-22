@@ -16,7 +16,7 @@ return [
 
     'tunnel' => [
         'config_path' => env('CLOUDFLARED_CONFIG', '/etc/cloudflared/config.yml'),
-        'device_app_port' => (int) env('DEVICE_APP_PORT', 8001),
+        'device_app_port' => (int) env('DEVICE_APP_PORT', 8081),
     ],
 
     'projects' => [
