@@ -1,26 +1,30 @@
 <div class="space-y-6">
     <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-8">
         <h2 class="text-xl font-semibold text-white mb-2">Welcome to VibeCodePC</h2>
-        <p class="text-gray-400 text-sm mb-6">Let's get your workstation set up. First, confirm your account and configure basic settings.</p>
+        <p class="text-gray-400 text-sm mb-6">Let's get your workstation set up. First, confirm your account and
+            configure basic settings.</p>
 
         @if (!$isPaired)
             {{-- No Cloud Account — Pairing CTA --}}
             <div class="text-center py-8">
                 <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-8 mb-6">
-                    <svg class="w-16 h-16 mx-auto text-emerald-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.86-2.07a4.5 4.5 0 00-6.364-6.364L4.757 8.243a4.5 4.5 0 003.182 7.682" />
+                    <svg class="w-16 h-16 mx-auto text-emerald-400 mb-4" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.86-2.07a4.5 4.5 0 00-6.364-6.364L4.757 8.243a4.5 4.5 0 003.182 7.682" />
                     </svg>
                     <h3 class="text-lg font-semibold text-white mb-2">Connect Your Cloud Account</h3>
                     <p class="text-gray-400 text-sm mb-6 max-w-sm mx-auto">
-                        Your device needs to be linked to a VibeCodePC cloud account before setup can continue. Scan the QR code or visit the pairing page to register and claim this device.
+                        Your device needs to be linked to a VibeCodePC cloud account before setup can continue. Scan the
+                        QR code or visit the pairing page to register and claim this device.
                     </p>
-                    <a
-                        href="{{ route('pairing') }}"
-                        class="inline-flex items-center gap-3 px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold text-lg rounded-xl transition-colors"
-                    >
+                    <a href="{{ route('pairing') }}"
+                        class="inline-flex items-center gap-3 px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold text-lg rounded-xl transition-colors">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75H16.5v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75H16.5v-.75z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75H16.5v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75H16.5v-.75z" />
                         </svg>
                         Pair This Device
                     </a>
@@ -29,7 +33,33 @@
         @else
             {{-- Account Info --}}
             <div class="bg-white/[0.03] rounded-lg p-4 mb-6">
-                <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Cloud Account</h3>
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Cloud Account</h3>
+                    @if (!$showUnpairConfirm)
+                        <button wire:click="confirmUnpair" type="button"
+                            class="text-xs text-gray-500 hover:text-red-400 transition-colors">
+                            Change account
+                        </button>
+                    @endif
+                </div>
+
+                @if ($showUnpairConfirm)
+                    <div class="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-3">
+                        <p class="text-sm text-red-300 mb-3">This will clear the current pairing and return to the
+                            device pairing screen. You can then link a different cloud account.</p>
+                        <div class="flex items-center gap-3">
+                            <button wire:click="unpair" type="button"
+                                class="px-4 py-1.5 bg-red-500 hover:bg-red-400 text-white text-sm font-medium rounded-lg transition-colors">
+                                Unpair device
+                            </button>
+                            <button wire:click="cancelUnpair" type="button"
+                                class="px-4 py-1.5 text-gray-400 hover:text-white text-sm transition-colors">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                @endif
+
                 <dl class="space-y-2 text-sm">
                     <div class="flex justify-between">
                         <dt class="text-gray-400">Username</dt>
@@ -48,13 +78,9 @@
                     <label for="adminPassword" class="block text-sm font-medium text-gray-300 mb-1">
                         Device Admin Password
                     </label>
-                    <input
-                        wire:model="adminPassword"
-                        type="password"
-                        id="adminPassword"
+                    <input wire:model="adminPassword" type="password" id="adminPassword"
                         class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-gray-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none"
-                        placeholder="Minimum 8 characters"
-                    >
+                        placeholder="Minimum 8 characters">
                     @error('adminPassword')
                         <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
                     @enderror
@@ -64,13 +90,9 @@
                     <label for="adminPasswordConfirmation" class="block text-sm font-medium text-gray-300 mb-1">
                         Confirm Password
                     </label>
-                    <input
-                        wire:model="adminPasswordConfirmation"
-                        type="password"
-                        id="adminPasswordConfirmation"
+                    <input wire:model="adminPasswordConfirmation" type="password" id="adminPasswordConfirmation"
                         class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-gray-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none"
-                        placeholder="Re-enter your password"
-                    >
+                        placeholder="Re-enter your password">
                 </div>
 
                 {{-- Timezone --}}
@@ -78,11 +100,8 @@
                     <label for="timezone" class="block text-sm font-medium text-gray-300 mb-1">
                         Timezone
                     </label>
-                    <select
-                        wire:model="timezone"
-                        id="timezone"
-                        class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none"
-                    >
+                    <select wire:model="timezone" id="timezone"
+                        class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none">
                         @foreach ($timezones as $tz)
                             <option value="{{ $tz }}">{{ $tz }}</option>
                         @endforeach
@@ -94,14 +113,13 @@
 
                 {{-- Terms of Service --}}
                 <div class="flex items-start gap-3">
-                    <input
-                        wire:model="acceptedTos"
-                        type="checkbox"
-                        id="acceptedTos"
-                        class="mt-1 h-4 w-4 rounded border-gray-600 bg-white/5 text-emerald-500 focus:ring-emerald-500"
-                    >
+                    <input wire:model="acceptedTos" type="checkbox" id="acceptedTos"
+                        class="mt-1 h-4 w-4 rounded border-gray-600 bg-white/5 text-emerald-500 focus:ring-emerald-500">
                     <label for="acceptedTos" class="text-sm text-gray-400">
-                        I agree to the <a href="https://vibecodepc.com/terms" target="_blank" class="text-emerald-400 hover:underline">Terms of Service</a> and <a href="https://vibecodepc.com/privacy" target="_blank" class="text-emerald-400 hover:underline">Privacy Policy</a>.
+                        I agree to the <a href="{{ config('vibecodepc.cloud_browser_url') }}/terms" target="_blank"
+                            class="text-emerald-400 hover:underline">Terms of Service</a> and <a
+                            href="{{ config('vibecodepc.cloud_browser_url') }}/privacy" target="_blank"
+                            class="text-emerald-400 hover:underline">Privacy Policy</a>.
                     </label>
                 </div>
                 @error('acceptedTos')
@@ -109,17 +127,17 @@
                 @enderror
 
                 {{-- Submit --}}
-                <button
-                    type="submit"
+                <button type="submit"
                     class="w-full bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold py-3 rounded-xl transition-colors"
-                    wire:loading.attr="disabled"
-                    wire:loading.class="opacity-50 cursor-wait"
-                >
+                    wire:loading.attr="disabled" wire:loading.class="opacity-50 cursor-wait">
                     <span wire:loading.remove>Continue</span>
                     <span wire:loading class="inline-flex items-center gap-2">
                         <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
                         </svg>
                         Saving...
                     </span>

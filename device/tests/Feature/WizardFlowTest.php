@@ -59,7 +59,7 @@ it('renders wizard starting at welcome step', function () {
         ->assertSee('VibeCodePC Setup');
 });
 
-it('completes welcome and advances to ai services', function () {
+it('completes welcome and advances to tunnel', function () {
     Livewire::test(Welcome::class)
         ->set('adminPassword', 'securepassword')
         ->set('adminPasswordConfirmation', 'securepassword')
@@ -71,7 +71,7 @@ it('completes welcome and advances to ai services', function () {
     $service = app(WizardProgressService::class);
 
     expect($service->isStepCompleted(WizardStep::Welcome))->toBeTrue()
-        ->and($service->getCurrentStep())->toBe(WizardStep::AiServices);
+        ->and($service->getCurrentStep())->toBe(WizardStep::Tunnel);
 });
 
 it('completes full wizard flow with skips and transitions to dashboard', function () {
@@ -86,10 +86,10 @@ it('completes full wizard flow with skips and transitions to dashboard', functio
         ->call('complete');
 
     // Skip remaining steps
+    Livewire::test(Tunnel::class)->call('skip');
     Livewire::test(AiServices::class)->call('skip');
     Livewire::test(GitHub::class)->call('skip');
     Livewire::test(CodeServer::class)->call('skip');
-    Livewire::test(Tunnel::class)->call('skip');
 
     expect($service->getCurrentStep())->toBe(WizardStep::Complete);
 

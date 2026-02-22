@@ -5,13 +5,20 @@ declare(strict_types=1);
 namespace App\Livewire\Wizard;
 
 use App\Models\CloudCredential;
+use App\Models\DeviceState;
+use App\Models\TunnelConfig;
+use App\Services\DeviceStateService;
 use App\Services\SystemService;
+use App\Services\Tunnel\TunnelService;
 use App\Services\WizardProgressService;
+use Illuminate\Support\Facades\Hash;
 use Livewire\Component;
 use VibecodePC\Common\Enums\WizardStep;
 
 class Welcome extends Component
 {
+    public bool $showUnpairConfirm = false;
+
     public string $cloudUsername = '';
 
     public string $cloudEmail = '';
@@ -55,6 +62,7 @@ class Welcome extends Component
         ]);
 
         $systemService->setAdminPassword($this->adminPassword);
+        DeviceState::setValue('admin_password_hash', Hash::make($this->adminPassword));
         $systemService->setTimezone($this->timezone);
 
         $progressService->completeStep(WizardStep::Welcome, [
@@ -63,6 +71,34 @@ class Welcome extends Component
         ]);
 
         $this->dispatch('step-completed');
+    }
+
+    public function confirmUnpair(): void
+    {
+        $this->showUnpairConfirm = true;
+    }
+
+    public function cancelUnpair(): void
+    {
+        $this->showUnpairConfirm = false;
+    }
+
+    public function unpair(TunnelService $tunnelService): void
+    {
+        // Stop the tunnel if running
+        $tunnelService->stop();
+
+        // Clean up all pairing and tunnel data
+        TunnelConfig::query()->delete();
+        CloudCredential::query()->delete();
+        DeviceState::where('key', DeviceStateService::MODE_KEY)->delete();
+
+        // Reset wizard progress so tunnel step can be re-done
+        app(WizardProgressService::class)->resetWizard();
+
+        session()->flush();
+
+        $this->redirect('/');
     }
 
     public function render()

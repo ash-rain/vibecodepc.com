@@ -12,3 +12,4 @@ Artisan::command('inspire', function () {
 Schedule::command('devices:mark-stale')->everyFiveMinutes();
 Schedule::command('heartbeats:prune')->daily();
 Schedule::command('tunnel-logs:prune')->weekly();
+Schedule::command('tunnels:clean-orphaned')->hourly();

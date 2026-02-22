@@ -7,9 +7,9 @@ namespace VibecodePC\Common\Enums;
 enum WizardStep: string
 {
     case Welcome = 'welcome';
+    case Tunnel = 'tunnel';
     case AiServices = 'ai_services';
     case GitHub = 'github';
     case CodeServer = 'code_server';
-    case Tunnel = 'tunnel';
     case Complete = 'complete';
 }

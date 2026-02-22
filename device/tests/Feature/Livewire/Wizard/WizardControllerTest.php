@@ -43,7 +43,7 @@ it('advances step on step-completed event', function () {
     $service->completeStep(WizardStep::Welcome);
 
     Livewire::test(WizardController::class)
-        ->assertSet('currentStep', 'ai_services');
+        ->assertSet('currentStep', 'tunnel');
 });
 
 it('allows navigation to completed steps', function () {

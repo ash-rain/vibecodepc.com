@@ -15,7 +15,7 @@
                         placeholder="your-username"
                         @if($tunnelActive) disabled @endif
                     >
-                    <span class="text-gray-500 pr-4 text-sm">.vibecodepc.com</span>
+                    <span class="text-gray-500 pr-4 text-sm">.{{ config('vibecodepc.cloud_domain') }}</span>
                 </div>
                 @if(!$tunnelActive)
                     <button
@@ -91,8 +91,8 @@
                         </svg>
                         <span class="text-green-400 font-medium">Tunnel Active</span>
                     </div>
-                    <a href="https://{{ $subdomain }}.vibecodepc.com" target="_blank" class="text-emerald-400 text-sm hover:underline">
-                        {{ $subdomain }}.vibecodepc.com
+                    <a href="https://{{ $subdomain }}.{{ config('vibecodepc.cloud_domain') }}" target="_blank" class="text-emerald-400 text-sm hover:underline">
+                        {{ $subdomain }}.{{ config('vibecodepc.cloud_domain') }}
                     </a>
                 </div>
             </div>

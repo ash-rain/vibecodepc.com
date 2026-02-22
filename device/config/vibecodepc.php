@@ -3,6 +3,7 @@
 return [
     'cloud_url' => env('VIBECODEPC_CLOUD_URL', 'https://vibecodepc.com'),
     'cloud_browser_url' => env('VIBECODEPC_CLOUD_BROWSER_URL', env('VIBECODEPC_CLOUD_URL', 'https://vibecodepc.com')),
+    'cloud_domain' => parse_url(env('VIBECODEPC_CLOUD_BROWSER_URL', env('VIBECODEPC_CLOUD_URL', 'https://vibecodepc.com')), PHP_URL_HOST),
     'device_json_path' => env('VIBECODEPC_DEVICE_JSON', storage_path('device.json')),
 
     'code_server' => [

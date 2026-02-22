@@ -36,7 +36,7 @@
         @if ($subdomain)
             <div class="bg-white/[0.03] rounded-lg p-3 text-sm">
                 <span class="text-gray-500">Device URL:</span>
-                <span class="text-emerald-400 font-mono ml-1">https://{{ $subdomain }}.vibecodepc.com</span>
+                <span class="text-emerald-400 font-mono ml-1">https://{{ $subdomain }}.{{ config('vibecodepc.cloud_domain') }}</span>
             </div>
         @else
             <p class="text-gray-500 text-sm">No tunnel configured. Complete the setup wizard to configure tunnel access.</p>
@@ -58,7 +58,7 @@
                             @if ($project['tunnel_enabled'] && $subdomain)
                                 <div class="text-xs text-gray-500 font-mono mt-0.5 space-y-0.5">
                                     <div>/{{ $project['slug'] }} &rarr; localhost:{{ $project['port'] }}</div>
-                                    <div class="text-emerald-400/70">{{ $project['slug'] }}--{{ $subdomain }}.vibecodepc.com</div>
+                                    <div class="text-emerald-400/70">{{ $project['slug'] }}--{{ $subdomain }}.{{ config('vibecodepc.cloud_domain') }}</div>
                                 </div>
                             @endif
                         </div>

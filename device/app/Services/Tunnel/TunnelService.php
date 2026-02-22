@@ -52,7 +52,7 @@ class TunnelService
     public function testConnectivity(string $subdomain): bool
     {
         $result = Process::timeout(15)->run(
-            sprintf('curl -s -o /dev/null -w "%%{http_code}" https://%s.vibecodepc.com', escapeshellarg($subdomain)),
+            sprintf('curl -s -o /dev/null -w "%%{http_code}" https://%s.%s', escapeshellarg($subdomain), config('vibecodepc.cloud_domain')),
         );
 
         if (! $result->successful()) {
@@ -193,7 +193,7 @@ class TunnelService
      */
     public function updateIngress(string $subdomain, array $routes): void
     {
-        $hostname = "{$subdomain}.vibecodepc.com";
+        $hostname = "{$subdomain}." . config('vibecodepc.cloud_domain');
         $ingress = [];
 
         foreach ($routes as $path => $port) {

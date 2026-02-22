@@ -57,7 +57,7 @@ class Tunnel extends Component
             $result = $cloudApi->checkSubdomainAvailability($this->subdomain);
             $this->subdomainAvailable = $result;
             $this->message = $result
-                ? "{$this->subdomain}.vibecodepc.com is available!"
+                ? "{$this->subdomain}." . config('vibecodepc.cloud_domain') . ' is available!'
                 : 'This subdomain is taken. Try another.';
         } catch (\Exception $e) {
             $this->message = 'Could not check availability: '.$e->getMessage();
@@ -110,7 +110,7 @@ class Tunnel extends Component
 
         $this->status = 'active';
         $this->tunnelActive = true;
-        $this->message = "Tunnel is active at https://{$this->subdomain}.vibecodepc.com";
+        $this->message = 'Tunnel is active at https://' . $this->subdomain . '.' . config('vibecodepc.cloud_domain');
     }
 
     public function testConnectivity(TunnelService $tunnelService): void

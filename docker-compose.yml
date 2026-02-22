@@ -32,10 +32,11 @@ services:
       QUEUE_CONNECTION: database
       VIBECODEPC_CLOUD_URL: http://host.docker.internal:8082
       VIBECODEPC_CLOUD_BROWSER_URL: http://localhost:8082
-      REDIS_HOST: redis-device
+      REDIS_HOST: device-redis
       DEVICE_APP_PORT: 8080
       TUNNEL_TOKEN_PATH: /tunnel/token
       DOCKER_HOST_PROJECTS_PATH: "${PWD}/device/storage/app/projects"
+      SESSION_COOKIE: vibecodepc_device_session
 
   cloudflared:
     build:
@@ -66,7 +67,8 @@ services:
       DB_CONNECTION: sqlite
       QUEUE_CONNECTION: database
       VIBECODEPC_CLOUD_URL: http://host.docker.internal:8082
-      REDIS_HOST: redis-device
+      VIBECODEPC_CLOUD_BROWSER_URL: http://localhost:8082
+      REDIS_HOST: device-redis
       DEVICE_APP_PORT: 8080
     depends_on:
       - device
@@ -91,18 +93,19 @@ services:
       DB_CONNECTION: sqlite
       QUEUE_CONNECTION: database
       VIBECODEPC_CLOUD_URL: http://host.docker.internal:8082
-      REDIS_HOST: redis-device
+      VIBECODEPC_CLOUD_BROWSER_URL: http://localhost:8082
+      REDIS_HOST: device-redis
       DEVICE_APP_PORT: 8080
       DOCKER_HOST_PROJECTS_PATH: "${PWD}/device/storage/app/projects"
     depends_on:
       - device
 
-  redis-device:
+  device-redis:
     image: valkey/valkey:8-alpine
     ports:
       - "6380:6379"
     volumes:
-      - redis-device-data:/data
+      - device-redis-data:/data
     healthcheck:
       test: ["CMD", "valkey-cli", "ping"]
       interval: 5s
@@ -111,4 +114,4 @@ services:
 
 volumes:
   tunnel-data:
-  redis-device-data:
+  device-redis-data:

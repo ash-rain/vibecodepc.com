@@ -70,9 +70,17 @@ class DashboardController extends Controller
             ->get()
             ->keyBy('tunnel_route_id');
 
+        $hourlyExpr = match (DB::getDriverName()) {
+            'sqlite' => "strftime('%Y-%m-%d %H:00', created_at)",
+            'pgsql' => "to_char(created_at, 'YYYY-MM-DD HH24:00')",
+            'mysql', 'mariadb' => "DATE_FORMAT(created_at, '%Y-%m-%d %H:00')",
+            'sqlsrv' => "FORMAT(created_at, 'yyyy-MM-dd HH:00')",
+            default => "to_char(created_at, 'YYYY-MM-DD HH24:00')",
+        };
+
         $hourlyStats = TunnelRequestLog::query()
             ->select(
-                DB::raw("strftime('%Y-%m-%d %H:00', created_at) as hour"),
+                DB::raw("{$hourlyExpr} as hour"),
                 DB::raw('COUNT(*) as requests'),
             )
             ->whereIn('tunnel_route_id', $routeIds)

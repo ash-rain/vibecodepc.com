@@ -38,7 +38,7 @@
             icon='<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>'
         />
 
-        <x-dashboard.nav-item :href="config('vibecodepc.cloud_browser_url')" label="Cloud App" :external="true"
+        <x-dashboard.nav-item :href="config('vibecodepc.cloud_browser_url') . '/dashboard'" label="Cloud Dashboard" :external="true"
             icon='<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" /></svg>'
         />
 

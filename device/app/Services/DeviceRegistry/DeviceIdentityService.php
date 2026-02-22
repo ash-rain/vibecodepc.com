@@ -41,6 +41,6 @@ class DeviceIdentityService
     {
         $device = $this->getDeviceInfo();
 
-        return config('vibecodepc.cloud_url') . '/pair/' . $device->id;
+        return config('vibecodepc.cloud_browser_url') . '/pair/' . $device->id;
     }
 }

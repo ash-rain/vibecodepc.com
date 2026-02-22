@@ -1,10 +1,13 @@
 <?php
 
 use App\Livewire\Pairing\PairingScreen;
+use App\Models\TunnelConfig;
 use App\Services\CloudApiClient;
 use App\Services\DeviceRegistry\DeviceIdentityService;
 use App\Services\DeviceStateService;
 use App\Services\NetworkService;
+use App\Services\Tunnel\TunnelService;
+use App\Services\WizardProgressService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
@@ -12,6 +15,7 @@ use VibecodePC\Common\DTOs\DeviceInfo;
 use VibecodePC\Common\DTOs\DeviceStatusResult;
 use VibecodePC\Common\DTOs\PairingResult;
 use VibecodePC\Common\Enums\DeviceStatus;
+use VibecodePC\Common\Enums\WizardStep;
 
 uses(RefreshDatabase::class);
 
@@ -66,6 +70,15 @@ function mockDeviceStateService(): void
     $stateService->shouldReceive('setMode')->andReturnNull();
 
     app()->instance(DeviceStateService::class, $stateService);
+}
+
+function mockTunnelService(): void
+{
+    $tunnelService = Mockery::mock(TunnelService::class);
+    $tunnelService->shouldReceive('start')->andReturn(null);
+    $tunnelService->shouldReceive('stop')->andReturn(null);
+
+    app()->instance(TunnelService::class, $tunnelService);
 }
 
 it('renders successfully', function () {
