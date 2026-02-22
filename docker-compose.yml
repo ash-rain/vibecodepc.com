@@ -1,37 +1,9 @@
 services:
-  # Cloud Edge App (simulates VPS at vibecodepc.com)
-  cloud:
-    image: serversideup/php:8.4-fpm-nginx
-    working_dir: /var/www/html
-    volumes:
-      - ./cloud:/var/www/html
-      - ./packages:/var/www/packages
-    ports:
-      - "8080:8080"
-    environment:
-      APP_NAME: VibeCodePC
-      APP_ENV: local
-      APP_DEBUG: "true"
-      APP_URL: http://localhost:8080
-      DB_CONNECTION: mysql
-      DB_HOST: mysql
-      DB_PORT: "3306"
-      DB_DATABASE: vibecodepc_cloud
-      DB_USERNAME: vibecodepc
-      DB_PASSWORD: secret
-      CACHE_STORE: redis
-      QUEUE_CONNECTION: redis
-      SESSION_DRIVER: redis
-      REDIS_HOST: redis
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
   # Device App (simulates Raspberry Pi)
   device:
-    image: serversideup/php:8.4-fpm-nginx
+    build:
+      context: .
+      dockerfile: device/Dockerfile
     working_dir: /var/www/html
     volumes:
       - ./device:/var/www/html
@@ -45,40 +17,31 @@ services:
       APP_DEBUG: "true"
       APP_URL: http://localhost:8081
       DB_CONNECTION: sqlite
-      VIBECODEPC_CLOUD_URL: http://cloud:8080
+      CODE_SERVER_PORT: "8443"
+      VIBECODEPC_CLOUD_URL: https://vibecodepc.com
       VIBECODEPC_DEVICE_JSON: /etc/vibecodepc/device.json
       REDIS_HOST: redis-device
 
-  # MySQL (Cloud Edge database)
-  mysql:
-    image: mysql:8.4
-    ports:
-      - "33061:3306"
+  # Device Scheduler (runs Laravel scheduled tasks like heartbeat)
+  device-scheduler:
+    image: serversideup/php:8.4-fpm-nginx
+    working_dir: /var/www/html
+    command: ["php", "artisan", "schedule:work"]
+    volumes:
+      - ./device:/var/www/html
+      - ./packages:/var/www/packages
+      - device-data:/etc/vibecodepc
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: vibecodepc_cloud
-      MYSQL_USER: vibecodepc
-      MYSQL_PASSWORD: secret
-    volumes:
-      - mysql-data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  # Redis (Cloud Edge cache/queue/session)
-  redis:
-    image: valkey/valkey:8-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/data
-    healthcheck:
-      test: ["CMD", "valkey-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      APP_NAME: VibeCodePC
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8081
+      DB_CONNECTION: sqlite
+      VIBECODEPC_CLOUD_URL: https://vibecodepc.com
+      VIBECODEPC_DEVICE_JSON: /etc/vibecodepc/device.json
+      REDIS_HOST: redis-device
+    depends_on:
+      - device
 
   # Redis for Device (simulates on-device Valkey)
   redis-device:
@@ -93,15 +56,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # Mailpit (email testing for both apps)
-  mailpit:
-    image: axllent/mailpit:latest
-    ports:
-      - "8025:8025"
-      - "1025:1025"
-
 volumes:
-  mysql-data:
-  redis-data:
   redis-device-data:
   device-data:

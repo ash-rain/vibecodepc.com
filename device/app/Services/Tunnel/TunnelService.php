@@ -6,6 +6,7 @@ namespace App\Services\Tunnel;
 
 use App\Models\TunnelConfig;
 use Illuminate\Support\Facades\Process;
+use Symfony\Component\Yaml\Yaml;
 
 class TunnelService
 {
@@ -149,6 +150,39 @@ class TunnelService
         usleep(500_000);
 
         return $this->isRunning() ? 'Failed to stop cloudflared.' : null;
+    }
+
+    /**
+     * Update the cloudflared ingress rules in the config file.
+     *
+     * @param  array<string, int>  $routes  Map of subdomain paths to local ports
+     */
+    public function updateIngress(string $subdomain, array $routes): void
+    {
+        $hostname = "{$subdomain}.vibecodepc.com";
+        $ingress = [];
+
+        foreach ($routes as $path => $port) {
+            $ingress[] = [
+                'hostname' => $hostname,
+                'path' => "/{$path}(/.*)?$",
+                'service' => "http://localhost:{$port}",
+            ];
+        }
+
+        // Catch-all rule (required by cloudflared)
+        $ingress[] = ['service' => 'http_status:404'];
+
+        $dir = dirname($this->configPath);
+
+        if (! is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+
+        file_put_contents(
+            $this->configPath,
+            Yaml::dump(['ingress' => $ingress], 3, 2),
+        );
     }
 
     /**

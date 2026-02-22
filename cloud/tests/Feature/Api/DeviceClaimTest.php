@@ -8,6 +8,7 @@ use App\Models\Device;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use Laravel\Sanctum\PersonalAccessToken;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 use VibecodePC\Common\Enums\DeviceStatus;
@@ -30,7 +31,7 @@ class DeviceClaimTest extends TestCase
         $user = User::factory()->create();
         Sanctum::actingAs($user);
 
-        $response = $this->postJson('/api/devices/' . Str::uuid() . '/claim');
+        $response = $this->postJson('/api/devices/'.Str::uuid().'/claim');
 
         $response->assertStatus(404)
             ->assertJson(['error' => 'Device not found']);
@@ -78,5 +79,10 @@ class DeviceClaimTest extends TestCase
         $this->assertEquals($user->id, $device->user_id);
         $this->assertNotNull($device->paired_at);
         $this->assertNotNull($device->pairing_token_encrypted);
+
+        // Verify the Sanctum token has no expiry (long-lived device token)
+        $token = PersonalAccessToken::where('name', "device:{$device->uuid}")->first();
+        $this->assertNotNull($token);
+        $this->assertNull($token->expires_at);
     }
 }

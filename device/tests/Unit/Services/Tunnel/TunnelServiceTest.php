@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Models\TunnelConfig;
 use App\Services\Tunnel\TunnelService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
+use Symfony\Component\Yaml\Yaml;
 
 uses(RefreshDatabase::class);
 
@@ -146,4 +148,43 @@ it('falls back to nohup with token when systemd fails', function () {
     $service = new TunnelService(configPath: storage_path('app/test-cloudflared/config.yml'));
 
     expect($service->start())->toBeNull();
+});
+
+it('writes ingress rules to the config file', function () {
+    $configPath = storage_path('app/test-cloudflared-ingress/config.yml');
+    $service = new TunnelService(configPath: $configPath);
+
+    $service->updateIngress('myuser', [
+        'my-project' => 3000,
+        'blog' => 3001,
+    ]);
+
+    expect(file_exists($configPath))->toBeTrue();
+
+    $config = Yaml::parseFile($configPath);
+
+    expect($config['ingress'])->toHaveCount(3)
+        ->and($config['ingress'][0]['hostname'])->toBe('myuser.vibecodepc.com')
+        ->and($config['ingress'][0]['path'])->toBe('/my-project(/.*)?$')
+        ->and($config['ingress'][0]['service'])->toBe('http://localhost:3000')
+        ->and($config['ingress'][1]['hostname'])->toBe('myuser.vibecodepc.com')
+        ->and($config['ingress'][1]['path'])->toBe('/blog(/.*)?$')
+        ->and($config['ingress'][1]['service'])->toBe('http://localhost:3001')
+        ->and($config['ingress'][2]['service'])->toBe('http_status:404');
+
+    File::deleteDirectory(dirname($configPath));
+});
+
+it('writes only catch-all when no routes are provided', function () {
+    $configPath = storage_path('app/test-cloudflared-empty/config.yml');
+    $service = new TunnelService(configPath: $configPath);
+
+    $service->updateIngress('myuser', []);
+
+    $config = Yaml::parseFile($configPath);
+
+    expect($config['ingress'])->toHaveCount(1)
+        ->and($config['ingress'][0]['service'])->toBe('http_status:404');
+
+    File::deleteDirectory(dirname($configPath));
 });

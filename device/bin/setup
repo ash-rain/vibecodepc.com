@@ -12,6 +12,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 APP_DIR="$(dirname "$SCRIPT_DIR")"
 IS_LINUX=false
 [[ "$(uname)" == "Linux" ]] && IS_LINUX=true
+IS_DOCKER_BUILD=false
+[[ "${VIBECODEPC_DOCKER_BUILD:-0}" == "1" ]] && IS_DOCKER_BUILD=true
 
 # ---------- helpers ----------
 
@@ -123,6 +125,11 @@ EOF
 }
 
 setup_code_server_service() {
+    if $IS_DOCKER_BUILD; then
+        warn "Skipping systemd service setup in Docker build"
+        return
+    fi
+
     if ! $IS_LINUX; then
         warn "Skipping systemd service setup on macOS"
         return
@@ -208,6 +215,11 @@ configure_cloudflared() {
 }
 
 setup_cloudflared_service() {
+    if $IS_DOCKER_BUILD; then
+        warn "Skipping systemd service setup in Docker build"
+        return
+    fi
+
     if ! $IS_LINUX; then
         warn "Skipping systemd service setup on macOS"
         return
@@ -269,7 +281,9 @@ setup_laravel_app() {
     run_as_user php artisan device:generate-id --no-interaction
 
     # Frontend assets
-    if [[ -f package.json ]]; then
+    if $IS_DOCKER_BUILD; then
+        warn "Skipping npm build in Docker (volumes override)"
+    elif [[ -f package.json ]]; then
         run_as_user npm ci --no-audit
         run_as_user npm run build
     fi
@@ -289,7 +303,13 @@ main() {
 
     setup_user
 
-    install_docker
+    if [[ "${VIBECODEPC_DOCKER_BUILD:-0}" == "1" ]]; then
+        warn "Skipping Docker installation (Docker build)"
+    elif [[ "${VIBECODEPC_SKIP_DOCKER:-0}" != "1" ]]; then
+        install_docker
+    else
+        warn "Skipping Docker installation (VIBECODEPC_SKIP_DOCKER=1)"
+    fi
 
     install_code_server
     configure_code_server
@@ -299,10 +319,13 @@ main() {
     configure_cloudflared
     setup_cloudflared_service
 
-    setup_laravel_app
-
-    # Ensure the device user owns the app directory
-    chown -R "${DEVICE_USER}" "$APP_DIR"
+    if $IS_DOCKER_BUILD; then
+        warn "Skipping Laravel app setup in Docker build (handled at container start)"
+    else
+        setup_laravel_app
+        # Ensure the device user owns the app directory
+        chown -R "${DEVICE_USER}" "$APP_DIR"
+    fi
 
     echo ""
     ok "Device setup complete!"

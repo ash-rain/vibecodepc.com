@@ -1,126 +1,78 @@
 # VibeCodePC
 
-A pre-configured Raspberry Pi 5 that works as a personal AI-powered coding workstation. Plug it in, scan the QR code, and a guided wizard walks you through connecting AI services, setting up VS Code, and choosing project templates. After setup, a dashboard lets you create projects, manage deployments, and publish through tunnels to `username.vibecodepc.com`.
-
-## Monorepo Structure
-
-```
-vibecodepc.com/
-├── cloud/                    # Cloud edge app (vibecodepc.com VPS)
-├── device/                   # On-device app (Raspberry Pi 5)
-├── packages/
-│   └── vibecodepc-common/    # Shared DTOs, enums, and API contracts
-└── docker-compose.yml        # Full-stack local development
-```
-
-| Directory | Description | Tech |
-|---|---|---|
-| `cloud/` | Device registry, QR pairing, user accounts, admin panel | Laravel 12, Filament 5, Sanctum |
-| `device/` | Setup wizard, dashboard, project & tunnel manager | Laravel 12, Livewire 3 |
-| `packages/vibecodepc-common/` | Shared PHP library (DTOs, enums) | PHP 8.2 |
+A pre-configured Raspberry Pi 5 that works as a personal AI-powered coding workstation. Plug it in, scan the QR code, and start coding with AI.
 
 ## Prerequisites
 
-- PHP 8.2+
-- Composer
-- Node.js & npm
+Install Docker Desktop for your platform:
 
-For Docker setup: Docker & Docker Compose.
+| Platform | Link |
+|---|---|
+| macOS | https://docs.docker.com/desktop/install/mac-install/ |
+| Windows | https://docs.docker.com/desktop/install/windows-install/ |
+| Linux | https://docs.docker.com/desktop/install/linux/ |
 
-## Quick Start (Native)
+Make sure Docker is running before continuing.
 
-Each app is set up independently with Composer:
-
-```bash
-# Cloud edge
-cd cloud
-composer setup
-php artisan serve
-
-# Device app (in a separate terminal)
-cd device
-composer setup
-php artisan serve --port=8081
-```
-
-Both apps use SQLite by default for local development — no MySQL or Redis required.
-
-## Quick Start (Docker)
+## Setup
 
 ```bash
+git clone <repo-url> vibecodepc.com
+cd vibecodepc.com
 docker compose up -d
 ```
 
-This starts the full stack:
+That's it. Docker builds the device image (installs code-server, cloudflared) and starts everything.
+
+## What's Running
 
 | Service | URL | Description |
 |---|---|---|
-| Cloud app | http://localhost:8080 | Cloud edge (MySQL + Redis) |
-| Device app | http://localhost:8081 | Device simulator (SQLite) |
-| Mailpit | http://localhost:8025 | Email testing UI |
-| MySQL | localhost:33061 | Cloud database |
-| Redis | localhost:6379 | Cloud cache/queue/sessions |
+| **Device app** | http://localhost:8081 | Setup wizard & dashboard |
+| **Redis** | localhost:6380 | Cache & queue (Valkey) |
+
+## Project Structure
+
+```
+vibecodepc.com/
+├── device/              # Device app (Laravel 12 + Livewire 3)
+│   ├── bin/setup        # Provisioning script (runs during image build)
+│   └── Dockerfile       # Builds on serversideup/php:8.4-fpm-nginx
+├── cloud/               # Cloud edge app (vibecodepc.com)
+├── packages/
+│   └── vibecodepc-common/   # Shared PHP library
+└── docker-compose.yml
+```
+
+## Common Commands
+
+```bash
+# Start everything
+docker compose up -d
+
+# Rebuild after changes to Dockerfile or bin/setup
+docker compose build device
+docker compose up -d device
+
+# View logs
+docker compose logs -f device
+
+# Stop everything
+docker compose down
+
+# Full reset (removes volumes)
+docker compose down -v
+```
 
 ## Development
 
+Source code is mounted into the container via volumes, so file changes are reflected immediately. The Vite dev server can be started inside the container for HMR:
+
 ```bash
-# Run dev servers with HMR (from each app directory)
-composer run dev
-
-# Run tests
-composer run test
-
-# Lint / format
-./vendor/bin/pint
+docker compose exec device npm run dev
 ```
-
-## Architecture
-
-```
-┌─────────────────────────────────────────┐
-│  Raspberry Pi 5  ("The VibeCodePC")     │
-│                                         │
-│  Laravel 12 app (device/)               │
-│  ├── Setup wizard (first-run)           │
-│  ├── Dashboard (post-setup)             │
-│  ├── Project manager                    │
-│  └── Tunnel / deploy manager            │
-│                                         │
-│  code-server (VS Code in browser)       │
-│  cloudflared (tunnel to vibecodepc.com) │
-│  SQLite + Redis (Valkey)                │
-└────────────┬────────────────────────────┘
-             │ Tunnel + API
-             ▼
-┌─────────────────────────────────────────┐
-│  vibecodepc.com  (cloud/)               │
-│                                         │
-│  Device registry & QR pairing           │
-│  User accounts & auth                   │
-│  Tunnel ingress (*.vibecodepc.com)      │
-│  Admin panel (Filament)                 │
-│                                         │
-│  MySQL + Redis                          │
-└─────────────────────────────────────────┘
-```
-
-## How Pairing Works
-
-1. Each device ships with a unique UUID burned into `/etc/vibecodepc/device.json`
-2. QR code on the device encodes `https://vibecodepc.com/id/{uuid}`
-3. User scans QR, creates an account (or logs in), and claims the device
-4. Cloud issues an encrypted API token; device polls and retrieves it
-5. Device wizard begins on the local web UI
-
-## Cloud Admin Panel
-
-After running `composer setup` in `cloud/`, an admin user is seeded automatically:
-
-- **URL:** http://localhost:8080/admin
-- **Email:** admin@vibecodepc.com
-- **Password:** password
 
 ## Further Reading
 
-- [cloud/README.md](cloud/README.md) — Cloud edge setup, API endpoints, project structure
-- [device/README.md](device/README.md) — Device app setup, artisan commands, environment variables
+- [device/README.md](device/README.md) — Device app details, artisan commands, environment config
+- [cloud/README.md](cloud/README.md) — Cloud edge setup & API docs

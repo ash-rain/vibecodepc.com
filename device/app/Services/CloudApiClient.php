@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\CloudCredential;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use VibecodePC\Common\DTOs\DeviceStatusResult;
 
 class CloudApiClient
@@ -62,6 +63,30 @@ class CloudApiClient
         }
 
         return $response->json();
+    }
+
+    /**
+     * @param  array{cpu_percent: float, ram_used_mb: int, ram_total_mb: int, disk_used_gb: float, disk_total_gb: float, temperature_c: float|null, running_projects: int, tunnel_active: bool, firmware_version: string}  $metrics
+     */
+    public function sendHeartbeat(string $deviceId, array $metrics): void
+    {
+        try {
+            $this->authenticatedHttp()
+                ->post("/api/devices/{$deviceId}/heartbeat", [
+                    'cpu_percent' => $metrics['cpu_percent'],
+                    'cpu_temp' => $metrics['temperature_c'],
+                    'ram_used_mb' => $metrics['ram_used_mb'],
+                    'ram_total_mb' => $metrics['ram_total_mb'],
+                    'disk_used_gb' => $metrics['disk_used_gb'],
+                    'disk_total_gb' => $metrics['disk_total_gb'],
+                    'running_projects' => $metrics['running_projects'],
+                    'tunnel_active' => $metrics['tunnel_active'],
+                    'firmware_version' => $metrics['firmware_version'],
+                ])
+                ->throw();
+        } catch (\Throwable $e) {
+            Log::warning('Heartbeat failed: '.$e->getMessage());
+        }
     }
 
     private function http(): PendingRequest

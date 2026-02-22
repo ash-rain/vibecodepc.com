@@ -73,7 +73,6 @@ class DeviceRegistryService
             $token = $user->createToken(
                 name: "device:{$uuid}",
                 abilities: ['device:pair'],
-                expiresAt: now()->addHour(),
             );
 
             $device->update([
