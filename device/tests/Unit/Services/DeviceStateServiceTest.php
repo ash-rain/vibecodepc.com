@@ -8,7 +8,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 it('getMode returns pairing when no credentials exist', function () {
-    $service = new DeviceStateService();
+    $service = new DeviceStateService;
 
     expect($service->getMode())->toBe(DeviceStateService::MODE_PAIRING);
 });
@@ -23,7 +23,7 @@ it('getMode returns pairing when credential exists but is not paired', function 
         'paired_at' => null,
     ]);
 
-    $service = new DeviceStateService();
+    $service = new DeviceStateService;
 
     expect($service->getMode())->toBe(DeviceStateService::MODE_PAIRING);
 });
@@ -38,7 +38,7 @@ it('getMode returns wizard as default when paired but no mode is stored', functi
         'paired_at' => now(),
     ]);
 
-    $service = new DeviceStateService();
+    $service = new DeviceStateService;
 
     expect($service->getMode())->toBe(DeviceStateService::MODE_WIZARD);
 });
@@ -55,13 +55,21 @@ it('getMode returns stored mode when paired', function () {
 
     DeviceState::setValue(DeviceStateService::MODE_KEY, DeviceStateService::MODE_DASHBOARD);
 
-    $service = new DeviceStateService();
+    $service = new DeviceStateService;
 
     expect($service->getMode())->toBe(DeviceStateService::MODE_DASHBOARD);
 });
 
+it('getMode returns pairing when stored mode is wizard but no credentials exist', function () {
+    DeviceState::setValue(DeviceStateService::MODE_KEY, DeviceStateService::MODE_WIZARD);
+
+    $service = new DeviceStateService;
+
+    expect($service->getMode())->toBe(DeviceStateService::MODE_PAIRING);
+});
+
 it('setMode updates the device mode', function () {
-    $service = new DeviceStateService();
+    $service = new DeviceStateService;
 
     $service->setMode(DeviceStateService::MODE_WIZARD);
     expect(DeviceState::getValue(DeviceStateService::MODE_KEY))->toBe(DeviceStateService::MODE_WIZARD);
@@ -71,7 +79,7 @@ it('setMode updates the device mode', function () {
 });
 
 it('isPairing returns true when not paired', function () {
-    $service = new DeviceStateService();
+    $service = new DeviceStateService;
 
     expect($service->isPairing())->toBeTrue()
         ->and($service->isWizard())->toBeFalse()
@@ -90,7 +98,7 @@ it('isWizard returns true when paired and in wizard mode', function () {
 
     DeviceState::setValue(DeviceStateService::MODE_KEY, DeviceStateService::MODE_WIZARD);
 
-    $service = new DeviceStateService();
+    $service = new DeviceStateService;
 
     expect($service->isWizard())->toBeTrue()
         ->and($service->isPairing())->toBeFalse()
@@ -109,7 +117,7 @@ it('isDashboard returns true when paired and in dashboard mode', function () {
 
     DeviceState::setValue(DeviceStateService::MODE_KEY, DeviceStateService::MODE_DASHBOARD);
 
-    $service = new DeviceStateService();
+    $service = new DeviceStateService;
 
     expect($service->isDashboard())->toBeTrue()
         ->and($service->isPairing())->toBeFalse()

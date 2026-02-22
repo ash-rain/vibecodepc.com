@@ -12,19 +12,27 @@ class DeviceStateService
     public const MODE_KEY = 'device_mode';
 
     public const MODE_PAIRING = 'pairing';
+
     public const MODE_WIZARD = 'wizard';
+
     public const MODE_DASHBOARD = 'dashboard';
 
     public function getMode(): string
     {
         $credential = CloudCredential::current();
+        $isPaired = $credential && $credential->isPaired();
 
-        // If not paired, always show pairing screen
-        if (! $credential || ! $credential->isPaired()) {
+        if (! $isPaired) {
             return self::MODE_PAIRING;
         }
 
-        return DeviceState::getValue(self::MODE_KEY, self::MODE_WIZARD);
+        $stored = DeviceState::getValue(self::MODE_KEY);
+
+        if ($stored !== null) {
+            return $stored;
+        }
+
+        return self::MODE_WIZARD;
     }
 
     public function setMode(string $mode): void
