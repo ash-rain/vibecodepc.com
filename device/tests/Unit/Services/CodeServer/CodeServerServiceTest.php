@@ -96,7 +96,7 @@ it('auto-detects port and password from config file', function () {
 
     expect($service->getPort())->toBe(8080)
         ->and($service->getPassword())->toBe('secret123')
-        ->and($service->getUrl())->toBe('http://localhost:8080?tkn=secret123');
+        ->and($service->getUrl())->toBe('http://localhost:8080');
 
     File::deleteDirectory(dirname($configPath));
 });
@@ -135,8 +135,12 @@ it('returns failed extensions', function () {
 });
 
 it('starts code-server via systemd', function () {
+    $configPath = storage_path('app/test-code-server-systemd/config.yaml');
+    File::ensureDirectoryExists(dirname($configPath));
+    File::put($configPath, "bind-addr: 127.0.0.1:8443\nauth: none\ncert: false\n");
+
     $lsofCalls = 0;
-    Process::fake(function ($process) use (&$lsofCalls) {
+    Process::fake(function ($process) use (&$lsofCalls, $configPath) {
         if (str_contains($process->command, 'lsof')) {
             $lsofCalls++;
 
@@ -146,6 +150,9 @@ it('starts code-server via systemd', function () {
         }
         if (str_contains($process->command, 'code-server --version')) {
             return Process::result(output: '4.108.2');
+        }
+        if (str_contains($process->command, 'cat') && str_contains($process->command, 'config.yaml')) {
+            return Process::result(output: File::get($configPath));
         }
         if (str_contains($process->command, 'systemctl start')) {
             return Process::result();
@@ -154,14 +161,20 @@ it('starts code-server via systemd', function () {
         return Process::result();
     });
 
-    $service = new CodeServerService(port: 8443);
+    $service = new CodeServerService(port: 8443, configPath: $configPath);
 
     expect($service->start())->toBeNull();
+
+    File::deleteDirectory(dirname($configPath));
 });
 
 it('starts code-server directly when systemd fails', function () {
+    $configPath = storage_path('app/test-code-server-direct/config.yaml');
+    File::ensureDirectoryExists(dirname($configPath));
+    File::put($configPath, "bind-addr: 127.0.0.1:8443\nauth: none\ncert: false\n");
+
     $lsofCalls = 0;
-    Process::fake(function ($process) use (&$lsofCalls) {
+    Process::fake(function ($process) use (&$lsofCalls, $configPath) {
         if (str_contains($process->command, 'lsof')) {
             $lsofCalls++;
 
@@ -171,6 +184,9 @@ it('starts code-server directly when systemd fails', function () {
         }
         if (str_contains($process->command, 'code-server --version')) {
             return Process::result(output: '4.108.2');
+        }
+        if (str_contains($process->command, 'cat') && str_contains($process->command, 'config.yaml')) {
+            return Process::result(output: File::get($configPath));
         }
         if (str_contains($process->command, 'systemctl start')) {
             return Process::result(exitCode: 1);
@@ -182,9 +198,11 @@ it('starts code-server directly when systemd fails', function () {
         return Process::result();
     });
 
-    $service = new CodeServerService(port: 8443);
+    $service = new CodeServerService(port: 8443, configPath: $configPath);
 
     expect($service->start())->toBeNull();
+
+    File::deleteDirectory(dirname($configPath));
 });
 
 it('returns error when code-server is not installed', function () {
@@ -204,17 +222,130 @@ it('returns error when code-server is not installed', function () {
     expect($service->start())->toBe('code-server is not installed.');
 });
 
-it('stops code-server', function () {
+it('disables auth in config file', function () {
+    $configPath = storage_path('app/test-code-server/config.yaml');
+    File::ensureDirectoryExists(dirname($configPath));
+    File::put($configPath, "bind-addr: 127.0.0.1:8080\nauth: password\npassword: secret123\ncert: false\n");
+
+    $service = new CodeServerService(configPath: $configPath);
+
+    expect($service->disableAuth())->toBeTrue();
+    expect(File::get($configPath))->toContain('auth: none')
+        ->not->toContain('auth: password');
+
+    File::deleteDirectory(dirname($configPath));
+});
+
+it('skips disableAuth when already set to none', function () {
+    $configPath = storage_path('app/test-code-server/config.yaml');
+    File::ensureDirectoryExists(dirname($configPath));
+    File::put($configPath, "bind-addr: 127.0.0.1:8080\nauth: none\npassword: secret123\ncert: false\n");
+
+    $service = new CodeServerService(configPath: $configPath);
+
+    expect($service->disableAuth())->toBeTrue();
+
+    File::deleteDirectory(dirname($configPath));
+});
+
+it('returns false when config file is missing for disableAuth', function () {
+    Process::fake([
+        'cat*' => Process::result(exitCode: 1),
+    ]);
+
+    $service = new CodeServerService(configPath: '/nonexistent/config.yaml');
+
+    expect($service->disableAuth())->toBeFalse();
+});
+
+it('calls disableAuth and passes --auth none when starting directly', function () {
+    $lsofCalls = 0;
+    $commands = [];
+    Process::fake(function ($process) use (&$lsofCalls, &$commands) {
+        $commands[] = $process->command;
+
+        if (str_contains($process->command, 'lsof')) {
+            $lsofCalls++;
+
+            return $lsofCalls > 2
+                ? Process::result(output: '12345')
+                : Process::result(exitCode: 1);
+        }
+        if (str_contains($process->command, 'code-server --version')) {
+            return Process::result(output: '4.108.2');
+        }
+        if (str_contains($process->command, 'systemctl start')) {
+            return Process::result(exitCode: 1);
+        }
+        if (str_contains($process->command, 'nohup') && str_contains($process->command, 'code-server')) {
+            return Process::result(output: '12345');
+        }
+        if (str_contains($process->command, 'cat') && str_contains($process->command, 'config.yaml')) {
+            return Process::result(output: "bind-addr: 127.0.0.1:8443\nauth: password\npassword: test\ncert: false\n");
+        }
+
+        return Process::result();
+    });
+
+    $configPath = storage_path('app/test-code-server-start/config.yaml');
+    File::ensureDirectoryExists(dirname($configPath));
+    File::put($configPath, "bind-addr: 127.0.0.1:8443\nauth: password\npassword: test\ncert: false\n");
+
+    $service = new CodeServerService(port: 8443, configPath: $configPath);
+
+    expect($service->start())->toBeNull();
+
+    // Verify auth was disabled in config
+    expect(File::get($configPath))->toContain('auth: none');
+
+    // Verify --auth none was passed in the direct launch command
+    $nohupCommand = collect($commands)->first(fn ($cmd) => str_contains($cmd, 'nohup'));
+    expect($nohupCommand)->toContain('--auth none');
+
+    File::deleteDirectory(dirname($configPath));
+});
+
+it('stops code-server via systemd', function () {
     $lsofCalls = 0;
     Process::fake(function ($process) use (&$lsofCalls) {
         if (str_contains($process->command, 'lsof')) {
             $lsofCalls++;
 
-            return $lsofCalls > 1
-                ? Process::result(exitCode: 1)
-                : Process::result(output: '12345');
+            // First call: isRunning() before stop — running
+            // Second call: isRunning() in poll loop — stopped
+            return $lsofCalls <= 1
+                ? Process::result(output: '12345')
+                : Process::result(exitCode: 1);
         }
         if (str_contains($process->command, 'systemctl stop')) {
+            return Process::result();
+        }
+
+        return Process::result();
+    });
+
+    $service = new CodeServerService(port: 8443);
+
+    expect($service->stop())->toBeNull();
+});
+
+it('stops code-server by killing port process when systemd fails', function () {
+    $lsofCalls = 0;
+    Process::fake(function ($process) use (&$lsofCalls) {
+        if (str_contains($process->command, 'lsof')) {
+            $lsofCalls++;
+
+            // First call: isRunning() — running
+            // Second call: killByPort() finds PID
+            // Third call: isRunning() in poll — stopped
+            return $lsofCalls <= 2
+                ? Process::result(output: '12345')
+                : Process::result(exitCode: 1);
+        }
+        if (str_contains($process->command, 'systemctl stop')) {
+            return Process::result(exitCode: 1);
+        }
+        if (str_contains($process->command, 'kill')) {
             return Process::result();
         }
 

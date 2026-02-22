@@ -152,10 +152,29 @@ class CodeServerService
 
     public function getUrl(): string
     {
-        $base = "http://localhost:{$this->getPort()}";
-        $password = $this->getPassword();
+        return "http://localhost:{$this->getPort()}";
+    }
 
-        return $password ? "{$base}?tkn={$password}" : $base;
+    /**
+     * Ensure code-server config has auth disabled since the device dashboard handles access control.
+     */
+    public function disableAuth(): bool
+    {
+        $result = Process::run(sprintf('cat %s 2>/dev/null', escapeshellarg($this->configPath)));
+
+        if (! $result->successful()) {
+            return false;
+        }
+
+        $config = $result->output();
+
+        if (preg_match('/^auth:\s*none$/m', $config)) {
+            return true;
+        }
+
+        $config = preg_replace('/^auth:\s*.+$/m', 'auth: none', $config);
+
+        return file_put_contents($this->configPath, $config) !== false;
     }
 
     /**
@@ -171,6 +190,9 @@ class CodeServerService
             return 'code-server is not installed.';
         }
 
+        // Disable auth since the device dashboard handles access control
+        $this->disableAuth();
+
         // Try systemd first (production RPi), then direct launch (dev/macOS)
         $result = Process::run('sudo systemctl start code-server@vibecodepc 2>&1');
 
@@ -180,10 +202,10 @@ class CodeServerService
             return $this->isRunning() ? null : 'Service started but code-server is not responding on port '.$this->getPort().'.';
         }
 
-        // Direct launch as background process
+        // Direct launch as background process with auth disabled as belt-and-suspenders
         $port = $this->getPort();
         $result = Process::run($this->shell(sprintf(
-            'nohup code-server --bind-addr 127.0.0.1:%d > /tmp/code-server.log 2>&1 & echo $!',
+            'nohup code-server --auth none --bind-addr 127.0.0.1:%d > /tmp/code-server.log 2>&1 & echo $!',
             $port,
         )));
 
@@ -215,15 +237,58 @@ class CodeServerService
             return null;
         }
 
+        // Try systemd first (production RPi)
         $result = Process::run('sudo systemctl stop code-server@vibecodepc 2>/dev/null');
 
         if (! $result->successful()) {
-            Process::run('pkill -f "code-server" 2>/dev/null');
+            // Kill the process listening on the port directly
+            $this->killByPort($this->getPort());
         }
 
-        sleep(1);
+        // Wait for shutdown with polling
+        for ($i = 0; $i < 6; $i++) {
+            usleep(500_000);
+
+            if (! $this->isRunning()) {
+                return null;
+            }
+        }
+
+        // Force kill if SIGTERM wasn't enough
+        $this->killByPort($this->getPort(), force: true);
+        Process::run('pkill -9 -f "code-server" 2>/dev/null');
+
+        usleep(500_000);
 
         return $this->isRunning() ? 'Failed to stop code-server.' : null;
+    }
+
+    /**
+     * Kill process(es) listening on the given port.
+     */
+    private function killByPort(int $port, bool $force = false): void
+    {
+        $result = Process::run(sprintf(
+            '/usr/sbin/lsof -iTCP:%d -sTCP:LISTEN -t 2>/dev/null || lsof -iTCP:%d -sTCP:LISTEN -t 2>/dev/null',
+            $port,
+            $port,
+        ));
+
+        if (! $result->successful()) {
+            // Fallback to pkill
+            Process::run(sprintf('pkill %s -f "code-server" 2>/dev/null', $force ? '-9' : ''));
+
+            return;
+        }
+
+        $signal = $force ? '-9' : '';
+        $pids = array_filter(array_map('trim', explode("\n", trim($result->output()))));
+
+        foreach ($pids as $pid) {
+            if (ctype_digit($pid)) {
+                Process::run(sprintf('kill %s %s 2>/dev/null', $signal, $pid));
+            }
+        }
     }
 
     /**
