@@ -21,6 +21,7 @@ use App\Services\SystemService;
 use App\Services\Tunnel\TunnelService;
 use App\Services\WizardProgressService;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -99,6 +100,10 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        URL::forceHttps(
+            $app->environment(['production', 'staging'])
+        );
+
         $this->ensureTunnelTokenFile();
     }
 
