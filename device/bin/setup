@@ -1,0 +1,299 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# VibeCodePC Device Setup
+# Installs and configures all services needed for the device to run.
+# Production (RPi): sudo bin/setup
+# Development (macOS): sudo bin/setup
+
+DEVICE_USER="${VIBECODEPC_USER:-vibecodepc}"
+CODESERVER_PORT="${VIBECODEPC_CODESERVER_PORT:-8443}"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+APP_DIR="$(dirname "$SCRIPT_DIR")"
+IS_LINUX=false
+[[ "$(uname)" == "Linux" ]] && IS_LINUX=true
+
+# ---------- helpers ----------
+
+info()  { echo -e "\033[1;34m[info]\033[0m  $*"; }
+ok()    { echo -e "\033[1;32m[ok]\033[0m    $*"; }
+warn()  { echo -e "\033[1;33m[warn]\033[0m  $*"; }
+fail()  { echo -e "\033[1;31m[error]\033[0m $*"; exit 1; }
+
+need_root() {
+    if [[ $EUID -ne 0 ]]; then
+        fail "This script must be run as root (sudo bin/setup)"
+    fi
+}
+
+command_exists() { command -v "$1" &>/dev/null; }
+
+run_as_user() { sudo -u "$DEVICE_USER" "$@"; }
+
+# ---------- system user ----------
+
+setup_user() {
+    info "Setting up ${DEVICE_USER} user..."
+
+    if $IS_LINUX; then
+        if id "$DEVICE_USER" &>/dev/null; then
+            ok "User ${DEVICE_USER} already exists"
+            return
+        fi
+
+        groupadd --system "$DEVICE_USER"
+        useradd --system --gid "$DEVICE_USER" --create-home --shell /bin/bash "$DEVICE_USER"
+
+        ok "Created user and group: ${DEVICE_USER}"
+    else
+        DEVICE_USER="$(logname 2>/dev/null || echo "${SUDO_USER:-$USER}")"
+        ok "macOS dev mode — using current user: ${DEVICE_USER}"
+    fi
+}
+
+# ---------- code-server ----------
+
+install_code_server() {
+    info "Installing code-server..."
+
+    if command_exists code-server; then
+        ok "code-server already installed: $(code-server --version | head -1)"
+    else
+        curl -fsSL https://code-server.dev/install.sh | sh
+        ok "code-server installed: $(code-server --version | head -1)"
+    fi
+}
+
+configure_code_server() {
+    info "Configuring code-server..."
+
+    local config_dir="${APP_DIR}/storage/code-server"
+    local config_file="${config_dir}/config.yaml"
+
+    mkdir -p "$config_dir"
+
+    cat > "$config_file" <<EOF
+bind-addr: 127.0.0.1:${CODESERVER_PORT}
+auth: none
+cert: false
+EOF
+
+    chown -R "${DEVICE_USER}" "$config_dir"
+
+    ok "code-server config written to ${config_file}"
+}
+
+setup_code_server_service() {
+    if ! $IS_LINUX; then
+        warn "Skipping systemd service setup on macOS"
+        return
+    fi
+
+    info "Setting up code-server systemd service..."
+
+    cat > /etc/systemd/system/code-server@.service <<EOF
+[Unit]
+Description=code-server for %i
+After=network.target
+
+[Service]
+Type=exec
+User=%i
+ExecStart=/usr/bin/code-server --bind-addr 127.0.0.1:${CODESERVER_PORT}
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    systemctl daemon-reload
+    systemctl enable "code-server@${DEVICE_USER}"
+    systemctl start "code-server@${DEVICE_USER}"
+
+    ok "code-server service enabled and started"
+}
+
+# ---------- cloudflared ----------
+
+install_cloudflared() {
+    info "Installing cloudflared..."
+
+    if command_exists cloudflared; then
+        ok "cloudflared already installed: $(cloudflared --version 2>&1 | head -1)"
+        return
+    fi
+
+    if $IS_LINUX; then
+        local arch
+        arch="$(dpkg --print-architecture 2>/dev/null || uname -m)"
+
+        case "$arch" in
+            arm64|aarch64)  arch="arm64" ;;
+            armhf|armv7l)   arch="arm"   ;;
+            amd64|x86_64)   arch="amd64" ;;
+            *)              fail "Unsupported architecture: $arch" ;;
+        esac
+
+        local url="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-${arch}.deb"
+
+        info "Downloading cloudflared for ${arch}..."
+        curl -fsSL -o /tmp/cloudflared.deb "$url"
+        dpkg -i /tmp/cloudflared.deb
+        rm -f /tmp/cloudflared.deb
+    else
+        if command_exists brew; then
+            brew install cloudflared
+        else
+            fail "Install cloudflared manually: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/"
+        fi
+    fi
+
+    ok "cloudflared installed: $(cloudflared --version 2>&1 | head -1)"
+}
+
+configure_cloudflared() {
+    info "Configuring cloudflared..."
+
+    mkdir -p /etc/cloudflared
+
+    # Placeholder credentials file so cloudflared doesn't crash looking for cert.pem.
+    # The wizard overwrites this with real credentials after the user claims a subdomain
+    # and the cloud edge provisions the tunnel.
+    if [[ ! -f /etc/cloudflared/credentials.json ]]; then
+        cat > /etc/cloudflared/credentials.json <<'EOF'
+{
+  "AccountTag": "",
+  "TunnelID": "00000000-0000-0000-0000-000000000000",
+  "TunnelSecret": ""
+}
+EOF
+        chmod 600 /etc/cloudflared/credentials.json
+        ok "cloudflared placeholder credentials written"
+    else
+        ok "cloudflared credentials already exist, skipping"
+    fi
+
+    # Placeholder config — uses the tunnel UUID from credentials-file so cloudflared
+    # never needs cert.pem (which requires `cloudflared login`).
+    # The real config is written by the wizard after the user claims a subdomain.
+    if [[ ! -f /etc/cloudflared/config.yml ]]; then
+        cat > /etc/cloudflared/config.yml <<'EOF'
+# VibeCodePC tunnel config — populated after device pairing.
+# See: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/
+tunnel: 00000000-0000-0000-0000-000000000000
+credentials-file: /etc/cloudflared/credentials.json
+
+ingress:
+  - service: http_status:503
+EOF
+        ok "cloudflared placeholder config written"
+    else
+        ok "cloudflared config already exists, skipping"
+    fi
+}
+
+setup_cloudflared_service() {
+    if ! $IS_LINUX; then
+        warn "Skipping systemd service setup on macOS"
+        return
+    fi
+
+    info "Setting up cloudflared systemd service..."
+
+    cat > /etc/systemd/system/cloudflared.service <<'EOF'
+[Unit]
+Description=Cloudflare Tunnel for VibeCodePC
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+ExecStart=/usr/local/bin/cloudflared tunnel --config /etc/cloudflared/config.yml run
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    systemctl daemon-reload
+    systemctl enable cloudflared
+
+    # Don't start yet — no credentials until the wizard completes pairing
+    ok "cloudflared service enabled (will start after tunnel is configured)"
+}
+
+# ---------- laravel app ----------
+
+setup_laravel_app() {
+    info "Setting up Laravel application..."
+
+    cd "$APP_DIR"
+
+    # PHP dependencies
+    if [[ -f composer.json ]]; then
+        run_as_user composer install --no-dev --optimize-autoloader --no-interaction
+    fi
+
+    # Environment
+    if [[ ! -f .env ]]; then
+        cp .env.example .env
+        run_as_user php artisan key:generate --no-interaction
+    fi
+
+    # Database
+    local db_file="database/database.sqlite"
+    if [[ ! -f "$db_file" ]]; then
+        run_as_user touch "$db_file"
+    fi
+    run_as_user php artisan migrate --force --no-interaction
+
+    # Device identity
+    run_as_user php artisan device:generate-id --no-interaction
+
+    # Frontend assets
+    if [[ -f package.json ]]; then
+        run_as_user npm ci --no-audit
+        run_as_user npm run build
+    fi
+
+    ok "Laravel app configured"
+}
+
+# ---------- main ----------
+
+main() {
+    echo ""
+    echo "  VibeCodePC Device Setup"
+    echo "  ======================"
+    echo ""
+
+    need_root
+
+    setup_user
+
+    install_code_server
+    configure_code_server
+    setup_code_server_service
+
+    install_cloudflared
+    configure_cloudflared
+    setup_cloudflared_service
+
+    setup_laravel_app
+
+    # Ensure the device user owns the app directory
+    chown -R "${DEVICE_USER}" "$APP_DIR"
+
+    echo ""
+    ok "Device setup complete!"
+    echo ""
+    info "Next steps:"
+    echo "  1. Scan the QR code on your device to pair it"
+    echo "  2. The wizard will walk you through AI services, VS Code, and tunnel setup"
+    echo ""
+}
+
+main "$@"

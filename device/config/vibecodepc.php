@@ -6,7 +6,8 @@ return [
 
     'code_server' => [
         'port' => env('CODE_SERVER_PORT') ? (int) env('CODE_SERVER_PORT') : null,
-        'config_path' => env('CODE_SERVER_CONFIG', ($_SERVER['HOME'] ?? '/home/vibecodepc').'/.config/code-server/config.yaml'),
+        'config_path' => env('CODE_SERVER_CONFIG', storage_path('code-server/config.yaml')),
+        'settings_path' => env('CODE_SERVER_SETTINGS', storage_path('code-server/User/settings.json')),
     ],
 
     'github' => [

@@ -19,7 +19,11 @@ class TunnelManager extends Component
 
     public bool $tunnelRunning = false;
 
+    public bool $tunnelConfigured = false;
+
     public ?string $subdomain = null;
+
+    public string $error = '';
 
     /** @var array<int, array{id: int, name: string, slug: string, port: int|null, tunnel_enabled: bool}> */
     public array $projects = [];
@@ -29,6 +33,7 @@ class TunnelManager extends Component
         $status = $tunnelService->getStatus();
         $this->tunnelInstalled = $status['installed'];
         $this->tunnelRunning = $status['running'];
+        $this->tunnelConfigured = $status['configured'];
 
         $tunnelConfig = TunnelConfig::current();
         $this->subdomain = $tunnelConfig?->subdomain;
@@ -50,11 +55,24 @@ class TunnelManager extends Component
 
     public function restartTunnel(TunnelService $tunnelService): void
     {
-        $tunnelService->stop();
-        $tunnelService->start();
+        $this->error = '';
 
-        $status = $tunnelService->getStatus();
-        $this->tunnelRunning = $status['running'];
+        $stopError = $tunnelService->stop();
+
+        if ($stopError !== null) {
+            $this->error = $stopError;
+            $this->tunnelRunning = $tunnelService->isRunning();
+
+            return;
+        }
+
+        $startError = $tunnelService->start();
+
+        if ($startError !== null) {
+            $this->error = $startError;
+        }
+
+        $this->tunnelRunning = $tunnelService->isRunning();
     }
 
     public function render()

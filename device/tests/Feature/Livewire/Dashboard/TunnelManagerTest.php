@@ -6,27 +6,20 @@ use App\Livewire\Dashboard\TunnelManager;
 use App\Models\Project;
 use App\Models\TunnelConfig;
 use App\Services\Tunnel\TunnelService;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Process;
 use Livewire\Livewire;
 
 beforeEach(function () {
-    Process::fake([
-        'cloudflared --version*' => Process::result(output: '2024.1.0'),
-        'pgrep*' => Process::result(output: '12345'),
-        '*' => Process::result(),
-    ]);
+    $this->tunnelMock = Mockery::mock(TunnelService::class);
+    $this->tunnelMock->shouldReceive('getStatus')->andReturn([
+        'installed' => true,
+        'running' => true,
+        'configured' => true,
+    ])->byDefault();
+    $this->tunnelMock->shouldReceive('updateIngress')->andReturn(true)->byDefault();
 
-    $this->configPath = storage_path('app/test-cloudflared/config.yml');
-    File::deleteDirectory(dirname($this->configPath));
-
-    $this->app->singleton(TunnelService::class, fn () => new TunnelService(configPath: $this->configPath));
+    $this->app->instance(TunnelService::class, $this->tunnelMock);
 
     TunnelConfig::factory()->verified()->create(['subdomain' => 'mydevice']);
-});
-
-afterEach(function () {
-    File::deleteDirectory(dirname($this->configPath));
 });
 
 it('renders the tunnel manager', function () {
@@ -39,6 +32,18 @@ it('renders the tunnel manager', function () {
 it('shows the device subdomain', function () {
     Livewire::test(TunnelManager::class)
         ->assertSee('mydevice.vibecodepc.com');
+});
+
+it('shows not configured when tunnel has no credentials', function () {
+    $this->tunnelMock->shouldReceive('getStatus')->andReturn([
+        'installed' => true,
+        'running' => false,
+        'configured' => false,
+    ]);
+
+    Livewire::test(TunnelManager::class)
+        ->assertSee('Not Configured')
+        ->assertDontSee('Restart');
 });
 
 it('lists projects with tunnel toggle', function () {
@@ -58,10 +63,23 @@ it('can toggle project tunnel', function () {
 });
 
 it('can restart the tunnel', function () {
-    Livewire::test(TunnelManager::class)
-        ->call('restartTunnel');
+    $this->tunnelMock->shouldReceive('stop')->once()->andReturn(null);
+    $this->tunnelMock->shouldReceive('start')->once()->andReturn(null);
+    $this->tunnelMock->shouldReceive('isRunning')->andReturn(true);
 
-    Process::assertRan(fn ($process) => str_contains($process->command, 'cloudflared') && (
-        str_contains($process->command, 'stop') || str_contains($process->command, 'pkill')
-    ));
+    Livewire::test(TunnelManager::class)
+        ->call('restartTunnel')
+        ->assertSet('tunnelRunning', true)
+        ->assertSet('error', '');
+});
+
+it('shows error when restart fails', function () {
+    $this->tunnelMock->shouldReceive('stop')->once()->andReturn(null);
+    $this->tunnelMock->shouldReceive('start')->once()->andReturn('Failed to start cloudflared.');
+    $this->tunnelMock->shouldReceive('isRunning')->andReturn(false);
+
+    Livewire::test(TunnelManager::class)
+        ->call('restartTunnel')
+        ->assertSet('tunnelRunning', false)
+        ->assertSee('Failed to start cloudflared.');
 });

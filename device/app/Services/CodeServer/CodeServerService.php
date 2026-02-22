@@ -12,7 +12,8 @@ class CodeServerService
 
     public function __construct(
         private readonly ?int $port = null,
-        private readonly string $configPath = '/home/vibecodepc/.config/code-server/config.yaml',
+        private readonly string $configPath = '',
+        private readonly string $settingsPath = '',
     ) {}
 
     public function isInstalled(): bool
@@ -122,7 +123,7 @@ class CodeServerService
 
     public function setTheme(string $theme): bool
     {
-        $settingsPath = '/home/vibecodepc/.local/share/code-server/User/settings.json';
+        $settingsPath = $this->settingsPath;
 
         $result = Process::run(sprintf('cat %s 2>/dev/null', escapeshellarg($settingsPath)));
 

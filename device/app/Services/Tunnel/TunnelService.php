@@ -4,18 +4,23 @@ declare(strict_types=1);
 
 namespace App\Services\Tunnel;
 
+use App\Models\TunnelConfig;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 
 class TunnelService
 {
+    private const CREDENTIALS_PATH = '/etc/cloudflared/credentials.json';
+
+    private const PLACEHOLDER_TUNNEL_ID = '00000000-0000-0000-0000-000000000000';
+
     public function __construct(
         private readonly string $configPath = '/etc/cloudflared/config.yml',
     ) {}
 
     public function isInstalled(): bool
     {
-        $result = Process::run('cloudflared --version 2>/dev/null');
+        $result = Process::run($this->shell('cloudflared --version 2>/dev/null'));
 
         return $result->successful();
     }
@@ -27,11 +32,26 @@ class TunnelService
         return $result->successful();
     }
 
+    /**
+     * Check if real tunnel credentials have been provisioned via the wizard.
+     */
+    public function hasCredentials(): bool
+    {
+        $config = TunnelConfig::current();
+
+        return $config !== null
+            && ! empty($config->tunnel_id)
+            && $config->tunnel_id !== self::PLACEHOLDER_TUNNEL_ID;
+    }
+
     public function createTunnel(string $subdomain, string $tunnelToken): bool
     {
+        $tunnelConfig = TunnelConfig::current();
+        $tunnelId = $tunnelConfig?->tunnel_id ?? self::PLACEHOLDER_TUNNEL_ID;
+
         $config = implode("\n", [
-            'tunnel: vibecodepc',
-            'credentials-file: /etc/cloudflared/credentials.json',
+            "tunnel: {$tunnelId}",
+            'credentials-file: '.self::CREDENTIALS_PATH,
             '',
             'ingress:',
             "  - hostname: {$subdomain}.vibecodepc.com",
@@ -63,27 +83,93 @@ class TunnelService
         return $statusCode >= 200 && $statusCode < 500;
     }
 
-    /** @return array{installed: bool, running: bool} */
+    /** @return array{installed: bool, running: bool, configured: bool} */
     public function getStatus(): array
     {
         return [
             'installed' => $this->isInstalled(),
             'running' => $this->isRunning(),
+            'configured' => $this->hasCredentials(),
         ];
     }
 
-    public function start(): bool
+    /**
+     * Start cloudflared. Returns null on success, or an error message on failure.
+     */
+    public function start(): ?string
     {
-        $result = Process::run('sudo systemctl start cloudflared 2>/dev/null || cloudflared tunnel run vibecodepc &');
+        if ($this->isRunning()) {
+            return null;
+        }
 
-        return $result->successful();
+        if (! $this->isInstalled()) {
+            return 'cloudflared is not installed.';
+        }
+
+        if (! $this->hasCredentials()) {
+            return 'Tunnel is not configured. Complete the setup wizard to provision tunnel credentials.';
+        }
+
+        // Try systemd first (production RPi), then direct launch (dev/fallback)
+        $result = Process::run('sudo systemctl start cloudflared 2>&1');
+
+        if ($result->successful()) {
+            sleep(1);
+
+            return $this->isRunning() ? null : 'Service started but cloudflared is not responding.';
+        }
+
+        // Direct launch as background process
+        Process::run($this->shell(sprintf(
+            'nohup cloudflared tunnel --config %s run > /tmp/cloudflared.log 2>&1 & echo $!',
+            escapeshellarg($this->configPath),
+        )));
+
+        // Wait for it to become responsive
+        for ($i = 0; $i < 10; $i++) {
+            usleep(500_000);
+
+            if ($this->isRunning()) {
+                return null;
+            }
+        }
+
+        $logResult = Process::run('tail -5 /tmp/cloudflared.log 2>/dev/null');
+        $logTail = trim($logResult->output());
+
+        return 'Failed to start cloudflared.'.($logTail ? "\n".$logTail : '');
     }
 
-    public function stop(): bool
+    /**
+     * Stop cloudflared. Returns null on success, or an error message on failure.
+     */
+    public function stop(): ?string
     {
-        $result = Process::run('sudo systemctl stop cloudflared 2>/dev/null || pkill -x cloudflared');
+        if (! $this->isRunning()) {
+            return null;
+        }
 
-        return $result->successful();
+        // Try systemd first (production RPi)
+        $result = Process::run('sudo systemctl stop cloudflared 2>/dev/null');
+
+        if (! $result->successful()) {
+            Process::run('pkill -x cloudflared 2>/dev/null');
+        }
+
+        // Wait for shutdown
+        for ($i = 0; $i < 6; $i++) {
+            usleep(500_000);
+
+            if (! $this->isRunning()) {
+                return null;
+            }
+        }
+
+        // Force kill
+        Process::run('pkill -9 -x cloudflared 2>/dev/null');
+        usleep(500_000);
+
+        return $this->isRunning() ? 'Failed to stop cloudflared.' : null;
     }
 
     /**
@@ -94,6 +180,9 @@ class TunnelService
      */
     public function updateIngress(string $subdomain, array $projectRoutes): bool
     {
+        $tunnelConfig = TunnelConfig::current();
+        $tunnelId = $tunnelConfig?->tunnel_id ?? self::PLACEHOLDER_TUNNEL_ID;
+
         $ingressRules = [];
 
         foreach ($projectRoutes as $path => $port) {
@@ -105,8 +194,8 @@ class TunnelService
         $ingressRules[] = '  - service: http_status:404';
 
         $config = implode("\n", [
-            'tunnel: vibecodepc',
-            'credentials-file: /etc/cloudflared/credentials.json',
+            "tunnel: {$tunnelId}",
+            'credentials-file: '.self::CREDENTIALS_PATH,
             '',
             'ingress:',
             implode("\n", $ingressRules),
@@ -125,5 +214,13 @@ class TunnelService
         }
 
         return $written;
+    }
+
+    /**
+     * Wrap a command in a login shell so binaries like cloudflared are found in PATH.
+     */
+    private function shell(string $command): string
+    {
+        return sprintf('bash -lc %s', escapeshellarg($command));
     }
 }

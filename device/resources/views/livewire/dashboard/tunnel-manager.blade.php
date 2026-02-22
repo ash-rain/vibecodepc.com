@@ -7,18 +7,31 @@
                 <p class="text-gray-400 text-sm mt-0.5">Manage internet access to your projects.</p>
             </div>
             <div class="flex items-center gap-3">
-                @if ($tunnelRunning)
+                @if (! $tunnelConfigured)
+                    <span class="text-xs bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full">Not Configured</span>
+                @elseif ($tunnelRunning)
                     <span class="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">Running</span>
                 @else
-                    <span class="text-xs bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full">Stopped</span>
+                    <span class="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full">Stopped</span>
                 @endif
-                <button
-                    wire:click="restartTunnel"
-                    wire:loading.attr="disabled"
-                    class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white text-xs rounded-lg transition-colors"
-                >Restart</button>
+                @if ($tunnelConfigured)
+                    <button
+                        wire:click="restartTunnel"
+                        wire:loading.attr="disabled"
+                        class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-white text-xs rounded-lg transition-colors"
+                    >
+                        <span wire:loading.remove wire:target="restartTunnel">Restart</span>
+                        <span wire:loading wire:target="restartTunnel">Restarting...</span>
+                    </button>
+                @endif
             </div>
         </div>
+
+        @if ($error)
+            <div class="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mt-4">
+                <p class="text-red-400 text-sm">{{ $error }}</p>
+            </div>
+        @endif
 
         @if ($subdomain)
             <div class="bg-gray-800/50 rounded-lg p-3 text-sm">

@@ -10,7 +10,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-#[Layout('layouts.dashboard', ['title' => 'Code Editor'])]
+#[Layout('layouts.editor')]
 #[Title('Code Editor — VibeCodePC')]
 class CodeEditor extends Component
 {
@@ -24,8 +24,11 @@ class CodeEditor extends Component
 
     public string $error = '';
 
+    public ?string $folder = null;
+
     public function mount(CodeServerService $codeServerService): void
     {
+        $this->folder = request()->query('folder');
         $this->isInstalled = $codeServerService->isInstalled();
         $this->isRunning = $codeServerService->isRunning();
         $this->version = $codeServerService->getVersion();
@@ -62,8 +65,14 @@ class CodeEditor extends Component
 
     public function render(CodeServerService $codeServerService)
     {
+        $editorUrl = $codeServerService->getUrl();
+
+        if ($this->folder) {
+            $editorUrl .= '/?folder='.urlencode($this->folder);
+        }
+
         return view('livewire.dashboard.code-editor', [
-            'editorUrl' => $codeServerService->getUrl(),
+            'editorUrl' => $editorUrl,
         ]);
     }
 }

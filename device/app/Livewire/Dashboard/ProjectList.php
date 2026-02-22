@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Livewire\Dashboard;
 
 use App\Models\Project;
-use App\Services\CodeServer\CodeServerService;
 use App\Services\Docker\ProjectContainerService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\File;
@@ -46,11 +45,11 @@ class ProjectList extends Component
         $project->delete();
     }
 
-    public function openInVsCode(int $projectId, CodeServerService $codeServerService): void
+    public function openInVsCode(int $projectId): void
     {
         $project = Project::findOrFail($projectId);
 
-        $this->redirect($codeServerService->getUrl().'/?folder='.$project->path, navigate: false);
+        $this->redirect(route('dashboard.code-editor', ['folder' => $project->path]), navigate: false);
     }
 
     /** @return Collection<int, Project> */

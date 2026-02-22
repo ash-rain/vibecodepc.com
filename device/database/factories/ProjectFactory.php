@@ -25,7 +25,7 @@ class ProjectFactory extends Factory
             'slug' => Str::slug($name),
             'framework' => fake()->randomElement(ProjectFramework::cases()),
             'status' => ProjectStatus::Created,
-            'path' => '/home/vibecodepc/projects/'.Str::slug($name),
+            'path' => config('vibecodepc.projects.base_path').'/'.Str::slug($name),
             'port' => fake()->numberBetween(3000, 9000),
             'container_id' => null,
             'tunnel_subdomain_path' => null,

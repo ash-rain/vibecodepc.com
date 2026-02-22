@@ -53,6 +53,7 @@ class AppServiceProvider extends ServiceProvider
             return new CodeServerService(
                 port: $port ?: null,
                 configPath: config('vibecodepc.code_server.config_path'),
+                settingsPath: config('vibecodepc.code_server.settings_path'),
             );
         });
 
