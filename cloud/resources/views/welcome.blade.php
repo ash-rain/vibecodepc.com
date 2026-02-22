@@ -180,7 +180,8 @@
                     </div>
                     <div>
                         <h3 class="font-semibold">128 GB Kingston SD Card</h3>
-                        <p class="mt-1 text-sm text-gray-400">Pre-flashed high-endurance microSD for your projects, tools, and containers
+                        <p class="mt-1 text-sm text-gray-400">Pre-flashed high-endurance microSD for your projects,
+                            tools, and containers
                         </p>
                     </div>
                 </div>
