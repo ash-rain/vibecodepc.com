@@ -179,8 +179,8 @@
                         </svg>
                     </div>
                     <div>
-                        <h3 class="font-semibold">256 GB NVMe SSD</h3>
-                        <p class="mt-1 text-sm text-gray-400">Fast M.2 storage for your projects, tools, and containers
+                        <h3 class="font-semibold">128 GB Kingston SD Card</h3>
+                        <p class="mt-1 text-sm text-gray-400">Pre-flashed high-endurance microSD for your projects, tools, and containers
                         </p>
                     </div>
                 </div>
@@ -439,7 +439,7 @@
                                 stroke-width="2.5" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                             </svg>
-                            256 GB NVMe SSD
+                            128 GB Kingston SD Card
                         </li>
                         <li class="flex items-start gap-2">
                             <svg class="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24"
@@ -537,7 +537,7 @@
                         </tr>
                         <tr>
                             <td class="px-6 py-4 font-medium text-gray-300 whitespace-nowrap">Storage</td>
-                            <td class="px-6 py-4 text-gray-400">256 GB NVMe SSD (M.2 HAT+)</td>
+                            <td class="px-6 py-4 text-gray-400">128 GB Kingston microSD (high-endurance)</td>
                         </tr>
                         <tr class="bg-white/[0.02]">
                             <td class="px-6 py-4 font-medium text-gray-300 whitespace-nowrap">CPU</td>
@@ -575,7 +575,7 @@
                         </tr>
                         <tr class="bg-white/[0.02]">
                             <td class="px-6 py-4 font-medium text-gray-300 whitespace-nowrap">Weight</td>
-                            <td class="px-6 py-4 text-gray-400">~180g (with case and SSD)</td>
+                            <td class="px-6 py-4 text-gray-400">~180g (with case and SD card)</td>
                         </tr>
                     </tbody>
                 </table>
@@ -624,7 +624,7 @@
                             class="text-gray-500">local only</span></p>
                     <p class="text-gray-300">&nbsp; discord-bot &nbsp;<span class="text-yellow-400">stopped</span></p>
                     <p class="mt-3 text-gray-400">System: <span class="text-gray-300">CPU 12%</span> &nbsp; <span
-                            class="text-gray-300">RAM 1.8/16 GB</span> &nbsp; <span class="text-gray-300">Disk 24/256
+                            class="text-gray-300">RAM 1.8/16 GB</span> &nbsp; <span class="text-gray-300">Disk 24/128
                             GB</span> &nbsp; <span class="text-gray-300">Temp 48C</span></p>
                     <p class="mt-2 text-gray-500">$ <span class="animate-pulse">_</span></p>
                 </div>
@@ -731,7 +731,7 @@
                     <div x-show="open === 5" x-collapse class="px-6 pb-5">
                         <p class="text-sm text-gray-400 leading-relaxed">We plan to release the device image for
                             download after launch. However, the Kickstarter rewards include the full hardware bundle
-                            with custom enclosure, pre-flashed SSD, and QR pairing — the complete experience.</p>
+                            with custom enclosure, pre-flashed SD card, and QR pairing — the complete experience.</p>
                     </div>
                 </div>
 
