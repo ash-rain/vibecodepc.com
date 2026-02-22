@@ -20,8 +20,8 @@ use App\Services\Projects\ProjectScaffoldService;
 use App\Services\SystemService;
 use App\Services\Tunnel\TunnelService;
 use App\Services\WizardProgressService;
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -102,6 +102,7 @@ class AppServiceProvider extends ServiceProvider
     {
         URL::forceHttps(
             app()->environment(['production', 'staging'])
+            || config('vibecodepc.tunnel.token_file_path') !== null
         );
 
         $this->ensureTunnelTokenFile();
