@@ -1,0 +1,257 @@
+---
+meta:
+  title: "VibeCodePC — Aansluiten. Scannen. Coderen. Lanceren."
+  description: "Een Raspberry Pi 5 die klaar is om te coderen met AI. Scan de QR-code, koppel je accounts en deploy naar het web in minuten."
+
+nav:
+  how_it_works: "Hoe het werkt"
+  whats_included: "Wat zit erbij"
+  software: "Software"
+  features: "Functies"
+  pricing: "Prijzen"
+  specs: "Specificaties"
+  faq: "FAQ"
+  join_waitlist: "Schrijf je in"
+
+hero:
+  badge: "Binnenkort beschikbaar — Schrijf je in voor de wachtlijst"
+  title_line1: "Aansluiten. Scannen."
+  title_line2: "Coderen. Lanceren."
+  description: "Een Raspberry Pi 5 die klaar is om te coderen met AI. Scan de QR-code, koppel ChatGPT, Copilot en meer, en deploy je projecten naar het web — allemaal vanuit een klein kastje op je bureau."
+  image_alt: "Twee VibeCodePC-apparaten — een Raspberry Pi 5 in een custom behuizing met groene LED-accenten en zichtbare poorten"
+  spam_notice: "Geen spam. Op elk moment afmelden. We mailen je eenmalig bij de lancering."
+
+how_it_works:
+  title: "Van doos tot online in 5 minuten"
+  subtitle: "Drie stappen. Geen terminal. Geen Linux-ervaring nodig."
+  steps:
+    - number: "1"
+      title: "Scan de QR-code"
+      description: "Sluit je VibeCodePC aan en scan de QR-code op het apparaat met je telefoon. Maak een account aan en claim je apparaat op <strong class=\"text-gray-300\">id.vibecodepc.com</strong>."
+    - number: "2"
+      title: "Koppel je AI & code-omgeving"
+      description: "Een stapsgewijze wizard helpt je bij het koppelen van OpenAI, Anthropic, Copilot en meer. VS Code is vooraf geinstalleerd en automatisch geconfigureerd."
+    - number: "3"
+      title: "Bouw & deploy"
+      description: "Maak projecten aan vanuit templates, codeer met AI-ondersteuning en deploy direct naar <strong class=\"text-gray-300\">yourname.vibecodepc.com</strong> met een klik."
+
+showcase:
+  image_alt: "Drie VibeCodePC-apparaten in verschillende formaten — Raspberry Pi 5-units in custom gepantserde behuizingen met groene LED-verlichting"
+  caption: "Op maat ontworpen behuizingen. Serieuze hardware. Minimale voetafdruk."
+
+whats_included:
+  title: "Wat zit er in de doos"
+  subtitle: "Alles wat je nodig hebt om te beginnen. Niets wat je niet nodig hebt."
+  items:
+    - title: "Raspberry Pi 5"
+      description: "16 GB LPDDR4X RAM — de krachtigste Pi ooit gemaakt"
+    - title: "128 GB Kingston SD-kaart"
+      description: "Vooraf geflashte high-endurance microSD voor je projecten, tools en containers"
+    - title: "Custom behuizing"
+      description: "Spuitgegoten behuizing met passieve koeling — ziet er geweldig uit op je bureau"
+    - title: "USB-C voeding"
+      description: "27W (5V/5A) — alles wat de Pi nodig heeft, meegeleverd"
+    - title: "Ethernetkabel"
+      description: "1m Cat6-kabel voor betrouwbare gigabit-connectiviteit"
+    - title: "QR-codekaart & Snelstartgids"
+      description: "Je unieke Device ID-kaart — scan hem en je bent binnen minuten aan de slag"
+
+software:
+  title: "Vooraf geinstalleerd & klaar voor gebruik"
+  subtitle: "Alles is geconfigureerd bij de eerste opstart. Geen setup, geen installaties, geen afhankelijkheden om achteraan te jagen."
+  items:
+    - name: "VS Code"
+      detail: "Volledige Visual Studio Code in je browser via code-server"
+    - name: "AI-integraties"
+      detail: "Koppel OpenAI, Anthropic, GitHub Copilot, OpenRouter, HuggingFace"
+    - name: "Docker"
+      detail: "Projectisolatie en containers, klaar voor gebruik"
+    - name: "Node.js 22 LTS"
+      detail: "npm en pnpm meegeleverd"
+    - name: "PHP 8.4"
+      detail: "Met Composer package manager"
+    - name: "Python 3.12"
+      detail: "Met pip package manager"
+    - name: "Git"
+      detail: "Vooraf geconfigureerd en klaar voor versiebeheer"
+    - name: "SQLite"
+      detail: "Lichtgewicht database, geen configuratie nodig"
+    - name: "Redis (Valkey)"
+      detail: "Caching en wachtrijen ingebouwd"
+    - name: "Cloudflare Tunnel"
+      detail: "Veilige webdeployment, geen port forwarding nodig"
+
+features:
+  title: "Alles wat je nodig hebt om te bouwen"
+  subtitle: "Vooraf geconfigureerd, altijd aan, en volledig van jou."
+  items:
+    - title: "AI-first ontwikkeling"
+      description: "ChatGPT, Claude, Copilot, OpenRouter, HuggingFace — koppel ze allemaal in de setupwizard. Jouw API-sleutels, versleuteld opgeslagen op jouw hardware."
+    - title: "VS Code in je browser"
+      description: "Volledige Visual Studio Code draait op het apparaat. Open het vanuit elke browser op je netwerk. Copilot en extensies vooraf geinstalleerd."
+    - title: "Deploy naar het web"
+      description: "Beveiligde HTTPS-tunnels publiceren je projecten op yourname.vibecodepc.com. Schakel deployments aan en uit vanuit het dashboard."
+    - title: "Jouw hardware, jouw data"
+      description: "Alles draait op een Raspberry Pi 5 op je bureau. Geen cloud-afhankelijkheid. Geen maandelijkse rekening voor rekenkracht. Je code en sleutels verlaten nooit je apparaat."
+    - title: "Projecttemplates"
+      description: "Begin met Laravel, Next.js, Astro, Python of gewone HTML. Elk template is vooraf gekoppeld aan je AI-diensten en klaar om te deployen."
+    - title: "Altijd aan, ultralaag verbruik"
+      description: "De Raspberry Pi 5 verbruikt slechts 15W. Laat hem 24/7 draaien voor een paar cent. Je projecten blijven live, je tunnels blijven open."
+
+who:
+  title: "Gebouwd voor bouwers van alle soorten"
+  subtitle: "Of je nu een ervaren ontwikkelaar bent of net begint met AI-ondersteund programmeren."
+  items:
+    - emoji: "🚀"
+      title: "Indie hackers & solo-ontwikkelaars"
+      description: "Een eigen, altijd draaiende dev-machine die niet je laptop is. Bouw je SaaS, zijproject of startup-MVP op hardware die van jou is."
+    - emoji: "🎓"
+      title: "Mensen die leren programmeren"
+      description: "Een zelfstandige omgeving die gewoon werkt. Geen setup-hel, geen kapotte afhankelijkheden. Open je browser en begin met leren."
+    - emoji: "🤖"
+      title: "Vibe coders"
+      description: "De groeiende golf van niet-traditionele ontwikkelaars die AI gebruiken om echte software te bouwen. VibeCodePC is voor jou gemaakt."
+    - emoji: "🏠"
+      title: "Self-hosters"
+      description: "Draai je eigen diensten zonder de pijn van serverbeheer. Jouw data, jouw hardware, jouw regels."
+    - emoji: "👩‍🏫"
+      title: "Docenten & bootcamps"
+      description: "Consistente, vooraf geconfigureerde dev-omgevingen voor elke student. Geen \"het werkt op mijn machine\" meer — ze hebben allemaal dezelfde machine."
+    - emoji: "⚡"
+      title: "Knutselaars & makers"
+      description: "Als je van het Pi-ecosysteem houdt maar een hekel hebt aan de setup, dan geeft VibeCodePC je een kant-en-klaar platform om op te bouwen."
+
+platform:
+  title: "Meer dan hardware — het is een platform"
+  subtitle: "Elk apparaat maakt verbinding met vibecodepc.com via een beveiligde Cloudflare Tunnel."
+  features:
+    - title: "Persoonlijk subdomein"
+      description: "Krijg yourname.vibecodepc.com — je eigen plekje op het web, aangedreven door jouw apparaat."
+    - title: "Standaard HTTPS"
+      description: "Elke deployment is automatisch beveiligd. Geen certificaten om te beheren, geen configuratie nodig."
+    - title: "Dashboardbeheer"
+      description: "Beheer deployments, monitor je apparaat en werk software bij — alles vanuit het web."
+    - title: "Community"
+      description: "Sluit je aan bij andere VibeCodePC-gebruikers op Discord. Deel projecten, krijg hulp en leer samen."
+  note: "De basishardware werkt volledig offline. Het platformabonnement is optioneel en alleen nodig voor webpublicatie."
+
+pricing:
+  title: "Eenvoudige, transparante prijzen"
+  subtitle: "Een apparaat. Optioneel abonnement voor webpublicatie."
+  device:
+    label: "Het apparaat"
+    price: "$299"
+    period: "eenmalig"
+    features:
+      - "Raspberry Pi 5 — 16 GB RAM"
+      - "128 GB Kingston SD-kaart"
+      - "Custom behuizing, voeding, ethernetkabel"
+      - "Vooraf geinstalleerd: VS Code, Docker, Node, PHP, Python"
+      - "Werkt volledig offline — geen abonnement vereist"
+  subscription:
+    label: "Starterspakket"
+    badge: "Populair"
+    price: "$5"
+    period: "/maand"
+    features:
+      - "Jouw subdomein: you.vibecodepc.com"
+      - "HTTPS-tunnel naar je apparaat"
+      - "10 GB bandbreedte / maand"
+      - "Community-ondersteuning + Discord"
+      - "Pro- & Team-abonnementen volgen binnenkort"
+  footnote: "Early-bird-prijzen voor wachtlijstleden. Definitieve prijzen worden bij de lancering bekendgemaakt."
+
+specs:
+  title: "Technische specificaties"
+  subtitle: "Klein kastje. Serieus vermogen."
+  rows:
+    - label: "SBC"
+      value: "Raspberry Pi 5 — 16 GB LPDDR4X RAM"
+    - label: "Opslag"
+      value: "128 GB Kingston microSD (high-endurance)"
+    - label: "CPU"
+      value: "Broadcom BCM2712, Quad-core Arm Cortex-A76 @ 2.4 GHz"
+    - label: "GPU"
+      value: "VideoCore VII"
+    - label: "Connectiviteit"
+      value: "Gigabit Ethernet, Wi-Fi 5 (802.11ac), Bluetooth 5.0"
+    - label: "Poorten"
+      value: "2x USB 3.0, 2x USB 2.0, 2x micro-HDMI, USB-C voeding"
+    - label: "Voeding"
+      value: "USB-C, 27W (5V/5A) — voeding meegeleverd"
+    - label: "OS"
+      value: "Debian 12 (Bookworm), custom image"
+    - label: "Behuizing"
+      value: "Custom spuitgegoten behuizing met passieve koeling"
+    - label: "Afmetingen"
+      value: "~120 x 85 x 40 mm"
+    - label: "Gewicht"
+      value: "~180g (met behuizing en SD-kaart)"
+  footnote: "Vooraf geinstalleerd: VS Code (code-server), Docker, Node.js 22 LTS, PHP 8.4, Python 3.12, Git, SQLite, Redis, Cloudflare Tunnel"
+
+stretch_goals:
+  title: "Stretchdoelen"
+  subtitle: "Hoe meer backers meedoen, hoe meer we voor iedereen ontgrendelen."
+  goals:
+    - amount: "$50,000"
+      label: "Gefinancierd"
+      description: "Basisproduct wordt geleverd zoals beschreven"
+    - amount: "$75,000"
+      label: "Mobiele app"
+      description: "Begeleidende app voor iOS + Android — beheer je apparaat vanaf je telefoon"
+    - amount: "$100,000"
+      label: "Template-marktplaats"
+      description: "Community template-marktplaats — deel en ontdek projectstarters"
+    - amount: "$150,000"
+      label: "VibeCodePC Pro"
+      description: "Raspberry Pi CM5, 16 GB RAM, ventilatorloze aluminium behuizing"
+    - amount: "$200,000"
+      label: "Klaslokaal-editie"
+      description: "10-pack met centraal beheersdashboard voor docenten"
+    - amount: "$250,000"
+      label: "Pluginsysteem"
+      description: "Door de community gebouwde dashboard-extensies — monitoring, databases, CMS"
+
+terminal:
+  window_title: "vibecodepc.local"
+
+faq:
+  title: "Veelgestelde vragen"
+  subtitle: "Alles wat je moet weten over VibeCodePC."
+  items:
+    - question: "Moet ik Linux kennen om dit te gebruiken?"
+      answer: "Nee. De volledige setup wordt begeleid via een webgebaseerde wizard. Je hoeft de terminal nooit aan te raken, tenzij je dat wilt."
+    - question: "Kan ik het gebruiken zonder internetverbinding?"
+      answer: "Ja. Het apparaat werkt volledig offline voor lokale ontwikkeling. Je hebt alleen internet nodig om AI API-sleutels te valideren tijdens de eerste setup (wat netjes afhandelt als er geen verbinding is) en om projecten naar het web te deployen."
+    - question: "Welke AI-diensten worden ondersteund?"
+      answer: "OpenAI (ChatGPT/GPT-4), Anthropic (Claude), GitHub Copilot, OpenRouter (toegang tot tientallen modellen) en HuggingFace. Je gebruikt je eigen API-sleutels — wij verkopen geen AI-toegang door en nemen geen commissie."
+    - question: "Is de software open source?"
+      answer: "De apparaatsoftware wordt na de lancering open source gemaakt. Het cloudplatform (vibecodepc.com) is proprietary. Backers krijgen vroegtijdig toegang tot de broncode."
+    - question: "Kan ik mijn eigen Raspberry Pi gebruiken?"
+      answer: "We zijn van plan de apparaat-image na de lancering beschikbaar te stellen als download. De Kickstarter-beloningen bevatten echter de volledige hardwarebundel met custom behuizing, vooraf geflashte SD-kaart en QR-koppeling — de complete ervaring."
+    - question: "Waarvoor is het abonnement van $5/maand?"
+      answer: "Het Starterspakket geeft je een persoonlijk subdomein (yourname.vibecodepc.com), HTTPS-tunneling om je projecten naar het web te deployen, en community-ondersteuning. Lokale ontwikkeling is volledig gratis zonder abonnement."
+    - question: "Hoeveel stroom verbruikt het?"
+      answer: "Ongeveer 15 watt bij normaal gebruik. Dat is ruwweg $1-2/maand aan elektriciteit om 24/7 te draaien, afhankelijk van je lokale tarieven."
+    - question: "Kan ik een beeldscherm en toetsenbord direct aansluiten?"
+      answer: "Ja. De Raspberry Pi 5 heeft 2x micro-HDMI en USB-poorten. Je kunt hem headless gebruiken (via de browser) of met een direct beeldscherm. De meeste gebruikers geven de voorkeur aan de browsergebaseerde VS Code-ervaring, omdat deze toegankelijk is vanaf elk apparaat op hun netwerk."
+    - question: "Wat gebeurt er als VibeCodePC (het bedrijf) verdwijnt?"
+      answer: "Je apparaat blijft gewoon werken. Het is een Raspberry Pi die open-source software draait op je bureau. De cloudfuncties (subdomein, tunneling) zouden stoppen, maar je hardware, code en lokale ontwikkelomgeving zijn voor altijd van jou."
+
+cta:
+  title: "Klaar om te viben?"
+  description: "Schrijf je in voor de wachtlijst en wees de eerste die een VibeCodePC krijgt bij de lancering."
+
+footer:
+  copyright: "VibeCodePC. Alle rechten voorbehouden."
+
+languages:
+  en: "English"
+  fr: "Français"
+  de: "Deutsch"
+  es: "Español"
+  it: "Italiano"
+  pt: "Português"
+  nl: "Nederlands"
+  bg: "Български"
+---

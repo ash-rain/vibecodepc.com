@@ -1,0 +1,257 @@
+---
+meta:
+  title: "VibeCodePC — Einstecken. Scannen. Coden. Deployen."
+  description: "Ein Raspberry Pi 5, der sofort bereit ist, mit KI zu coden. QR-Code scannen, Konten verbinden, in Minuten im Web deployen."
+
+nav:
+  how_it_works: "So funktioniert's"
+  whats_included: "Lieferumfang"
+  software: "Software"
+  features: "Features"
+  pricing: "Preise"
+  specs: "Spezifikationen"
+  faq: "FAQ"
+  join_waitlist: "Warteliste beitreten"
+
+hero:
+  badge: "Demnachst erhaltlich — Trag dich auf die Warteliste ein"
+  title_line1: "Einstecken. Scannen."
+  title_line2: "Coden. Deployen."
+  description: "Ein Raspberry Pi 5, der sofort bereit ist, mit KI zu coden. QR-Code scannen, ChatGPT, Copilot und mehr verbinden und deine Projekte ins Web deployen — alles von einer kleinen Box auf deinem Schreibtisch."
+  image_alt: "Zwei VibeCodePC-Gerate — ein Raspberry Pi 5 im individuellen Gehause mit grunen LED-Akzenten und sichtbaren Anschlussen"
+  spam_notice: "Kein Spam. Jederzeit abmelden. Wir schicken dir eine E-Mail zum Launch."
+
+how_it_works:
+  title: "Von der Box zum Deployment in 5 Minuten"
+  subtitle: "Drei Schritte. Kein Terminal. Keine Linux-Erfahrung notig."
+  steps:
+    - number: "1"
+      title: "QR-Code scannen"
+      description: "Schliess deinen VibeCodePC an und scanne den QR-Code auf dem Gerat mit deinem Handy. Erstelle dein Konto und registriere dein Gerat auf <strong class=\"text-gray-300\">id.vibecodepc.com</strong>."
+    - number: "2"
+      title: "KI und Code verbinden"
+      description: "Ein gefuhrter Assistent begleitet dich durch die Einrichtung von OpenAI, Anthropic, Copilot und mehr. VS Code ist vorinstalliert und wird automatisch konfiguriert."
+    - number: "3"
+      title: "Bauen und Deployen"
+      description: "Erstelle Projekte aus Vorlagen, programmiere mit KI-Unterstutzung und deploye sofort auf <strong class=\"text-gray-300\">yourname.vibecodepc.com</strong> mit einem Klick."
+
+showcase:
+  image_alt: "Drei VibeCodePC-Gerate in verschiedenen Grossen — Raspberry Pi 5-Einheiten in individuellen gepanzerten Gehausen mit gruner LED-Beleuchtung"
+  caption: "Individuell designte Gehause. Ernsthafte Hardware. Winziger Platzbedarf."
+
+whats_included:
+  title: "Was ist in der Box"
+  subtitle: "Alles, was du zum Loslegen brauchst. Nichts, was du nicht brauchst."
+  items:
+    - title: "Raspberry Pi 5"
+      description: "16 GB LPDDR4X RAM — der leistungsstarkste Pi aller Zeiten"
+    - title: "128 GB Kingston SD-Karte"
+      description: "Vorinstallierte High-Endurance microSD fur deine Projekte, Tools und Container"
+    - title: "Individuelles Gehause"
+      description: "Spritzgegossenes Gehause mit passiver Kuhlung — sieht super aus auf deinem Schreibtisch"
+    - title: "USB-C Netzteil"
+      description: "27W (5V/5A) — alles, was der Pi braucht, inklusive"
+    - title: "Ethernet-Kabel"
+      description: "1m Cat6-Kabel fur zuverlassige Gigabit-Konnektivitat"
+    - title: "QR-Code-Karte und Kurzanleitung"
+      description: "Deine einzigartige Gerate-ID-Karte — scannen und in Minuten startklar sein"
+
+software:
+  title: "Vorinstalliert und sofort einsatzbereit"
+  subtitle: "Beim ersten Start ist alles konfiguriert. Kein Setup, keine Installationen, keine fehlenden Abhangigkeiten."
+  items:
+    - name: "VS Code"
+      detail: "Vollstandiges Visual Studio Code in deinem Browser uber code-server"
+    - name: "KI-Integrationen"
+      detail: "Verbinde OpenAI, Anthropic, GitHub Copilot, OpenRouter, HuggingFace"
+    - name: "Docker"
+      detail: "Projektisolierung und Container, sofort einsatzbereit"
+    - name: "Node.js 22 LTS"
+      detail: "npm und pnpm inklusive"
+    - name: "PHP 8.4"
+      detail: "Mit Composer Paketmanager"
+    - name: "Python 3.12"
+      detail: "Mit pip Paketmanager"
+    - name: "Git"
+      detail: "Vorkonfiguriert und bereit fur Versionskontrolle"
+    - name: "SQLite"
+      detail: "Leichtgewichtige Datenbank, keine Konfiguration notig"
+    - name: "Redis (Valkey)"
+      detail: "Caching und Warteschlangen bereits integriert"
+    - name: "Cloudflare Tunnel"
+      detail: "Sicheres Web-Deployment, kein Port-Forwarding notig"
+
+features:
+  title: "Alles, was du zum Bauen brauchst"
+  subtitle: "Vorkonfiguriert, immer an und ganz dir gehorend."
+  items:
+    - title: "KI-zuerst-Entwicklung"
+      description: "ChatGPT, Claude, Copilot, OpenRouter, HuggingFace — verbinde sie alle im Setup-Assistenten. Deine API-Schlussel, verschlusselt auf deiner Hardware gespeichert."
+    - title: "VS Code in deinem Browser"
+      description: "Vollstandiges Visual Studio Code lauft auf dem Gerat. Offne es von jedem Browser in deinem Netzwerk. Copilot und Erweiterungen vorinstalliert."
+    - title: "Ins Web deployen"
+      description: "Sichere HTTPS-Tunnel veroffentlichen deine Projekte unter yourname.vibecodepc.com. Schalte Deployments uber das Dashboard ein und aus."
+    - title: "Deine Hardware, deine Daten"
+      description: "Alles lauft auf einem Raspberry Pi 5 auf deinem Schreibtisch. Keine Cloud-Abhangigkeit. Keine monatlichen Rechenkosten. Dein Code und deine Schlussel verlassen nie dein Gerat."
+    - title: "Projektvorlagen"
+      description: "Starte mit Laravel, Next.js, Astro, Python oder einfachem HTML. Jede Vorlage ist bereits mit deinen KI-Diensten verknupft und bereit zum Deployen."
+    - title: "Immer an, extrem stromsparend"
+      description: "Der Raspberry Pi 5 verbraucht nur 15W. Lass ihn rund um die Uhr laufen fur Centbetrage. Deine Projekte bleiben online, deine Tunnel bleiben offen."
+
+who:
+  title: "Gemacht fur Macher aller Art"
+  subtitle: "Egal ob erfahrener Entwickler oder gerade erst mit KI-gestutztem Coden angefangen."
+  items:
+    - emoji: "🚀"
+      title: "Indie Hacker und Solo-Entwickler"
+      description: "Eine eigene, immer verfugbare Entwicklungsmaschine, die nicht dein Laptop ist. Baue dein SaaS, Nebenprojekt oder Startup-MVP auf Hardware, die dir gehort."
+    - emoji: "🎓"
+      title: "Programmieren lernen"
+      description: "Eine eigenstandige Umgebung, die einfach funktioniert. Kein Setup-Chaos, keine kaputten Abhangigkeiten. Browser offnen und mit dem Lernen beginnen."
+    - emoji: "🤖"
+      title: "Vibe Coder"
+      description: "Die wachsende Welle nicht-traditioneller Entwickler, die KI nutzen, um echte Software zu bauen. VibeCodePC ist fur euch gemacht."
+    - emoji: "🏠"
+      title: "Self-Hoster"
+      description: "Betreibe eigene Dienste ohne den Aufwand der Serveradministration. Deine Daten, deine Hardware, deine Regeln."
+    - emoji: "👩‍🏫"
+      title: "Lehrende und Bootcamps"
+      description: "Konsistente, vorkonfigurierte Entwicklungsumgebungen fur jeden Teilnehmer. Kein \"bei mir funktioniert's\" mehr — alle haben dieselbe Maschine."
+    - emoji: "⚡"
+      title: "Bastler und Maker"
+      description: "Wenn du das Pi-Okosystem liebst, aber das Setup hasst, gibt dir VibeCodePC eine sofort einsatzbereite Plattform zum Drauflosbauen."
+
+platform:
+  title: "Mehr als Hardware — es ist eine Plattform"
+  subtitle: "Jedes Gerat verbindet sich uber einen sicheren Cloudflare Tunnel mit vibecodepc.com."
+  features:
+    - title: "Personliche Subdomain"
+      description: "Erhalte yourname.vibecodepc.com — deine eigene Ecke im Web, betrieben von deinem Gerat."
+    - title: "HTTPS standardmassig"
+      description: "Jedes Deployment ist automatisch sicher. Keine Zertifikate zu verwalten, keine Konfiguration notig."
+    - title: "Dashboard-Steuerung"
+      description: "Verwalte Deployments, uberwache dein Gerat und aktualisiere Software — alles uber das Web."
+    - title: "Community"
+      description: "Tritt anderen VibeCodePC-Nutzern auf Discord bei. Teile Projekte, hole dir Hilfe und lerne gemeinsam."
+  note: "Die Hardware funktioniert vollstandig offline. Das Plattform-Abo ist optional und wird nur fur die Veroffentlichung im Web benotigt."
+
+pricing:
+  title: "Einfache, transparente Preise"
+  subtitle: "Ein Gerat. Optionales Abo fur Web-Veroffentlichung."
+  device:
+    label: "Das Gerat"
+    price: "$299"
+    period: "einmalig"
+    features:
+      - "Raspberry Pi 5 — 16 GB RAM"
+      - "128 GB Kingston SD-Karte"
+      - "Individuelles Gehause, Netzteil, Ethernet-Kabel"
+      - "Vorinstalliert: VS Code, Docker, Node, PHP, Python"
+      - "Funktioniert komplett offline — kein Abo erforderlich"
+  subscription:
+    label: "Starter-Plan"
+    badge: "Beliebt"
+    price: "$5"
+    period: "/Monat"
+    features:
+      - "Deine Subdomain: you.vibecodepc.com"
+      - "HTTPS-Tunnel zu deinem Gerat"
+      - "10 GB Bandbreite / Monat"
+      - "Community-Support + Discord"
+      - "Pro- und Team-Tarife folgen in Kurze"
+  footnote: "Fruhbucher-Preise fur Wartelisten-Mitglieder. Endgultige Preise werden zum Launch bekannt gegeben."
+
+specs:
+  title: "Technische Spezifikationen"
+  subtitle: "Kleine Box. Grosse Leistung."
+  rows:
+    - label: "SBC"
+      value: "Raspberry Pi 5 — 16 GB LPDDR4X RAM"
+    - label: "Speicher"
+      value: "128 GB Kingston microSD (High-Endurance)"
+    - label: "CPU"
+      value: "Broadcom BCM2712, Quad-Core Arm Cortex-A76 @ 2,4 GHz"
+    - label: "GPU"
+      value: "VideoCore VII"
+    - label: "Konnektivitat"
+      value: "Gigabit Ethernet, Wi-Fi 5 (802.11ac), Bluetooth 5.0"
+    - label: "Anschlusse"
+      value: "2x USB 3.0, 2x USB 2.0, 2x micro-HDMI, USB-C Stromversorgung"
+    - label: "Stromversorgung"
+      value: "USB-C, 27W (5V/5A) — Netzteil inklusive"
+    - label: "Betriebssystem"
+      value: "Debian 12 (Bookworm), individuelles Image"
+    - label: "Gehause"
+      value: "Individuell spritzgegossenes Gehause mit passiver Kuhlung"
+    - label: "Abmessungen"
+      value: "~120 x 85 x 40 mm"
+    - label: "Gewicht"
+      value: "~180g (mit Gehause und SD-Karte)"
+  footnote: "Vorinstalliert: VS Code (code-server), Docker, Node.js 22 LTS, PHP 8.4, Python 3.12, Git, SQLite, Redis, Cloudflare Tunnel"
+
+stretch_goals:
+  title: "Stretch Goals"
+  subtitle: "Je mehr Unterstutzer mitmachen, desto mehr schalten wir fur alle frei."
+  goals:
+    - amount: "$50,000"
+      label: "Finanziert"
+      description: "Das Basisprodukt wird wie beschrieben ausgeliefert"
+    - amount: "$75,000"
+      label: "Mobile App"
+      description: "Begleit-App fur iOS + Android — verwalte dein Gerat vom Handy aus"
+    - amount: "$100,000"
+      label: "Vorlagen-Marktplatz"
+      description: "Community-Vorlagen-Marktplatz — Projektvorlagen teilen und entdecken"
+    - amount: "$150,000"
+      label: "VibeCodePC Pro"
+      description: "Raspberry Pi CM5, 16 GB RAM, lufterlose Aluminiumgehause"
+    - amount: "$200,000"
+      label: "Classroom Edition"
+      description: "10er-Pack mit zentralem Management-Dashboard fur Lehrende"
+    - amount: "$250,000"
+      label: "Plugin-System"
+      description: "Von der Community entwickelte Dashboard-Erweiterungen — Monitoring, Datenbanken, CMS"
+
+terminal:
+  window_title: "vibecodepc.local"
+
+faq:
+  title: "Haufig gestellte Fragen"
+  subtitle: "Alles, was du uber VibeCodePC wissen musst."
+  items:
+    - question: "Muss ich Linux kennen, um das zu benutzen?"
+      answer: "Nein. Die gesamte Einrichtung wird durch einen webbasierten Assistenten gefuhrt. Du musst das Terminal nie anfassen, ausser du mochtest es."
+    - question: "Kann ich es ohne Internetverbindung benutzen?"
+      answer: "Ja. Das Gerat funktioniert komplett offline fur lokale Entwicklung. Du brauchst Internet nur zur Validierung der KI-API-Schlussel bei der Ersteinrichtung (was bei fehlender Verbindung problemlos funktioniert) und zum Deployen von Projekten ins Web."
+    - question: "Welche KI-Dienste werden unterstutzt?"
+      answer: "OpenAI (ChatGPT/GPT-4), Anthropic (Claude), GitHub Copilot, OpenRouter (Zugang zu Dutzenden Modellen) und HuggingFace. Du bringst deine eigenen API-Schlussel mit — wir verkaufen keinen KI-Zugang weiter und nehmen keine Provision."
+    - question: "Ist die Software Open Source?"
+      answer: "Die Gerate-Software wird nach dem Launch als Open Source veroffentlicht. Die Cloud-Plattform (vibecodepc.com) ist proprietar. Unterstutzer erhalten fruhen Zugang zum Quellcode."
+    - question: "Kann ich meinen eigenen Raspberry Pi verwenden?"
+      answer: "Wir planen, das Gerate-Image nach dem Launch zum Download anzubieten. Die Kickstarter-Belohnungen beinhalten jedoch das komplette Hardware-Bundle mit individuellem Gehause, vorinstallierter SD-Karte und QR-Pairing — das vollstandige Erlebnis."
+    - question: "Wofur ist das $5/Monat-Abo?"
+      answer: "Der Starter-Plan gibt dir eine personliche Subdomain (yourname.vibecodepc.com), HTTPS-Tunneling zum Deployen deiner Projekte ins Web und Community-Support. Lokale Entwicklung ist komplett kostenlos ohne Abo."
+    - question: "Wie viel Strom verbraucht es?"
+      answer: "Etwa 15 Watt unter typischer Last. Das sind ungefahr 1-2 Dollar pro Monat an Strom fur den 24/7-Betrieb, abhangig von deinen lokalen Tarifen."
+    - question: "Kann ich einen Monitor und eine Tastatur direkt anschliessen?"
+      answer: "Ja. Der Raspberry Pi 5 hat 2x micro-HDMI und USB-Anschlusse. Du kannst ihn headless (browserbasiert) oder mit einem direkten Display verwenden. Die meisten Nutzer bevorzugen die browserbasierte VS Code-Erfahrung, da sie von jedem Gerat im Netzwerk aus zuganglich ist."
+    - question: "Was passiert, wenn VibeCodePC (das Unternehmen) nicht mehr existiert?"
+      answer: "Dein Gerat funktioniert weiter. Es ist ein Raspberry Pi mit Open-Source-Software auf deinem Schreibtisch. Die Cloud-Features (Subdomain, Tunneling) wurden eingestellt, aber deine Hardware, dein Code und deine lokale Entwicklungsumgebung gehoren dir fur immer."
+
+cta:
+  title: "Bereit zum Viben?"
+  description: "Trag dich auf die Warteliste ein und sei unter den Ersten, die ihren VibeCodePC zum Launch erhalten."
+
+footer:
+  copyright: "VibeCodePC. Alle Rechte vorbehalten."
+
+languages:
+  en: "English"
+  fr: "Français"
+  de: "Deutsch"
+  es: "Español"
+  it: "Italiano"
+  pt: "Português"
+  nl: "Nederlands"
+  bg: "Български"
+---

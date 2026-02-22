@@ -1,0 +1,257 @@
+---
+meta:
+  title: "VibeCodePC — Collega. Scansiona. Programma. Pubblica."
+  description: "Un Raspberry Pi 5 pronto per programmare con l'AI. Scansiona il QR, collega i tuoi account, pubblica sul web in pochi minuti."
+
+nav:
+  how_it_works: "Come Funziona"
+  whats_included: "Cosa Include"
+  software: "Software"
+  features: "Funzionalita"
+  pricing: "Prezzi"
+  specs: "Specifiche"
+  faq: "FAQ"
+  join_waitlist: "Iscriviti alla Lista d'Attesa"
+
+hero:
+  badge: "In Arrivo — Iscriviti alla Lista d'Attesa"
+  title_line1: "Collega. Scansiona."
+  title_line2: "Programma. Pubblica."
+  description: "Un Raspberry Pi 5 pronto per programmare con l'AI. Scansiona il codice QR, collega ChatGPT, Copilot e altro, e pubblica i tuoi progetti sul web — tutto da una piccola scatola sulla tua scrivania."
+  image_alt: "Due dispositivi VibeCodePC — un Raspberry Pi 5 in un case personalizzato con accenti LED verdi e porte visibili"
+  spam_notice: "Niente spam. Cancellati quando vuoi. Ti invieremo una sola email al lancio."
+
+how_it_works:
+  title: "Dalla scatola al deploy in 5 minuti"
+  subtitle: "Tre passaggi. Nessun terminale. Nessuna esperienza Linux richiesta."
+  steps:
+    - number: "1"
+      title: "Scansiona il Codice QR"
+      description: "Collega il tuo VibeCodePC e scansiona il codice QR sul dispositivo con il telefono. Crea il tuo account e registra il tuo dispositivo su <strong class=\"text-gray-300\">id.vibecodepc.com</strong>."
+    - number: "2"
+      title: "Collega la tua AI e il Codice"
+      description: "Una procedura guidata ti accompagna nel collegamento di OpenAI, Anthropic, Copilot e altro. VS Code e preinstallato e configurato automaticamente."
+    - number: "3"
+      title: "Costruisci e Pubblica"
+      description: "Crea progetti da template, programma con l'assistenza dell'AI e pubblica istantaneamente su <strong class=\"text-gray-300\">yourname.vibecodepc.com</strong> con un solo clic."
+
+showcase:
+  image_alt: "Tre dispositivi VibeCodePC di diverse dimensioni — unita Raspberry Pi 5 in case corazzati personalizzati con illuminazione LED verde"
+  caption: "Case dal design personalizzato. Hardware serio. Ingombro minimo."
+
+whats_included:
+  title: "Cosa c'e nella scatola"
+  subtitle: "Tutto cio che ti serve per iniziare a costruire. Niente di superfluo."
+  items:
+    - title: "Raspberry Pi 5"
+      description: "16 GB di RAM LPDDR4X — il Pi piu potente mai realizzato"
+    - title: "Scheda SD Kingston da 128 GB"
+      description: "microSD ad alta resistenza pre-configurata per i tuoi progetti, strumenti e container"
+    - title: "Case Personalizzato"
+      description: "Case a iniezione con raffreddamento passivo — sta benissimo sulla tua scrivania"
+    - title: "Alimentatore USB-C"
+      description: "27W (5V/5A) — tutto cio che serve al Pi, incluso"
+    - title: "Cavo Ethernet"
+      description: "Cavo Cat6 da 1m per una connettivita gigabit affidabile"
+    - title: "Scheda QR e Guida Rapida"
+      description: "La tua scheda con Device ID unico — scansionala e sei operativo in pochi minuti"
+
+software:
+  title: "Preinstallato e pronto all'uso"
+  subtitle: "Tutto e configurato al primo avvio. Nessun setup, nessuna installazione, nessuna dipendenza da rincorrere."
+  items:
+    - name: "VS Code"
+      detail: "Visual Studio Code completo nel tuo browser tramite code-server"
+    - name: "Integrazioni AI"
+      detail: "Collega OpenAI, Anthropic, GitHub Copilot, OpenRouter, HuggingFace"
+    - name: "Docker"
+      detail: "Isolamento dei progetti e container, pronti all'uso"
+    - name: "Node.js 22 LTS"
+      detail: "npm e pnpm inclusi"
+    - name: "PHP 8.4"
+      detail: "Con il gestore di pacchetti Composer"
+    - name: "Python 3.12"
+      detail: "Con il gestore di pacchetti pip"
+    - name: "Git"
+      detail: "Preconfigurato e pronto per il controllo versione"
+    - name: "SQLite"
+      detail: "Database leggero, zero configurazione"
+    - name: "Redis (Valkey)"
+      detail: "Cache e code integrati"
+    - name: "Cloudflare Tunnel"
+      detail: "Pubblicazione web sicura, nessun port forwarding necessario"
+
+features:
+  title: "Tutto cio che ti serve per costruire"
+  subtitle: "Preconfigurato, sempre attivo e interamente tuo."
+  items:
+    - title: "Sviluppo AI-First"
+      description: "ChatGPT, Claude, Copilot, OpenRouter, HuggingFace — collegali tutti nella procedura guidata. Le tue chiavi API, salvate crittografate sul tuo hardware."
+    - title: "VS Code nel Tuo Browser"
+      description: "Visual Studio Code completo gira sul dispositivo. Aprilo da qualsiasi browser nella tua rete. Copilot e le estensioni sono preinstallati."
+    - title: "Pubblica sul Web"
+      description: "Tunnel HTTPS sicuri pubblicano i tuoi progetti su yourname.vibecodepc.com. Attiva e disattiva le pubblicazioni dalla dashboard."
+    - title: "Il Tuo Hardware, i Tuoi Dati"
+      description: "Tutto gira su un Raspberry Pi 5 sulla tua scrivania. Nessuna dipendenza dal cloud. Nessuna bolletta mensile per il calcolo. Il tuo codice e le tue chiavi non lasciano mai il tuo dispositivo."
+    - title: "Template di Progetto"
+      description: "Inizia con Laravel, Next.js, Astro, Python o semplice HTML. Ogni template e gia collegato ai tuoi servizi AI e pronto per la pubblicazione."
+    - title: "Sempre Acceso, Consumo Bassissimo"
+      description: "Il Raspberry Pi 5 consuma solo 15W. Lascialo acceso 24/7 per pochi centesimi. I tuoi progetti restano online, i tuoi tunnel restano aperti."
+
+who:
+  title: "Pensato per costruttori di ogni tipo"
+  subtitle: "Che tu sia uno sviluppatore esperto o alle prime armi con la programmazione assistita dall'AI."
+  items:
+    - emoji: "🚀"
+      title: "Indie Hacker e Dev Solitari"
+      description: "Una macchina di sviluppo dedicata, sempre accesa, che non e il tuo portatile. Costruisci il tuo SaaS, progetto personale o MVP della startup su hardware di tua proprieta."
+    - emoji: "🎓"
+      title: "Chi Sta Imparando a Programmare"
+      description: "Un ambiente autonomo che funziona e basta. Niente setup infernali, niente dipendenze rotte. Apri il browser e inizia a imparare."
+    - emoji: "🤖"
+      title: "Vibe Coder"
+      description: "L'ondata crescente di sviluppatori non tradizionali che usano l'AI per costruire software vero. VibeCodePC e fatto per te."
+    - emoji: "🏠"
+      title: "Self-Hoster"
+      description: "Gestisci i tuoi servizi senza il mal di testa dell'amministrazione server. I tuoi dati, il tuo hardware, le tue regole."
+    - emoji: "👩‍🏫"
+      title: "Educatori e Bootcamp"
+      description: "Ambienti di sviluppo consistenti e preconfigurati per ogni studente. Niente piu \"sul mio computer funziona\" — hanno tutti la stessa macchina."
+    - emoji: "⚡"
+      title: "Smanettoni e Maker"
+      description: "Se ami l'ecosistema Pi ma odi il setup, VibeCodePC ti offre una piattaforma pronta all'uso su cui costruire."
+
+platform:
+  title: "Piu di un hardware — e una piattaforma"
+  subtitle: "Ogni dispositivo si connette a vibecodepc.com attraverso un Cloudflare Tunnel sicuro."
+  features:
+    - title: "Sottodominio Personale"
+      description: "Ottieni yourname.vibecodepc.com — il tuo angolo del web, alimentato dal tuo dispositivo."
+    - title: "HTTPS di Default"
+      description: "Ogni pubblicazione e sicura, automaticamente. Nessun certificato da gestire, nessuna configurazione necessaria."
+    - title: "Controllo dalla Dashboard"
+      description: "Gestisci le pubblicazioni, monitora il tuo dispositivo e aggiorna il software — tutto dal web."
+    - title: "Community"
+      description: "Unisciti agli altri utenti VibeCodePC su Discord. Condividi progetti, chiedi aiuto e impara insieme."
+  note: "L'hardware di base funziona completamente offline. L'abbonamento alla piattaforma e opzionale e necessario solo per la pubblicazione web."
+
+pricing:
+  title: "Prezzi semplici e trasparenti"
+  subtitle: "Un dispositivo. Abbonamento opzionale per la pubblicazione web."
+  device:
+    label: "Il Dispositivo"
+    price: "$299"
+    period: "una tantum"
+    features:
+      - "Raspberry Pi 5 — 16 GB RAM"
+      - "Scheda SD Kingston da 128 GB"
+      - "Case personalizzato, alimentatore, cavo Ethernet"
+      - "Preinstallato: VS Code, Docker, Node, PHP, Python"
+      - "Funziona completamente offline — nessun abbonamento richiesto"
+  subscription:
+    label: "Piano Starter"
+    badge: "Popolare"
+    price: "$5"
+    period: "/mese"
+    features:
+      - "Il tuo sottodominio: you.vibecodepc.com"
+      - "Tunnel HTTPS verso il tuo dispositivo"
+      - "10 GB di banda / mese"
+      - "Supporto community + Discord"
+      - "Piani Pro e Team in arrivo"
+  footnote: "Prezzo early-bird per gli iscritti alla lista d'attesa. Prezzi definitivi annunciati al lancio."
+
+specs:
+  title: "Specifiche tecniche"
+  subtitle: "Scatola piccola. Potenza seria."
+  rows:
+    - label: "SBC"
+      value: "Raspberry Pi 5 — 16 GB LPDDR4X RAM"
+    - label: "Archiviazione"
+      value: "128 GB Kingston microSD (alta resistenza)"
+    - label: "CPU"
+      value: "Broadcom BCM2712, Quad-core Arm Cortex-A76 @ 2.4 GHz"
+    - label: "GPU"
+      value: "VideoCore VII"
+    - label: "Connettivita"
+      value: "Gigabit Ethernet, Wi-Fi 5 (802.11ac), Bluetooth 5.0"
+    - label: "Porte"
+      value: "2× USB 3.0, 2× USB 2.0, 2× micro-HDMI, alimentazione USB-C"
+    - label: "Alimentazione"
+      value: "USB-C, 27W (5V/5A) — alimentatore incluso"
+    - label: "SO"
+      value: "Debian 12 (Bookworm), immagine personalizzata"
+    - label: "Case"
+      value: "Case personalizzato a iniezione con raffreddamento passivo"
+    - label: "Dimensioni"
+      value: "~120 × 85 × 40 mm"
+    - label: "Peso"
+      value: "~180g (con case e scheda SD)"
+  footnote: "Preinstallato: VS Code (code-server), Docker, Node.js 22 LTS, PHP 8.4, Python 3.12, Git, SQLite, Redis, Cloudflare Tunnel"
+
+stretch_goals:
+  title: "Obiettivi aggiuntivi"
+  subtitle: "Piu sostenitori si uniscono, piu sblocchiamo per tutti."
+  goals:
+    - amount: "$50,000"
+      label: "Finanziato"
+      description: "Il prodotto base viene spedito come descritto"
+    - amount: "$75,000"
+      label: "App Mobile"
+      description: "App companion per iOS + Android — gestisci il tuo dispositivo dal telefono"
+    - amount: "$100,000"
+      label: "Marketplace Template"
+      description: "Marketplace di template della community — condividi e scopri starter di progetto"
+    - amount: "$150,000"
+      label: "VibeCodePC Pro"
+      description: "Raspberry Pi CM5, 16 GB RAM, case in alluminio fanless"
+    - amount: "$200,000"
+      label: "Edizione Classroom"
+      description: "Confezione da 10 con dashboard di gestione centralizzata per educatori"
+    - amount: "$250,000"
+      label: "Sistema Plugin"
+      description: "Estensioni della dashboard create dalla community — monitoraggio, database, CMS"
+
+terminal:
+  window_title: "vibecodepc.local"
+
+faq:
+  title: "Domande frequenti"
+  subtitle: "Tutto quello che devi sapere su VibeCodePC."
+  items:
+    - question: "Devo conoscere Linux per usarlo?"
+      answer: "No. L'intero setup e guidato tramite una procedura web. Non hai mai bisogno di toccare il terminale, a meno che tu non lo voglia."
+    - question: "Posso usarlo senza connessione internet?"
+      answer: "Si. Il dispositivo funziona completamente offline per lo sviluppo locale. Hai bisogno di internet solo per validare le chiavi API AI durante il setup iniziale (che degrada con grazia) e per pubblicare i progetti sul web."
+    - question: "Quali servizi AI supporta?"
+      answer: "OpenAI (ChatGPT/GPT-4), Anthropic (Claude), GitHub Copilot, OpenRouter (accesso a decine di modelli) e HuggingFace. Porti le tue chiavi API — non rivendiamo accesso AI e non prendiamo commissioni."
+    - question: "Il software e open source?"
+      answer: "Il software del dispositivo sara reso open source dopo il lancio. La piattaforma cloud (vibecodepc.com) e proprietaria. I sostenitori ottengono accesso anticipato al codice sorgente."
+    - question: "Posso usare il mio Raspberry Pi?"
+      answer: "Prevediamo di rendere disponibile l'immagine del dispositivo per il download dopo il lancio. Tuttavia, le ricompense Kickstarter includono il bundle hardware completo con case personalizzato, scheda SD pre-configurata e pairing QR — l'esperienza completa."
+    - question: "A cosa serve l'abbonamento da $5/mese?"
+      answer: "Il piano Starter ti offre un sottodominio personale (yourname.vibecodepc.com), tunneling HTTPS per pubblicare i tuoi progetti sul web e supporto community. Lo sviluppo locale e completamente gratuito senza alcun abbonamento."
+    - question: "Quanto consuma in termini di energia?"
+      answer: "Circa 15 watt sotto carico tipico. Sono circa 1-2 dollari al mese di elettricita per tenerlo acceso 24/7, a seconda delle tue tariffe locali."
+    - question: "Posso collegare un monitor e una tastiera direttamente?"
+      answer: "Si. Il Raspberry Pi 5 ha 2× micro-HDMI e porte USB. Puoi usarlo headless (via browser) o con un display diretto. La maggior parte degli utenti preferisce l'esperienza VS Code via browser perche e accessibile da qualsiasi dispositivo nella propria rete."
+    - question: "Cosa succede se VibeCodePC (l'azienda) chiude?"
+      answer: "Il tuo dispositivo continua a funzionare. E un Raspberry Pi che esegue software open source sulla tua scrivania. Le funzionalita cloud (sottodominio, tunneling) smetterebbero di funzionare, ma il tuo hardware, il tuo codice e il tuo ambiente di sviluppo locale sono tuoi per sempre."
+
+cta:
+  title: "Pronto a vibrare?"
+  description: "Iscriviti alla lista d'attesa e sii il primo a ricevere il tuo VibeCodePC al lancio."
+
+footer:
+  copyright: "VibeCodePC. Tutti i diritti riservati."
+
+languages:
+  en: "English"
+  fr: "Français"
+  de: "Deutsch"
+  es: "Español"
+  it: "Italiano"
+  pt: "Português"
+  nl: "Nederlands"
+  bg: "Български"
+---
