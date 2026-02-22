@@ -13,10 +13,15 @@ class TunnelService
     public function __construct(
         private readonly string $configPath = '/etc/cloudflared/config.yml',
         private readonly int $deviceAppPort = 8001,
+        private readonly ?string $tokenFilePath = null,
     ) {}
 
     public function isInstalled(): bool
     {
+        if ($this->tokenFilePath !== null) {
+            return true;
+        }
+
         $result = Process::run($this->shell('cloudflared --version 2>/dev/null'));
 
         return $result->successful();
@@ -24,6 +29,10 @@ class TunnelService
 
     public function isRunning(): bool
     {
+        if ($this->tokenFilePath !== null) {
+            return file_exists($this->tokenFilePath) && filesize($this->tokenFilePath) > 0;
+        }
+
         $result = Process::run('pgrep -x cloudflared 2>/dev/null');
 
         return $result->successful();
@@ -85,6 +94,23 @@ class TunnelService
 
         $token = TunnelConfig::current()->tunnel_token_encrypted;
 
+        // Token-file mode: write token to shared volume for the cloudflared container
+        if ($this->tokenFilePath !== null) {
+            $dir = dirname($this->tokenFilePath);
+
+            if (! is_dir($dir)) {
+                @mkdir($dir, 0755, true);
+            }
+
+            if (! is_writable($dir)) {
+                return "Tunnel token directory is not writable: {$dir}";
+            }
+
+            file_put_contents($this->tokenFilePath, $token);
+
+            return null;
+        }
+
         // Try systemd first (production RPi) — write token to env file for the service
         $envDir = dirname($this->configPath);
         $envFile = $envDir.'/tunnel.env';
@@ -127,6 +153,13 @@ class TunnelService
     public function stop(): ?string
     {
         if (! $this->isRunning()) {
+            return null;
+        }
+
+        // Token-file mode: truncate the token file to signal the entrypoint to stop
+        if ($this->tokenFilePath !== null) {
+            file_put_contents($this->tokenFilePath, '');
+
             return null;
         }
 

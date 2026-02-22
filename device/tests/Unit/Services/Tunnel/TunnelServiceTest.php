@@ -178,6 +178,86 @@ it('writes ingress rules to the config file with default device app route', func
     File::deleteDirectory(dirname($configPath));
 });
 
+// --- Token-file mode tests (Docker) ---
+
+it('reports installed when tokenFilePath is set', function () {
+    $tokenFile = storage_path('app/test-tunnel-token/token');
+
+    $service = new TunnelService(tokenFilePath: $tokenFile);
+
+    expect($service->isInstalled())->toBeTrue();
+});
+
+it('reports running when token file has content', function () {
+    $tokenFile = storage_path('app/test-tunnel-token/token');
+    @mkdir(dirname($tokenFile), 0755, true);
+    file_put_contents($tokenFile, 'test-token-value');
+
+    $service = new TunnelService(tokenFilePath: $tokenFile);
+
+    expect($service->isRunning())->toBeTrue();
+
+    File::deleteDirectory(dirname($tokenFile));
+});
+
+it('reports not running when token file is empty', function () {
+    $tokenFile = storage_path('app/test-tunnel-token/token');
+    @mkdir(dirname($tokenFile), 0755, true);
+    file_put_contents($tokenFile, '');
+
+    $service = new TunnelService(tokenFilePath: $tokenFile);
+
+    expect($service->isRunning())->toBeFalse();
+
+    File::deleteDirectory(dirname($tokenFile));
+});
+
+it('reports not running when token file does not exist', function () {
+    $tokenFile = storage_path('app/test-tunnel-token-missing/token');
+
+    $service = new TunnelService(tokenFilePath: $tokenFile);
+
+    expect($service->isRunning())->toBeFalse();
+});
+
+it('writes token to file on start in token-file mode', function () {
+    $tokenFile = storage_path('app/test-tunnel-start/token');
+    TunnelConfig::factory()->verified()->create();
+
+    $service = new TunnelService(tokenFilePath: $tokenFile);
+
+    expect($service->start())->toBeNull();
+    expect(file_exists($tokenFile))->toBeTrue();
+    expect(file_get_contents($tokenFile))->not->toBeEmpty();
+
+    File::deleteDirectory(dirname($tokenFile));
+});
+
+it('empties token file on stop in token-file mode', function () {
+    $tokenFile = storage_path('app/test-tunnel-stop/token');
+    @mkdir(dirname($tokenFile), 0755, true);
+    file_put_contents($tokenFile, 'test-token-value');
+
+    $service = new TunnelService(tokenFilePath: $tokenFile);
+
+    expect($service->stop())->toBeNull();
+    expect(file_get_contents($tokenFile))->toBe('');
+
+    File::deleteDirectory(dirname($tokenFile));
+});
+
+it('returns null on stop when token file is already empty in token-file mode', function () {
+    $tokenFile = storage_path('app/test-tunnel-stop-noop/token');
+    @mkdir(dirname($tokenFile), 0755, true);
+    file_put_contents($tokenFile, '');
+
+    $service = new TunnelService(tokenFilePath: $tokenFile);
+
+    expect($service->stop())->toBeNull();
+
+    File::deleteDirectory(dirname($tokenFile));
+});
+
 it('writes default device app route when no project routes are provided', function () {
     $configPath = storage_path('app/test-cloudflared-empty/config.yml');
     $service = new TunnelService(configPath: $configPath, deviceAppPort: 8001);

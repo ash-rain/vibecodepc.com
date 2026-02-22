@@ -1,5 +1,8 @@
 services:
-  # Device App (simulates Raspberry Pi)
+  # ==========================================================================
+  # Device Services (simulates Raspberry Pi)
+  # ==========================================================================
+
   device:
     build:
       context: .
@@ -8,6 +11,7 @@ services:
     volumes:
       - ./device:/var/www/html
       - ./packages:/var/www/packages
+      - tunnel-data:/tunnel
     ports:
       - "8081:8080"
     environment:
@@ -19,8 +23,20 @@ services:
       QUEUE_CONNECTION: database
       VIBECODEPC_CLOUD_URL: https://vibecodepc.com
       REDIS_HOST: redis-device
+      DEVICE_APP_PORT: 8080
+      TUNNEL_TOKEN_PATH: /tunnel/token
 
-  # Device Scheduler (runs Laravel scheduled tasks like heartbeat)
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    entrypoint: ["/entrypoint.sh"]
+    volumes:
+      - ./device/docker/cloudflared-entrypoint.sh:/entrypoint.sh:ro
+      - tunnel-data:/tunnel:ro
+    network_mode: "service:device"
+    depends_on:
+      - device
+    restart: unless-stopped
+
   device-scheduler:
     image: serversideup/php:8.4-fpm-nginx
     working_dir: /var/www/html
@@ -37,10 +53,10 @@ services:
       QUEUE_CONNECTION: database
       VIBECODEPC_CLOUD_URL: https://vibecodepc.com
       REDIS_HOST: redis-device
+      DEVICE_APP_PORT: 8080
     depends_on:
       - device
 
-  # Device Queue Worker (processes scaffolding/cloning jobs)
   device-queue:
     image: serversideup/php:8.4-fpm-nginx
     working_dir: /var/www/html
@@ -57,10 +73,10 @@ services:
       QUEUE_CONNECTION: database
       VIBECODEPC_CLOUD_URL: https://vibecodepc.com
       REDIS_HOST: redis-device
+      DEVICE_APP_PORT: 8080
     depends_on:
       - device
 
-  # Redis for Device (simulates on-device Valkey)
   redis-device:
     image: valkey/valkey:8-alpine
     ports:
@@ -74,4 +90,5 @@ services:
       retries: 5
 
 volumes:
+  tunnel-data:
   redis-device-data:

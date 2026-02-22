@@ -53,45 +53,6 @@ setup_user() {
     fi
 }
 
-# ---------- docker ----------
-
-install_docker() {
-    info "Installing Docker..."
-
-    if command_exists docker; then
-        ok "Docker already installed: $(docker --version)"
-    else
-        if $IS_LINUX; then
-            curl -fsSL https://get.docker.com | sh
-        else
-            fail "Install Docker Desktop manually: https://docs.docker.com/desktop/install/mac-install/"
-        fi
-        ok "Docker installed: $(docker --version)"
-    fi
-
-    # Verify docker compose plugin is available
-    if docker compose version &>/dev/null; then
-        ok "Docker Compose plugin: $(docker compose version --short)"
-    else
-        fail "Docker Compose plugin not found. Reinstall Docker."
-    fi
-
-    # Add device user to docker group so containers run without sudo
-    if $IS_LINUX; then
-        if ! id -nG "$DEVICE_USER" | grep -qw docker; then
-            usermod -aG docker "$DEVICE_USER"
-            ok "Added ${DEVICE_USER} to docker group"
-        fi
-    fi
-
-    # Enable and start Docker service
-    if $IS_LINUX; then
-        systemctl enable docker
-        systemctl start docker
-        ok "Docker service enabled and started"
-    fi
-}
-
 # ---------- avahi / mDNS ----------
 
 install_avahi() {
@@ -195,98 +156,6 @@ EOF
     ok "code-server service enabled and started"
 }
 
-# ---------- cloudflared ----------
-
-install_cloudflared() {
-    info "Installing cloudflared..."
-
-    if command_exists cloudflared; then
-        ok "cloudflared already installed: $(cloudflared --version 2>&1 | head -1)"
-        return
-    fi
-
-    if $IS_LINUX; then
-        local arch
-        arch="$(dpkg --print-architecture 2>/dev/null || uname -m)"
-
-        case "$arch" in
-            arm64|aarch64)  arch="arm64" ;;
-            armhf|armv7l)   arch="arm"   ;;
-            amd64|x86_64)   arch="amd64" ;;
-            *)              fail "Unsupported architecture: $arch" ;;
-        esac
-
-        local url="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-${arch}.deb"
-
-        info "Downloading cloudflared for ${arch}..."
-        curl -fsSL -o /tmp/cloudflared.deb "$url"
-        dpkg -i /tmp/cloudflared.deb
-        rm -f /tmp/cloudflared.deb
-    else
-        if command_exists brew; then
-            brew install cloudflared
-        else
-            fail "Install cloudflared manually: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/"
-        fi
-    fi
-
-    ok "cloudflared installed: $(cloudflared --version 2>&1 | head -1)"
-}
-
-configure_cloudflared() {
-    info "Configuring cloudflared directory..."
-
-    mkdir -p /etc/cloudflared
-    chmod 755 /etc/cloudflared
-
-    # The tunnel token will be written by the wizard after provisioning via the cloud API.
-    # No placeholder credentials or config needed — the token-based approach uses
-    # `cloudflared tunnel run --token <TOKEN>` directly.
-    if [[ -f /etc/cloudflared/tunnel.env ]]; then
-        ok "cloudflared tunnel.env already exists"
-    else
-        ok "cloudflared directory ready (tunnel token written after wizard setup)"
-    fi
-}
-
-setup_cloudflared_service() {
-    if $IS_DOCKER_BUILD; then
-        warn "Skipping systemd service setup in Docker build"
-        return
-    fi
-
-    if ! $IS_LINUX; then
-        warn "Skipping systemd service setup on macOS"
-        return
-    fi
-
-    info "Setting up cloudflared systemd service..."
-
-    cat > /etc/systemd/system/cloudflared.service <<'EOF'
-[Unit]
-Description=Cloudflare Tunnel for VibeCodePC
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-Type=notify
-EnvironmentFile=/etc/cloudflared/tunnel.env
-ExecStart=/usr/local/bin/cloudflared tunnel run --token ${TUNNEL_TOKEN}
-Restart=on-failure
-RestartSec=5
-TimeoutStartSec=0
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-    systemctl daemon-reload
-    systemctl enable cloudflared
-
-    # Don't start yet — no token until the wizard completes provisioning
-    ok "cloudflared service enabled (will start after tunnel is provisioned)"
-}
-
 # ---------- laravel app ----------
 
 setup_laravel_app() {
@@ -338,23 +207,11 @@ main() {
 
     setup_user
 
-    if [[ "${VIBECODEPC_DOCKER_BUILD:-0}" == "1" ]]; then
-        warn "Skipping Docker installation (Docker build)"
-    elif [[ "${VIBECODEPC_SKIP_DOCKER:-0}" != "1" ]]; then
-        install_docker
-    else
-        warn "Skipping Docker installation (VIBECODEPC_SKIP_DOCKER=1)"
-    fi
-
     install_avahi
 
     install_code_server
     configure_code_server
     setup_code_server_service
-
-    install_cloudflared
-    configure_cloudflared
-    setup_cloudflared_service
 
     if $IS_DOCKER_BUILD; then
         warn "Skipping Laravel app setup in Docker build (handled at container start)"

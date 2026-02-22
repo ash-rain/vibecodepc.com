@@ -1,0 +1,78 @@
+services:
+  cloud:
+    build:
+      context: ..
+      dockerfile: cloud/Dockerfile
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+      - ../packages:/var/www/packages
+      - tunnel-data:/tunnel
+    ports:
+      - "8082:8080"
+    environment:
+      APP_NAME: VibeCodePC
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8082
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: vibecodepc_cloud
+      DB_USERNAME: vibecodepc
+      DB_PASSWORD: vibecodepc
+      QUEUE_CONNECTION: redis
+      CACHE_STORE: redis
+      SESSION_DRIVER: redis
+      REDIS_HOST: redis-cloud
+      DEVICE_APP_PORT: 8080
+      TUNNEL_TOKEN_PATH: /tunnel/token
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis-cloud:
+        condition: service_healthy
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    entrypoint: ["/entrypoint.sh"]
+    volumes:
+      - ../device/docker/cloudflared-entrypoint.sh:/entrypoint.sh:ro
+      - tunnel-data:/tunnel:ro
+    network_mode: "service:cloud"
+    depends_on:
+      - cloud
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: vibecodepc_cloud
+      POSTGRES_USER: vibecodepc
+      POSTGRES_PASSWORD: vibecodepc
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vibecodepc -d vibecodepc_cloud"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis-cloud:
+    image: valkey/valkey:8-alpine
+    ports:
+      - "6381:6379"
+    volumes:
+      - redis-cloud-data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  tunnel-data:
+  postgres-data:
+  redis-cloud-data:
