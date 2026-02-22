@@ -2,6 +2,7 @@
 
 use App\Livewire\Dashboard\AiServicesHub;
 use App\Livewire\Dashboard\CodeEditor;
+use App\Livewire\Dashboard\ContainerMonitor;
 use App\Livewire\Dashboard\Overview;
 use App\Livewire\Dashboard\ProjectCreate;
 use App\Livewire\Dashboard\ProjectDetail;
@@ -36,4 +37,5 @@ Route::get('/dashboard/projects/{project}', ProjectDetail::class)->name('dashboa
 Route::get('/dashboard/ai-services', AiServicesHub::class)->name('dashboard.ai-services');
 Route::get('/dashboard/code-editor', CodeEditor::class)->name('dashboard.code-editor');
 Route::get('/dashboard/tunnels', TunnelManager::class)->name('dashboard.tunnels');
+Route::get('/dashboard/containers', ContainerMonitor::class)->name('dashboard.containers');
 Route::get('/dashboard/settings', SystemSettings::class)->name('dashboard.settings');

@@ -114,6 +114,35 @@ class ProjectContainerService
         ];
     }
 
+    /**
+     * @return array{success: bool, output: string}
+     */
+    public function execCommand(Project $project, string $command): array
+    {
+        if (! $project->container_id) {
+            return ['success' => false, 'output' => 'No running container found.'];
+        }
+
+        $command = trim($command);
+
+        if ($command === '') {
+            return ['success' => false, 'output' => 'Command cannot be empty.'];
+        }
+
+        $result = Process::path($project->path)
+            ->timeout(30)
+            ->run(sprintf('docker compose exec -T app %s', $command));
+
+        $output = trim($result->output() ?: $result->errorOutput());
+
+        $this->log($project, 'docker', "Exec [{$command}]: {$output}");
+
+        return [
+            'success' => $result->successful(),
+            'output' => $output,
+        ];
+    }
+
     public function remove(Project $project): bool
     {
         $result = Process::path($project->path)
