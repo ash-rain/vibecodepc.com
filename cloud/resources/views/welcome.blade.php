@@ -224,7 +224,7 @@
                     <ul class="mt-6 space-y-3 text-sm text-gray-400">
                         <li class="flex items-start gap-2">
                             <svg class="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                            Raspberry Pi 5 — 8 GB RAM
+                            Raspberry Pi 5 — 16 GB RAM
                         </li>
                         <li class="flex items-start gap-2">
                             <svg class="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
@@ -309,7 +309,7 @@
                     <p class="text-gray-300">&nbsp; my-saas &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-emerald-400">running</span> &nbsp; port 8000 &nbsp; <span class="text-emerald-400">tunneled</span></p>
                     <p class="text-gray-300">&nbsp; portfolio &nbsp;&nbsp;&nbsp;<span class="text-emerald-400">running</span> &nbsp; port 3000 &nbsp; <span class="text-gray-500">local only</span></p>
                     <p class="text-gray-300">&nbsp; discord-bot &nbsp;<span class="text-yellow-400">stopped</span></p>
-                    <p class="mt-3 text-gray-400">System: <span class="text-gray-300">CPU 12%</span> &nbsp; <span class="text-gray-300">RAM 1.8/8 GB</span> &nbsp; <span class="text-gray-300">Disk 24/256 GB</span> &nbsp; <span class="text-gray-300">Temp 48C</span></p>
+                    <p class="mt-3 text-gray-400">System: <span class="text-gray-300">CPU 12%</span> &nbsp; <span class="text-gray-300">RAM 1.8/16 GB</span> &nbsp; <span class="text-gray-300">Disk 24/256 GB</span> &nbsp; <span class="text-gray-300">Temp 48C</span></p>
                     <p class="mt-2 text-gray-500">$ <span class="animate-pulse">_</span></p>
                 </div>
             </div>

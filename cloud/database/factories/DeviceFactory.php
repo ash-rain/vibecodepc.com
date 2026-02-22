@@ -42,4 +42,28 @@ class DeviceFactory extends Factory
             'status' => DeviceStatus::Deactivated,
         ]);
     }
+
+    public function online(): static
+    {
+        return $this->claimed()->state(fn () => [
+            'is_online' => true,
+            'last_heartbeat_at' => now(),
+            'cpu_percent' => fake()->randomFloat(1, 5, 85),
+            'cpu_temp' => fake()->randomFloat(1, 35, 70),
+            'ram_used_mb' => fake()->numberBetween(1024, 6144),
+            'ram_total_mb' => 8192,
+            'disk_used_gb' => fake()->randomFloat(2, 10, 200),
+            'disk_total_gb' => 256,
+            'os_version' => 'Debian 12.8',
+            'tunnel_url' => 'https://'.fake()->userName().'.vibecodepc.com',
+        ]);
+    }
+
+    public function offline(): static
+    {
+        return $this->claimed()->state(fn () => [
+            'is_online' => false,
+            'last_heartbeat_at' => now()->subMinutes(10),
+        ]);
+    }
 }

@@ -71,10 +71,33 @@ class DeviceResource extends Resource
                         DeviceStatus::Deactivated => 'danger',
                     })
                     ->sortable(),
+                Tables\Columns\IconColumn::make('is_online')
+                    ->label('Online')
+                    ->boolean()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('user.email')
                     ->label('Owner')
                     ->searchable()
                     ->placeholder('Unclaimed'),
+                Tables\Columns\TextColumn::make('cpu_percent')
+                    ->label('CPU')
+                    ->suffix('%')
+                    ->sortable()
+                    ->placeholder('-'),
+                Tables\Columns\TextColumn::make('cpu_temp')
+                    ->label('Temp')
+                    ->suffix('°C')
+                    ->sortable()
+                    ->placeholder('-'),
+                Tables\Columns\TextColumn::make('last_heartbeat_at')
+                    ->label('Last Heartbeat')
+                    ->since()
+                    ->sortable()
+                    ->placeholder('Never'),
+                Tables\Columns\TextColumn::make('tunnel_url')
+                    ->label('Tunnel')
+                    ->limit(30)
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('hardware_serial')
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('firmware_version')
@@ -99,6 +122,8 @@ class DeviceResource extends Resource
                         'claimed' => 'Claimed',
                         'deactivated' => 'Deactivated',
                     ]),
+                Tables\Filters\TernaryFilter::make('is_online')
+                    ->label('Online Status'),
             ])
             ->actions([
                 Actions\EditAction::make(),
