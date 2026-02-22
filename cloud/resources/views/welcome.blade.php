@@ -158,7 +158,11 @@
             <div class="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 <div class="flex items-start gap-4 rounded-2xl border border-white/5 bg-white/[0.02] p-6">
                     <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
-                        <svg class="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25z" /></svg>
+                        <svg class="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25z" />
+                        </svg>
                     </div>
                     <div>
                         <h3 class="font-semibold">Raspberry Pi 5</h3>
@@ -168,27 +172,41 @@
 
                 <div class="flex items-start gap-4 rounded-2xl border border-white/5 bg-white/[0.02] p-6">
                     <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
-                        <svg class="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" /></svg>
+                        <svg class="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />
+                        </svg>
                     </div>
                     <div>
                         <h3 class="font-semibold">256 GB NVMe SSD</h3>
-                        <p class="mt-1 text-sm text-gray-400">Fast M.2 storage for your projects, tools, and containers</p>
+                        <p class="mt-1 text-sm text-gray-400">Fast M.2 storage for your projects, tools, and containers
+                        </p>
                     </div>
                 </div>
 
                 <div class="flex items-start gap-4 rounded-2xl border border-white/5 bg-white/[0.02] p-6">
                     <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
-                        <svg class="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-2.25-1.313M21 7.5v2.25m0-2.25l-2.25 1.313M3 7.5l2.25-1.313M3 7.5l2.25 1.313M3 7.5v2.25m9 3l2.25-1.313M12 12.75l-2.25-1.313M12 12.75V15m0 6.75l2.25-1.313M12 21.75V19.5m0 2.25l-2.25-1.313m0-16.875L12 2.25l2.25 1.313M21 14.25v2.25l-2.25 1.313m-13.5 0L3 16.5v-2.25" /></svg>
+                        <svg class="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M21 7.5l-2.25-1.313M21 7.5v2.25m0-2.25l-2.25 1.313M3 7.5l2.25-1.313M3 7.5l2.25 1.313M3 7.5v2.25m9 3l2.25-1.313M12 12.75l-2.25-1.313M12 12.75V15m0 6.75l2.25-1.313M12 21.75V19.5m0 2.25l-2.25-1.313m0-16.875L12 2.25l2.25 1.313M21 14.25v2.25l-2.25 1.313m-13.5 0L3 16.5v-2.25" />
+                        </svg>
                     </div>
                     <div>
                         <h3 class="font-semibold">Custom Enclosure</h3>
-                        <p class="mt-1 text-sm text-gray-400">Injection-molded case with passive cooling — looks great on your desk</p>
+                        <p class="mt-1 text-sm text-gray-400">Injection-molded case with passive cooling — looks great
+                            on your desk</p>
                     </div>
                 </div>
 
                 <div class="flex items-start gap-4 rounded-2xl border border-white/5 bg-white/[0.02] p-6">
                     <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
-                        <svg class="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
+                        <svg class="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                        </svg>
                     </div>
                     <div>
                         <h3 class="font-semibold">USB-C Power Supply</h3>
@@ -198,7 +216,11 @@
 
                 <div class="flex items-start gap-4 rounded-2xl border border-white/5 bg-white/[0.02] p-6">
                     <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
-                        <svg class="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>
+                        <svg class="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                        </svg>
                     </div>
                     <div>
                         <h3 class="font-semibold">Ethernet Cable</h3>
@@ -208,11 +230,18 @@
 
                 <div class="flex items-start gap-4 rounded-2xl border border-white/5 bg-white/[0.02] p-6">
                     <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
-                        <svg class="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" /><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z" /></svg>
+                        <svg class="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z" />
+                        </svg>
                     </div>
                     <div>
                         <h3 class="font-semibold">QR Code Card &amp; Quick Start</h3>
-                        <p class="mt-1 text-sm text-gray-400">Your unique Device ID card — scan it and you're up in minutes</p>
+                        <p class="mt-1 text-sm text-gray-400">Your unique Device ID card — scan it and you're up in
+                            minutes</p>
                     </div>
                 </div>
             </div>
@@ -327,44 +356,57 @@
         <div class="mx-auto max-w-6xl px-6">
             <div class="text-center">
                 <h2 class="text-3xl font-bold tracking-tight sm:text-4xl">Built for builders of all kinds</h2>
-                <p class="mt-4 text-gray-400 text-lg">Whether you're a seasoned dev or just getting started with AI-assisted coding.</p>
+                <p class="mt-4 text-gray-400 text-lg">Whether you're a seasoned dev or just getting started with
+                    AI-assisted coding.</p>
             </div>
 
             <div class="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                <div class="rounded-2xl border border-white/5 bg-white/[0.02] p-6 transition hover:border-emerald-500/20">
+                <div
+                    class="rounded-2xl border border-white/5 bg-white/[0.02] p-6 transition hover:border-emerald-500/20">
                     <div class="mb-4 text-3xl">🚀</div>
                     <h3 class="font-semibold text-lg">Indie Hackers &amp; Solo Devs</h3>
-                    <p class="mt-2 text-sm text-gray-400 leading-relaxed">A dedicated, always-on dev machine that isn't your laptop. Build your SaaS, side project, or startup MVP on hardware you own.</p>
+                    <p class="mt-2 text-sm text-gray-400 leading-relaxed">A dedicated, always-on dev machine that isn't
+                        your laptop. Build your SaaS, side project, or startup MVP on hardware you own.</p>
                 </div>
 
-                <div class="rounded-2xl border border-white/5 bg-white/[0.02] p-6 transition hover:border-emerald-500/20">
+                <div
+                    class="rounded-2xl border border-white/5 bg-white/[0.02] p-6 transition hover:border-emerald-500/20">
                     <div class="mb-4 text-3xl">🎓</div>
                     <h3 class="font-semibold text-lg">People Learning to Code</h3>
-                    <p class="mt-2 text-sm text-gray-400 leading-relaxed">A self-contained environment that just works. No setup hell, no broken dependencies. Open your browser and start learning.</p>
+                    <p class="mt-2 text-sm text-gray-400 leading-relaxed">A self-contained environment that just works.
+                        No setup hell, no broken dependencies. Open your browser and start learning.</p>
                 </div>
 
-                <div class="rounded-2xl border border-white/5 bg-white/[0.02] p-6 transition hover:border-emerald-500/20">
+                <div
+                    class="rounded-2xl border border-white/5 bg-white/[0.02] p-6 transition hover:border-emerald-500/20">
                     <div class="mb-4 text-3xl">🤖</div>
                     <h3 class="font-semibold text-lg">Vibe Coders</h3>
-                    <p class="mt-2 text-sm text-gray-400 leading-relaxed">The growing wave of non-traditional developers using AI to build real software. VibeCodePC is made for you.</p>
+                    <p class="mt-2 text-sm text-gray-400 leading-relaxed">The growing wave of non-traditional
+                        developers using AI to build real software. VibeCodePC is made for you.</p>
                 </div>
 
-                <div class="rounded-2xl border border-white/5 bg-white/[0.02] p-6 transition hover:border-emerald-500/20">
+                <div
+                    class="rounded-2xl border border-white/5 bg-white/[0.02] p-6 transition hover:border-emerald-500/20">
                     <div class="mb-4 text-3xl">🏠</div>
                     <h3 class="font-semibold text-lg">Self-Hosters</h3>
-                    <p class="mt-2 text-sm text-gray-400 leading-relaxed">Run your own services without the pain of server administration. Your data, your hardware, your rules.</p>
+                    <p class="mt-2 text-sm text-gray-400 leading-relaxed">Run your own services without the pain of
+                        server administration. Your data, your hardware, your rules.</p>
                 </div>
 
-                <div class="rounded-2xl border border-white/5 bg-white/[0.02] p-6 transition hover:border-emerald-500/20">
+                <div
+                    class="rounded-2xl border border-white/5 bg-white/[0.02] p-6 transition hover:border-emerald-500/20">
                     <div class="mb-4 text-3xl">👩‍🏫</div>
                     <h3 class="font-semibold text-lg">Educators &amp; Bootcamps</h3>
-                    <p class="mt-2 text-sm text-gray-400 leading-relaxed">Consistent, pre-configured dev environments for every student. No more "it works on my machine" — they all have the same machine.</p>
+                    <p class="mt-2 text-sm text-gray-400 leading-relaxed">Consistent, pre-configured dev environments
+                        for every student. No more "it works on my machine" — they all have the same machine.</p>
                 </div>
 
-                <div class="rounded-2xl border border-white/5 bg-white/[0.02] p-6 transition hover:border-emerald-500/20">
+                <div
+                    class="rounded-2xl border border-white/5 bg-white/[0.02] p-6 transition hover:border-emerald-500/20">
                     <div class="mb-4 text-3xl">⚡</div>
                     <h3 class="font-semibold text-lg">Tinkerers &amp; Makers</h3>
-                    <p class="mt-2 text-sm text-gray-400 leading-relaxed">If you love the Pi ecosystem but hate the setup, VibeCodePC gives you a ready-to-go platform to build on top of.</p>
+                    <p class="mt-2 text-sm text-gray-400 leading-relaxed">If you love the Pi ecosystem but hate the
+                        setup, VibeCodePC gives you a ready-to-go platform to build on top of.</p>
                 </div>
             </div>
         </div>
@@ -499,7 +541,8 @@
                         </tr>
                         <tr class="bg-white/[0.02]">
                             <td class="px-6 py-4 font-medium text-gray-300 whitespace-nowrap">CPU</td>
-                            <td class="px-6 py-4 text-gray-400">Broadcom BCM2712, Quad-core Arm Cortex-A76 @ 2.4 GHz</td>
+                            <td class="px-6 py-4 text-gray-400">Broadcom BCM2712, Quad-core Arm Cortex-A76 @ 2.4 GHz
+                            </td>
                         </tr>
                         <tr>
                             <td class="px-6 py-4 font-medium text-gray-300 whitespace-nowrap">GPU</td>
@@ -507,7 +550,8 @@
                         </tr>
                         <tr class="bg-white/[0.02]">
                             <td class="px-6 py-4 font-medium text-gray-300 whitespace-nowrap">Connectivity</td>
-                            <td class="px-6 py-4 text-gray-400">Gigabit Ethernet, Wi-Fi 5 (802.11ac), Bluetooth 5.0</td>
+                            <td class="px-6 py-4 text-gray-400">Gigabit Ethernet, Wi-Fi 5 (802.11ac), Bluetooth 5.0
+                            </td>
                         </tr>
                         <tr>
                             <td class="px-6 py-4 font-medium text-gray-300 whitespace-nowrap">Ports</td>
@@ -538,7 +582,8 @@
             </div>
 
             <div class="mt-8 text-center">
-                <p class="text-sm text-gray-500">Pre-installed: VS Code (code-server), Docker, Node.js 22 LTS, PHP 8.4, Python 3.12, Git, SQLite, Redis, Cloudflare Tunnel</p>
+                <p class="text-sm text-gray-500">Pre-installed: VS Code (code-server), Docker, Node.js 22 LTS, PHP 8.4,
+                    Python 3.12, Git, SQLite, Redis, Cloudflare Tunnel</p>
             </div>
         </div>
     </section>
@@ -597,101 +642,172 @@
 
             <div class="mt-12 space-y-4" x-data="{ open: null }">
                 {{-- Q1 --}}
-                <div class="rounded-2xl border border-white/5 bg-white/[0.02] transition" :class="open === 1 ? 'border-emerald-500/20' : ''">
-                    <button @click="open = open === 1 ? null : 1" class="flex w-full items-center justify-between px-6 py-5 text-left">
+                <div class="rounded-2xl border border-white/5 bg-white/[0.02] transition"
+                    :class="open === 1 ? 'border-emerald-500/20' : ''">
+                    <button @click="open = open === 1 ? null : 1"
+                        class="flex w-full items-center justify-between px-6 py-5 text-left">
                         <span class="font-medium">Do I need to know Linux to use this?</span>
-                        <svg class="h-5 w-5 shrink-0 text-gray-500 transition-transform duration-200" :class="open === 1 ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                        <svg class="h-5 w-5 shrink-0 text-gray-500 transition-transform duration-200"
+                            :class="open === 1 ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24"
+                            stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                        </svg>
                     </button>
                     <div x-show="open === 1" x-collapse class="px-6 pb-5">
-                        <p class="text-sm text-gray-400 leading-relaxed">No. The entire setup is guided through a web-based wizard. You never need to touch the terminal unless you want to.</p>
+                        <p class="text-sm text-gray-400 leading-relaxed">No. The entire setup is guided through a
+                            web-based wizard. You never need to touch the terminal unless you want to.</p>
                     </div>
                 </div>
 
                 {{-- Q2 --}}
-                <div class="rounded-2xl border border-white/5 bg-white/[0.02] transition" :class="open === 2 ? 'border-emerald-500/20' : ''">
-                    <button @click="open = open === 2 ? null : 2" class="flex w-full items-center justify-between px-6 py-5 text-left">
+                <div class="rounded-2xl border border-white/5 bg-white/[0.02] transition"
+                    :class="open === 2 ? 'border-emerald-500/20' : ''">
+                    <button @click="open = open === 2 ? null : 2"
+                        class="flex w-full items-center justify-between px-6 py-5 text-left">
                         <span class="font-medium">Can I use it without an internet connection?</span>
-                        <svg class="h-5 w-5 shrink-0 text-gray-500 transition-transform duration-200" :class="open === 2 ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                        <svg class="h-5 w-5 shrink-0 text-gray-500 transition-transform duration-200"
+                            :class="open === 2 ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24"
+                            stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                        </svg>
                     </button>
                     <div x-show="open === 2" x-collapse class="px-6 pb-5">
-                        <p class="text-sm text-gray-400 leading-relaxed">Yes. The device works fully offline for local development. You only need internet to validate AI API keys during initial setup (which gracefully degrades) and to deploy projects to the web.</p>
+                        <p class="text-sm text-gray-400 leading-relaxed">Yes. The device works fully offline for local
+                            development. You only need internet to validate AI API keys during initial setup (which
+                            gracefully degrades) and to deploy projects to the web.</p>
                     </div>
                 </div>
 
                 {{-- Q3 --}}
-                <div class="rounded-2xl border border-white/5 bg-white/[0.02] transition" :class="open === 3 ? 'border-emerald-500/20' : ''">
-                    <button @click="open = open === 3 ? null : 3" class="flex w-full items-center justify-between px-6 py-5 text-left">
+                <div class="rounded-2xl border border-white/5 bg-white/[0.02] transition"
+                    :class="open === 3 ? 'border-emerald-500/20' : ''">
+                    <button @click="open = open === 3 ? null : 3"
+                        class="flex w-full items-center justify-between px-6 py-5 text-left">
                         <span class="font-medium">What AI services does it support?</span>
-                        <svg class="h-5 w-5 shrink-0 text-gray-500 transition-transform duration-200" :class="open === 3 ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                        <svg class="h-5 w-5 shrink-0 text-gray-500 transition-transform duration-200"
+                            :class="open === 3 ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24"
+                            stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                        </svg>
                     </button>
                     <div x-show="open === 3" x-collapse class="px-6 pb-5">
-                        <p class="text-sm text-gray-400 leading-relaxed">OpenAI (ChatGPT/GPT-4), Anthropic (Claude), GitHub Copilot, OpenRouter (access to dozens of models), and HuggingFace. You bring your own API keys — we don't resell AI access or take a cut.</p>
+                        <p class="text-sm text-gray-400 leading-relaxed">OpenAI (ChatGPT/GPT-4), Anthropic (Claude),
+                            GitHub Copilot, OpenRouter (access to dozens of models), and HuggingFace. You bring your own
+                            API keys — we don't resell AI access or take a cut.</p>
                     </div>
                 </div>
 
                 {{-- Q4 --}}
-                <div class="rounded-2xl border border-white/5 bg-white/[0.02] transition" :class="open === 4 ? 'border-emerald-500/20' : ''">
-                    <button @click="open = open === 4 ? null : 4" class="flex w-full items-center justify-between px-6 py-5 text-left">
+                <div class="rounded-2xl border border-white/5 bg-white/[0.02] transition"
+                    :class="open === 4 ? 'border-emerald-500/20' : ''">
+                    <button @click="open = open === 4 ? null : 4"
+                        class="flex w-full items-center justify-between px-6 py-5 text-left">
                         <span class="font-medium">Is the software open source?</span>
-                        <svg class="h-5 w-5 shrink-0 text-gray-500 transition-transform duration-200" :class="open === 4 ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                        <svg class="h-5 w-5 shrink-0 text-gray-500 transition-transform duration-200"
+                            :class="open === 4 ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24"
+                            stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                        </svg>
                     </button>
                     <div x-show="open === 4" x-collapse class="px-6 pb-5">
-                        <p class="text-sm text-gray-400 leading-relaxed">The device software will be open-sourced after launch. The cloud platform (vibecodepc.com) is proprietary. Backers get early access to the source code.</p>
+                        <p class="text-sm text-gray-400 leading-relaxed">The device software will be open-sourced after
+                            launch. The cloud platform (vibecodepc.com) is proprietary. Backers get early access to the
+                            source code.</p>
                     </div>
                 </div>
 
                 {{-- Q5 --}}
-                <div class="rounded-2xl border border-white/5 bg-white/[0.02] transition" :class="open === 5 ? 'border-emerald-500/20' : ''">
-                    <button @click="open = open === 5 ? null : 5" class="flex w-full items-center justify-between px-6 py-5 text-left">
+                <div class="rounded-2xl border border-white/5 bg-white/[0.02] transition"
+                    :class="open === 5 ? 'border-emerald-500/20' : ''">
+                    <button @click="open = open === 5 ? null : 5"
+                        class="flex w-full items-center justify-between px-6 py-5 text-left">
                         <span class="font-medium">Can I use my own Raspberry Pi?</span>
-                        <svg class="h-5 w-5 shrink-0 text-gray-500 transition-transform duration-200" :class="open === 5 ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                        <svg class="h-5 w-5 shrink-0 text-gray-500 transition-transform duration-200"
+                            :class="open === 5 ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24"
+                            stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                        </svg>
                     </button>
                     <div x-show="open === 5" x-collapse class="px-6 pb-5">
-                        <p class="text-sm text-gray-400 leading-relaxed">We plan to release the device image for download after launch. However, the Kickstarter rewards include the full hardware bundle with custom enclosure, pre-flashed SSD, and QR pairing — the complete experience.</p>
+                        <p class="text-sm text-gray-400 leading-relaxed">We plan to release the device image for
+                            download after launch. However, the Kickstarter rewards include the full hardware bundle
+                            with custom enclosure, pre-flashed SSD, and QR pairing — the complete experience.</p>
                     </div>
                 </div>
 
                 {{-- Q6 --}}
-                <div class="rounded-2xl border border-white/5 bg-white/[0.02] transition" :class="open === 6 ? 'border-emerald-500/20' : ''">
-                    <button @click="open = open === 6 ? null : 6" class="flex w-full items-center justify-between px-6 py-5 text-left">
+                <div class="rounded-2xl border border-white/5 bg-white/[0.02] transition"
+                    :class="open === 6 ? 'border-emerald-500/20' : ''">
+                    <button @click="open = open === 6 ? null : 6"
+                        class="flex w-full items-center justify-between px-6 py-5 text-left">
                         <span class="font-medium">What's the $5/month subscription for?</span>
-                        <svg class="h-5 w-5 shrink-0 text-gray-500 transition-transform duration-200" :class="open === 6 ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                        <svg class="h-5 w-5 shrink-0 text-gray-500 transition-transform duration-200"
+                            :class="open === 6 ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24"
+                            stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                        </svg>
                     </button>
                     <div x-show="open === 6" x-collapse class="px-6 pb-5">
-                        <p class="text-sm text-gray-400 leading-relaxed">The Starter plan gives you a personal subdomain (yourname.vibecodepc.com), HTTPS tunneling to deploy your projects to the web, and community support. Local development is completely free with no subscription required.</p>
+                        <p class="text-sm text-gray-400 leading-relaxed">The Starter plan gives you a personal
+                            subdomain (yourname.vibecodepc.com), HTTPS tunneling to deploy your projects to the web, and
+                            community support. Local development is completely free with no subscription required.</p>
                     </div>
                 </div>
 
                 {{-- Q7 --}}
-                <div class="rounded-2xl border border-white/5 bg-white/[0.02] transition" :class="open === 7 ? 'border-emerald-500/20' : ''">
-                    <button @click="open = open === 7 ? null : 7" class="flex w-full items-center justify-between px-6 py-5 text-left">
+                <div class="rounded-2xl border border-white/5 bg-white/[0.02] transition"
+                    :class="open === 7 ? 'border-emerald-500/20' : ''">
+                    <button @click="open = open === 7 ? null : 7"
+                        class="flex w-full items-center justify-between px-6 py-5 text-left">
                         <span class="font-medium">How much power does it use?</span>
-                        <svg class="h-5 w-5 shrink-0 text-gray-500 transition-transform duration-200" :class="open === 7 ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                        <svg class="h-5 w-5 shrink-0 text-gray-500 transition-transform duration-200"
+                            :class="open === 7 ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24"
+                            stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                        </svg>
                     </button>
                     <div x-show="open === 7" x-collapse class="px-6 pb-5">
-                        <p class="text-sm text-gray-400 leading-relaxed">About 15 watts under typical load. That's roughly $1–2/month in electricity to run 24/7, depending on your local rates.</p>
+                        <p class="text-sm text-gray-400 leading-relaxed">About 15 watts under typical load. That's
+                            roughly $1–2/month in electricity to run 24/7, depending on your local rates.</p>
                     </div>
                 </div>
 
                 {{-- Q8 --}}
-                <div class="rounded-2xl border border-white/5 bg-white/[0.02] transition" :class="open === 8 ? 'border-emerald-500/20' : ''">
-                    <button @click="open = open === 8 ? null : 8" class="flex w-full items-center justify-between px-6 py-5 text-left">
+                <div class="rounded-2xl border border-white/5 bg-white/[0.02] transition"
+                    :class="open === 8 ? 'border-emerald-500/20' : ''">
+                    <button @click="open = open === 8 ? null : 8"
+                        class="flex w-full items-center justify-between px-6 py-5 text-left">
                         <span class="font-medium">Can I connect a monitor and keyboard directly?</span>
-                        <svg class="h-5 w-5 shrink-0 text-gray-500 transition-transform duration-200" :class="open === 8 ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                        <svg class="h-5 w-5 shrink-0 text-gray-500 transition-transform duration-200"
+                            :class="open === 8 ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24"
+                            stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                        </svg>
                     </button>
                     <div x-show="open === 8" x-collapse class="px-6 pb-5">
-                        <p class="text-sm text-gray-400 leading-relaxed">Yes. The Raspberry Pi 5 has 2× micro-HDMI and USB ports. You can use it headless (browser-based) or with a direct display. Most users prefer the browser-based VS Code experience since it's accessible from any device on their network.</p>
+                        <p class="text-sm text-gray-400 leading-relaxed">Yes. The Raspberry Pi 5 has 2× micro-HDMI and
+                            USB ports. You can use it headless (browser-based) or with a direct display. Most users
+                            prefer the browser-based VS Code experience since it's accessible from any device on their
+                            network.</p>
                     </div>
                 </div>
 
                 {{-- Q9 --}}
-                <div class="rounded-2xl border border-white/5 bg-white/[0.02] transition" :class="open === 9 ? 'border-emerald-500/20' : ''">
-                    <button @click="open = open === 9 ? null : 9" class="flex w-full items-center justify-between px-6 py-5 text-left">
+                <div class="rounded-2xl border border-white/5 bg-white/[0.02] transition"
+                    :class="open === 9 ? 'border-emerald-500/20' : ''">
+                    <button @click="open = open === 9 ? null : 9"
+                        class="flex w-full items-center justify-between px-6 py-5 text-left">
                         <span class="font-medium">What happens if VibeCodePC (the company) goes away?</span>
-                        <svg class="h-5 w-5 shrink-0 text-gray-500 transition-transform duration-200" :class="open === 9 ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                        <svg class="h-5 w-5 shrink-0 text-gray-500 transition-transform duration-200"
+                            :class="open === 9 ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24"
+                            stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                        </svg>
                     </button>
                     <div x-show="open === 9" x-collapse class="px-6 pb-5">
-                        <p class="text-sm text-gray-400 leading-relaxed">Your device keeps working. It's a Raspberry Pi running open-source software on your desk. The cloud features (subdomain, tunneling) would stop, but your hardware, code, and local development environment are yours forever.</p>
+                        <p class="text-sm text-gray-400 leading-relaxed">Your device keeps working. It's a Raspberry Pi
+                            running open-source software on your desk. The cloud features (subdomain, tunneling) would
+                            stop, but your hardware, code, and local development environment are yours forever.</p>
                     </div>
                 </div>
             </div>
