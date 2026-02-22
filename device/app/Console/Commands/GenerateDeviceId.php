@@ -12,13 +12,13 @@ class GenerateDeviceId extends Command
 {
     protected $signature = 'device:generate-id
         {--force : Overwrite existing device.json}
-        {--path= : Custom path for device.json (default: /etc/vibecodepc/device.json)}';
+        {--path= : Custom path for device.json (default: storage/device.json)}';
 
     protected $description = 'Generate a unique device ID and write device.json';
 
     public function handle(): int
     {
-        $path = $this->option('path') ?? config('vibecodepc.device_json_path', '/etc/vibecodepc/device.json');
+        $path = $this->option('path') ?? config('vibecodepc.device_json_path');
 
         if (file_exists($path) && ! $this->option('force')) {
             $this->error("Device identity already exists at {$path}. Use --force to overwrite.");

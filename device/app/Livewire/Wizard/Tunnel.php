@@ -47,9 +47,9 @@ class Tunnel extends Component
     public function checkAvailability(CloudApiClient $cloudApi): void
     {
         $this->validate([
-            'subdomain' => ['required', 'string', 'min:3', 'max:30', 'regex:/^[a-z0-9][a-z0-9-]*[a-z0-9]$/'],
+            'subdomain' => ['required', 'string', 'min:3', 'max:30', 'regex:/^[a-z][a-z0-9-]*[a-z0-9]$/'],
         ], [
-            'subdomain.regex' => 'Subdomain must be lowercase alphanumeric with optional hyphens.',
+            'subdomain.regex' => 'Subdomain must start with a letter, use lowercase alphanumeric and hyphens only.',
         ]);
 
         try {

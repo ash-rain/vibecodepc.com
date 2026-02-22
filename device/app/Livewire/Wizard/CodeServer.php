@@ -49,19 +49,19 @@ class CodeServer extends Component
         $this->message = '';
 
         $extensions = [
-            'GitHub.copilot',
             'bradlc.vscode-tailwindcss',
             'dbaeumer.vscode-eslint',
             'esbenp.prettier-vscode',
+            'continue.continue',
         ];
 
-        $success = $codeServer->installExtensions($extensions);
+        $failed = $codeServer->installExtensions($extensions);
 
         $this->installingExtensions = false;
-        $this->extensionsInstalled = $success;
-        $this->message = $success
+        $this->extensionsInstalled = empty($failed);
+        $this->message = empty($failed)
             ? 'Extensions installed successfully.'
-            : 'Some extensions failed to install. You can install them manually later.';
+            : 'Failed to install: '.implode(', ', $failed);
     }
 
     public function applyTheme(CodeServerService $codeServer): void

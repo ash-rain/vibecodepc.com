@@ -5,17 +5,28 @@ declare(strict_types=1);
 use App\Livewire\Dashboard\TunnelManager;
 use App\Models\Project;
 use App\Models\TunnelConfig;
+use App\Services\Tunnel\TunnelService;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 use Livewire\Livewire;
 
 beforeEach(function () {
     Process::fake([
-        'which cloudflared' => Process::result(output: '/usr/bin/cloudflared'),
-        'systemctl is-active cloudflared' => Process::result(output: 'active'),
+        'cloudflared --version*' => Process::result(output: '2024.1.0'),
+        'pgrep*' => Process::result(output: '12345'),
         '*' => Process::result(),
     ]);
 
+    $this->configPath = storage_path('app/test-cloudflared/config.yml');
+    File::deleteDirectory(dirname($this->configPath));
+
+    $this->app->singleton(TunnelService::class, fn () => new TunnelService(configPath: $this->configPath));
+
     TunnelConfig::factory()->verified()->create(['subdomain' => 'mydevice']);
+});
+
+afterEach(function () {
+    File::deleteDirectory(dirname($this->configPath));
 });
 
 it('renders the tunnel manager', function () {
@@ -50,6 +61,7 @@ it('can restart the tunnel', function () {
     Livewire::test(TunnelManager::class)
         ->call('restartTunnel');
 
-    Process::assertRan('sudo systemctl stop cloudflared');
-    Process::assertRan('sudo systemctl start cloudflared');
+    Process::assertRan(fn ($process) => str_contains($process->command, 'cloudflared') && (
+        str_contains($process->command, 'stop') || str_contains($process->command, 'pkill')
+    ));
 });

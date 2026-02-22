@@ -62,29 +62,26 @@ class ProjectScaffoldService
 
     private function scaffoldLaravel(Project $project): bool
     {
-        $result = Process::timeout(300)->run(
-            sprintf('composer create-project laravel/laravel %s --no-interaction', escapeshellarg($project->path)),
-        );
-
-        return $result->successful();
+        return $this->runCommand($project, sprintf(
+            'composer create-project laravel/laravel %s --no-interaction',
+            escapeshellarg($project->path),
+        ));
     }
 
     private function scaffoldNextJs(Project $project): bool
     {
-        $result = Process::timeout(300)->run(
-            sprintf('npx create-next-app@latest %s --ts --tailwind --eslint --app --no-src-dir --import-alias "@/*" --no-turbopack --use-npm', escapeshellarg($project->path)),
-        );
-
-        return $result->successful();
+        return $this->runCommand($project, sprintf(
+            'npx create-next-app@latest %s --ts --tailwind --eslint --app --no-src-dir --import-alias "@/*" --no-turbopack --use-npm',
+            escapeshellarg($project->path),
+        ));
     }
 
     private function scaffoldAstro(Project $project): bool
     {
-        $result = Process::timeout(300)->run(
-            sprintf('npm create astro@latest -- %s --template basics --install --no-git --typescript strict', escapeshellarg($project->path)),
-        );
-
-        return $result->successful();
+        return $this->runCommand($project, sprintf(
+            'npm create astro@latest -- %s --template basics --install --no-git --typescript strict',
+            escapeshellarg($project->path),
+        ));
     }
 
     private function scaffoldFastApi(Project $project): bool
@@ -268,6 +265,22 @@ services:
       - "{$project->port}:8080"
     command: sleep infinity
 YAML;
+    }
+
+    private function runCommand(Project $project, string $command): bool
+    {
+        $result = Process::timeout(300)->run("bash -lc {$this->shellEscape($command)}");
+
+        if (! $result->successful()) {
+            $this->log($project, 'error', "Command failed: {$command}\n{$result->errorOutput()}\n{$result->output()}");
+        }
+
+        return $result->successful();
+    }
+
+    private function shellEscape(string $command): string
+    {
+        return escapeshellarg($command);
     }
 
     private function log(Project $project, string $type, string $message): void

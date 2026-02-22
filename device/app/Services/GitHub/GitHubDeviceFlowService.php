@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\GitHub;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 
 class GitHubDeviceFlowService
@@ -27,7 +28,12 @@ class GitHubDeviceFlowService
         return DeviceFlowResult::fromArray($response->json());
     }
 
-    public function pollForToken(string $deviceCode): ?GitHubTokenResult
+    public const SLOW_DOWN = 'slow_down';
+
+    /**
+     * @return GitHubTokenResult|string|null Token result, error string (terminal), self::SLOW_DOWN, or null if pending.
+     */
+    public function pollForToken(string $deviceCode): GitHubTokenResult|string|null
     {
         $response = Http::withHeaders(['Accept' => 'application/json'])
             ->timeout(10)
@@ -39,10 +45,24 @@ class GitHubDeviceFlowService
 
         $data = $response->json();
 
+        Log::debug('GitHub token poll response', ['status' => $response->status(), 'data' => $data]);
+
         if (isset($data['access_token'])) {
             return GitHubTokenResult::fromArray($data);
         }
 
+        $error = $data['error'] ?? null;
+
+        if ($error === 'slow_down') {
+            return self::SLOW_DOWN;
+        }
+
+        // These are terminal errors — stop polling
+        if (in_array($error, ['expired_token', 'access_denied', 'unsupported_grant_type', 'incorrect_client_credentials', 'incorrect_device_code'])) {
+            return $data['error_description'] ?? $error;
+        }
+
+        // authorization_pending — keep polling
         return null;
     }
 

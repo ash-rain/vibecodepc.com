@@ -15,47 +15,57 @@ class CodeServerService
 
     public function isInstalled(): bool
     {
-        $result = Process::run('which code-server');
-
-        return $result->successful();
+        return $this->getVersion() !== null;
     }
 
     public function isRunning(): bool
     {
-        $result = Process::run('systemctl is-active code-server@vibecodepc');
+        $result = Process::run(sprintf(
+            'lsof -iTCP:%d -sTCP:LISTEN -t 2>/dev/null || ss -tlnp sport = :%d 2>/dev/null | grep -q LISTEN',
+            $this->port,
+            $this->port,
+        ));
 
-        return $result->successful() && str_contains(trim($result->output()), 'active');
+        return $result->successful();
     }
 
     public function getVersion(): ?string
     {
-        $result = Process::run('code-server --version');
+        $result = Process::run('code-server --version 2>/dev/null');
 
         if (! $result->successful()) {
             return null;
         }
 
-        $lines = explode("\n", trim($result->output()));
-
-        return $lines[0] ?? null;
-    }
-
-    /** @param array<int, string> $extensions */
-    public function installExtensions(array $extensions): bool
-    {
-        $allSucceeded = true;
-
-        foreach ($extensions as $extension) {
-            $result = Process::timeout(120)->run(
-                sprintf('code-server --install-extension %s', escapeshellarg($extension)),
-            );
-
-            if (! $result->successful()) {
-                $allSucceeded = false;
+        // code-server outputs debug lines (starting with "[") before the version
+        foreach (explode("\n", trim($result->output())) as $line) {
+            if (preg_match('/^\d+\.\d+\.\d+/', $line)) {
+                return $line;
             }
         }
 
-        return $allSucceeded;
+        return null;
+    }
+
+    /**
+     * @param  array<int, string>  $extensions
+     * @return array<int, string> List of extensions that failed to install (empty = all succeeded).
+     */
+    public function installExtensions(array $extensions): array
+    {
+        $failed = [];
+
+        foreach ($extensions as $extension) {
+            $result = Process::timeout(120)->run(
+                sprintf('code-server --install-extension %s 2>&1', escapeshellarg($extension)),
+            );
+
+            if (! $result->successful() && ! str_contains($result->output(), 'already installed')) {
+                $failed[] = $extension;
+            }
+        }
+
+        return $failed;
     }
 
     public function setTheme(string $theme): bool
@@ -95,7 +105,7 @@ class CodeServerService
 
     public function restart(): bool
     {
-        $result = Process::run('sudo systemctl restart code-server@vibecodepc');
+        $result = Process::run('sudo systemctl restart code-server@vibecodepc 2>/dev/null || true');
 
         return $result->successful();
     }

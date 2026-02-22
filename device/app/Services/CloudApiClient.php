@@ -44,8 +44,14 @@ class CloudApiClient
 
     private function http(): PendingRequest
     {
-        return Http::baseUrl($this->cloudUrl)
+        $request = Http::baseUrl($this->cloudUrl)
             ->acceptJson()
             ->timeout(10);
+
+        if (config('app.env') === 'local') {
+            $request->withoutVerifying();
+        }
+
+        return $request;
     }
 }

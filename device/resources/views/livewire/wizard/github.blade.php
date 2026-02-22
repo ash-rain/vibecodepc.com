@@ -31,11 +31,7 @@
             </div>
 
         @elseif ($status === 'polling')
-            <div
-                x-data="{ polling: true }"
-                x-init="setInterval(() => { if (polling) $wire.checkAuthStatus() }, 5000)"
-                class="text-center py-8"
-            >
+            <div wire:poll.{{ $pollInterval }}s="checkAuthStatus" class="text-center py-8">
                 <div class="bg-gray-800 rounded-lg p-6 inline-block mb-4">
                     <p class="text-sm text-gray-400 mb-2">Enter this code on GitHub:</p>
                     <p class="text-3xl font-mono font-bold text-amber-400 tracking-widest">{{ $userCode }}</p>

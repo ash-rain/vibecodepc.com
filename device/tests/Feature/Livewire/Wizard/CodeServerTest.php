@@ -16,7 +16,7 @@ beforeEach(function () {
     $mock->shouldReceive('isRunning')->andReturn(true);
     $mock->shouldReceive('getVersion')->andReturn('4.96.4');
     $mock->shouldReceive('getUrl')->andReturn('http://localhost:8443');
-    $mock->shouldReceive('installExtensions')->andReturn(true);
+    $mock->shouldReceive('installExtensions')->andReturn([]);
     $mock->shouldReceive('setTheme')->andReturn(true);
     app()->instance(CodeServerService::class, $mock);
 });

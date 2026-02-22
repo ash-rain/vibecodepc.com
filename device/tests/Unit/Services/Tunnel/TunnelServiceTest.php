@@ -3,11 +3,12 @@
 declare(strict_types=1);
 
 use App\Services\Tunnel\TunnelService;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 
 it('checks if cloudflared is installed', function () {
     Process::fake([
-        'which cloudflared' => Process::result(output: '/usr/bin/cloudflared'),
+        'cloudflared --version*' => Process::result(output: '2024.1.0'),
     ]);
 
     $service = new TunnelService;
@@ -15,9 +16,9 @@ it('checks if cloudflared is installed', function () {
     expect($service->isInstalled())->toBeTrue();
 });
 
-it('reports not installed when which fails', function () {
+it('reports not installed when version command fails', function () {
     Process::fake([
-        'which cloudflared' => Process::result(exitCode: 1),
+        'cloudflared --version*' => Process::result(exitCode: 1),
     ]);
 
     $service = new TunnelService;
@@ -27,7 +28,7 @@ it('reports not installed when which fails', function () {
 
 it('checks if cloudflared is running', function () {
     Process::fake([
-        'systemctl is-active cloudflared' => Process::result(output: 'active'),
+        'pgrep*' => Process::result(output: '12345'),
     ]);
 
     $service = new TunnelService;
@@ -37,8 +38,8 @@ it('checks if cloudflared is running', function () {
 
 it('returns status array', function () {
     Process::fake([
-        'which cloudflared' => Process::result(output: '/usr/bin/cloudflared'),
-        'systemctl is-active cloudflared' => Process::result(output: 'active'),
+        'cloudflared --version*' => Process::result(output: '2024.1.0'),
+        'pgrep*' => Process::result(output: '12345'),
     ]);
 
     $service = new TunnelService;
@@ -49,9 +50,24 @@ it('returns status array', function () {
         ->and($status['running'])->toBeTrue();
 });
 
+it('creates tunnel config file', function () {
+    $configPath = storage_path('app/test-cloudflared/config.yml');
+
+    File::deleteDirectory(dirname($configPath));
+
+    $service = new TunnelService(configPath: $configPath);
+    $result = $service->createTunnel('mydevice', '');
+
+    expect($result)->toBeTrue()
+        ->and(File::exists($configPath))->toBeTrue()
+        ->and(File::get($configPath))->toContain('mydevice.vibecodepc.com');
+
+    File::deleteDirectory(dirname($configPath));
+});
+
 it('starts the tunnel service', function () {
     Process::fake([
-        'sudo systemctl start cloudflared' => Process::result(),
+        '*' => Process::result(),
     ]);
 
     $service = new TunnelService;
@@ -61,7 +77,7 @@ it('starts the tunnel service', function () {
 
 it('stops the tunnel service', function () {
     Process::fake([
-        'sudo systemctl stop cloudflared' => Process::result(),
+        '*' => Process::result(),
     ]);
 
     $service = new TunnelService;

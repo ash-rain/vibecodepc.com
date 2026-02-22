@@ -74,6 +74,48 @@ it('fetches user profile', function () {
         ->and($profile->email)->toBe('test@example.com');
 });
 
+it('returns error string when token is expired', function () {
+    Http::fake([
+        'github.com/login/oauth/access_token' => Http::response([
+            'error' => 'expired_token',
+            'error_description' => 'The device code has expired.',
+        ]),
+    ]);
+
+    $service = new GitHubDeviceFlowService('test-client-id');
+    $result = $service->pollForToken('device-123');
+
+    expect($result)->toBe('The device code has expired.');
+});
+
+it('returns error string when access is denied', function () {
+    Http::fake([
+        'github.com/login/oauth/access_token' => Http::response([
+            'error' => 'access_denied',
+            'error_description' => 'The user has denied your application access.',
+        ]),
+    ]);
+
+    $service = new GitHubDeviceFlowService('test-client-id');
+    $result = $service->pollForToken('device-123');
+
+    expect($result)->toBe('The user has denied your application access.');
+});
+
+it('returns slow_down constant for slow_down response', function () {
+    Http::fake([
+        'github.com/login/oauth/access_token' => Http::response([
+            'error' => 'slow_down',
+            'interval' => 10,
+        ]),
+    ]);
+
+    $service = new GitHubDeviceFlowService('test-client-id');
+    $result = $service->pollForToken('device-123');
+
+    expect($result)->toBe(GitHubDeviceFlowService::SLOW_DOWN);
+});
+
 it('configures git identity', function () {
     Process::fake();
 

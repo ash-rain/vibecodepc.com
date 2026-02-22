@@ -8,8 +8,9 @@ use Livewire\Livewire;
 
 beforeEach(function () {
     Process::fake([
-        'systemctl is-active code-server@vibecodepc' => Process::result(output: 'active'),
-        'code-server --version' => Process::result(output: '4.23.1'),
+        'code-server --version*' => Process::result(output: '4.23.1'),
+        'lsof*' => Process::result(output: '12345'),
+        'ss*' => Process::result(output: 'LISTEN'),
         '*' => Process::result(),
     ]);
 });
@@ -30,5 +31,5 @@ it('can restart the editor', function () {
     Livewire::test(CodeEditor::class)
         ->call('restart');
 
-    Process::assertRan('sudo systemctl restart code-server@vibecodepc');
+    Process::assertRan(fn ($process) => str_contains($process->command, 'restart') && str_contains($process->command, 'code-server'));
 });

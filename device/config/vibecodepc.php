@@ -2,7 +2,7 @@
 
 return [
     'cloud_url' => env('VIBECODEPC_CLOUD_URL', 'https://vibecodepc.com'),
-    'device_json_path' => env('VIBECODEPC_DEVICE_JSON', '/etc/vibecodepc/device.json'),
+    'device_json_path' => env('VIBECODEPC_DEVICE_JSON', storage_path('device.json')),
 
     'code_server' => [
         'port' => (int) env('CODE_SERVER_PORT', 8443),
@@ -18,7 +18,7 @@ return [
     ],
 
     'projects' => [
-        'base_path' => env('VIBECODEPC_PROJECTS_PATH', '/home/vibecodepc/projects'),
+        'base_path' => env('VIBECODEPC_PROJECTS_PATH', storage_path('app/projects')),
         'max_projects' => (int) env('VIBECODEPC_MAX_PROJECTS', 10),
     ],
 

@@ -40,7 +40,7 @@
             {{-- Extensions --}}
             <div class="mb-6">
                 <h3 class="text-sm font-semibold text-gray-300 mb-3">Extensions</h3>
-                <p class="text-gray-400 text-sm mb-3">Install recommended extensions: GitHub Copilot, Tailwind CSS IntelliSense, ESLint, Prettier.</p>
+                <p class="text-gray-400 text-sm mb-3">Install recommended extensions: Tailwind CSS IntelliSense, ESLint, Prettier, Continue (AI assistant).</p>
                 <button
                     wire:click="installExtensions"
                     wire:loading.attr="disabled"

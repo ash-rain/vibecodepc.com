@@ -30,6 +30,8 @@ class GitHub extends Component
 
     public string $error = '';
 
+    public int $pollInterval = 10;
+
     public function mount(): void
     {
         $existing = GitHubCredential::current();
@@ -51,6 +53,7 @@ class GitHub extends Component
             $this->deviceCode = $result->deviceCode;
             $this->userCode = $result->userCode;
             $this->verificationUri = $result->verificationUri;
+            $this->pollInterval = max($result->interval + 1, 6);
             $this->status = 'polling';
             $this->error = '';
         } catch (\Exception $e) {
@@ -65,19 +68,32 @@ class GitHub extends Component
         }
 
         try {
-            $tokenResult = $githubService->pollForToken($this->deviceCode);
+            $result = $githubService->pollForToken($this->deviceCode);
 
-            if (! $tokenResult) {
+            if ($result === null) {
                 return;
             }
 
-            $profile = $githubService->getUserProfile($tokenResult->accessToken);
-            $hasCopilot = $githubService->checkCopilotAccess($tokenResult->accessToken);
+            if ($result === GitHubDeviceFlowService::SLOW_DOWN) {
+                $this->pollInterval = min($this->pollInterval + 5, 30);
+
+                return;
+            }
+
+            if (is_string($result)) {
+                $this->error = "GitHub authorization failed: {$result}";
+                $this->status = 'idle';
+
+                return;
+            }
+
+            $profile = $githubService->getUserProfile($result->accessToken);
+            $hasCopilot = $githubService->checkCopilotAccess($result->accessToken);
 
             GitHubCredential::updateOrCreate(
                 ['github_username' => $profile->username],
                 [
-                    'access_token_encrypted' => $tokenResult->accessToken,
+                    'access_token_encrypted' => $result->accessToken,
                     'github_email' => $profile->email,
                     'github_name' => $profile->name,
                     'has_copilot' => $hasCopilot,
@@ -96,6 +112,7 @@ class GitHub extends Component
             $this->hasCopilot = $hasCopilot;
         } catch (\Exception $e) {
             $this->error = 'Authentication error: '.$e->getMessage();
+            $this->status = 'idle';
         }
     }
 
