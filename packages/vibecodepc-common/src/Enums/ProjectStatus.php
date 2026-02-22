@@ -6,6 +6,8 @@ namespace VibecodePC\Common\Enums;
 
 enum ProjectStatus: string
 {
+    case Scaffolding = 'scaffolding';
+    case Cloning = 'cloning';
     case Created = 'created';
     case Running = 'running';
     case Stopped = 'stopped';
@@ -14,6 +16,8 @@ enum ProjectStatus: string
     public function label(): string
     {
         return match ($this) {
+            self::Scaffolding => 'Scaffolding',
+            self::Cloning => 'Cloning',
             self::Created => 'Created',
             self::Running => 'Running',
             self::Stopped => 'Stopped',
@@ -24,6 +28,7 @@ enum ProjectStatus: string
     public function color(): string
     {
         return match ($this) {
+            self::Scaffolding, self::Cloning => 'blue',
             self::Created => 'gray',
             self::Running => 'green',
             self::Stopped => 'amber',

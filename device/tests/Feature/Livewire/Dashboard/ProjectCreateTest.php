@@ -170,7 +170,7 @@ it('validates selected repo before proceeding in github mode', function () {
         ->assertHasErrors('selectedRepo');
 });
 
-it('clones a github repo successfully', function () {
+it('clones a github repo and redirects to project detail', function () {
     GitHubCredential::create([
         'access_token_encrypted' => 'gho_test_token',
         'github_username' => 'testuser',
@@ -186,7 +186,7 @@ it('clones a github repo successfully', function () {
     $mockCloneService = Mockery::mock(ProjectCloneService::class);
     $mockCloneService->shouldReceive('clone')
         ->once()
-        ->andReturn(Project::factory()->create(['status' => ProjectStatus::Created]));
+        ->andReturn(Project::factory()->create(['status' => ProjectStatus::Cloning]));
 
     app()->instance(ProjectCloneService::class, $mockCloneService);
 
@@ -198,36 +198,6 @@ it('clones a github repo successfully', function () {
         ->assertSet('step', 2)
         ->call('cloneProject')
         ->assertRedirect();
-});
-
-it('handles clone error for github repo', function () {
-    GitHubCredential::create([
-        'access_token_encrypted' => 'gho_test_token',
-        'github_username' => 'testuser',
-        'github_email' => 'test@example.com',
-        'github_name' => 'Test User',
-        'has_copilot' => true,
-    ]);
-
-    Http::fake([
-        'api.github.com/user/repos*' => Http::response([]),
-    ]);
-
-    $mockCloneService = Mockery::mock(ProjectCloneService::class);
-    $mockCloneService->shouldReceive('clone')
-        ->once()
-        ->andReturn(Project::factory()->create(['status' => ProjectStatus::Error]));
-
-    app()->instance(ProjectCloneService::class, $mockCloneService);
-
-    Livewire::test(ProjectCreate::class)
-        ->call('selectMode', 'github')
-        ->call('selectRepo', 'testuser/my-repo')
-        ->set('name', 'my-repo')
-        ->call('nextStep')
-        ->call('cloneProject')
-        ->assertSet('error', 'Clone failed. Check project logs for details.')
-        ->assertSet('scaffolding', false);
 });
 
 // Git URL mode tests
@@ -250,12 +220,12 @@ it('accepts valid git URL and advances', function () {
         ->assertSet('step', 2);
 });
 
-it('clones from git url successfully', function () {
+it('clones from git url and redirects to project detail', function () {
     $mockCloneService = Mockery::mock(ProjectCloneService::class);
     $mockCloneService->shouldReceive('clone')
         ->once()
         ->with('my-project', 'https://github.com/user/repo.git')
-        ->andReturn(Project::factory()->create(['status' => ProjectStatus::Created]));
+        ->andReturn(Project::factory()->create(['status' => ProjectStatus::Cloning]));
 
     app()->instance(ProjectCloneService::class, $mockCloneService);
 
@@ -266,24 +236,6 @@ it('clones from git url successfully', function () {
         ->call('nextStep')
         ->call('cloneProject')
         ->assertRedirect();
-});
-
-it('handles clone error for git url', function () {
-    $mockCloneService = Mockery::mock(ProjectCloneService::class);
-    $mockCloneService->shouldReceive('clone')
-        ->once()
-        ->andReturn(Project::factory()->create(['status' => ProjectStatus::Error]));
-
-    app()->instance(ProjectCloneService::class, $mockCloneService);
-
-    Livewire::test(ProjectCreate::class)
-        ->call('selectMode', 'git-url')
-        ->set('name', 'my-project')
-        ->set('gitUrl', 'https://github.com/user/repo.git')
-        ->call('nextStep')
-        ->call('cloneProject')
-        ->assertSet('error', 'Clone failed. Check project logs for details.')
-        ->assertSet('scaffolding', false);
 });
 
 it('disables github mode when no credential exists', function () {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Projects;
 
+use App\Jobs\CloneProjectJob;
 use App\Models\Project;
 use App\Models\ProjectLog;
 use Illuminate\Support\Facades\File;
@@ -24,20 +25,7 @@ class ProjectCloneService
     {
         $slug = Str::slug($name);
         $path = "{$this->basePath}/{$slug}";
-
-        File::ensureDirectoryExists($this->basePath);
-
-        $result = Process::timeout(120)->run(sprintf(
-            'git clone %s %s',
-            escapeshellarg($cloneUrl),
-            escapeshellarg($path),
-        ));
-
-        $framework = $result->successful()
-            ? $this->detectFramework($path)
-            : ProjectFramework::Custom;
-
-        $port = $this->portAllocator->allocate($framework);
+        $port = $this->portAllocator->allocate(ProjectFramework::Custom);
 
         // Strip token from clone URL before storing
         $sanitizedUrl = preg_replace('#://[^@]+@#', '://', $cloneUrl);
@@ -45,18 +33,40 @@ class ProjectCloneService
         $project = Project::create([
             'name' => $name,
             'slug' => $slug,
-            'framework' => $framework,
-            'status' => $result->successful() ? ProjectStatus::Created : ProjectStatus::Error,
+            'framework' => ProjectFramework::Custom,
+            'status' => ProjectStatus::Cloning,
             'path' => $path,
             'port' => $port,
             'clone_url' => $sanitizedUrl,
         ]);
 
+        $this->log($project, 'clone', 'Cloning repository...');
+
+        CloneProjectJob::dispatch($project, $cloneUrl);
+
+        return $project;
+    }
+
+    public function runClone(Project $project, string $cloneUrl): void
+    {
+        File::ensureDirectoryExists(dirname($project->path));
+
+        $result = Process::timeout(120)->run(sprintf(
+            'git clone %s %s',
+            escapeshellarg($cloneUrl),
+            escapeshellarg($project->path),
+        ));
+
         if (! $result->successful()) {
+            $project->update(['status' => ProjectStatus::Error]);
             $this->log($project, 'error', "Clone failed: {$result->errorOutput()}");
 
-            return $project;
+            return;
         }
+
+        $framework = $this->detectFramework($project->path);
+        $port = $this->portAllocator->allocate($framework);
+        $project->update(['framework' => $framework, 'port' => $port]);
 
         $this->log($project, 'clone', "Cloned repository (detected: {$framework->label()}).");
 
@@ -64,9 +74,8 @@ class ProjectCloneService
         $this->generateDockerCompose($project);
         $this->scaffoldService->injectAiConfigs($project);
 
+        $project->update(['status' => ProjectStatus::Created]);
         $this->log($project, 'clone', 'Project cloned successfully.');
-
-        return $project->fresh();
     }
 
     public function detectFramework(string $path): ProjectFramework

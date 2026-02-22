@@ -37,7 +37,20 @@
                             'bg-amber-500/20 text-amber-400' => $project->status->color() === 'amber',
                             'bg-gray-500/20 text-gray-400' => $project->status->color() === 'gray',
                             'bg-red-500/20 text-red-400' => $project->status->color() === 'red',
-                        ])>{{ $project->status->label() }}</span>
+                            'bg-blue-500/20 text-blue-400' => $project->status->color() === 'blue',
+                        ])>
+                            @if ($project->isProvisioning())
+                                <span class="inline-flex items-center gap-1">
+                                    <span class="relative flex h-1.5 w-1.5">
+                                        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75"></span>
+                                        <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-blue-500"></span>
+                                    </span>
+                                    {{ $project->status->label() }}
+                                </span>
+                            @else
+                                {{ $project->status->label() }}
+                            @endif
+                        </span>
                     </div>
 
                     <div class="text-xs text-gray-500 space-y-1 mb-4">
@@ -56,6 +69,7 @@
                             Details
                         </a>
 
+                        @if (! $project->isProvisioning())
                         <div x-data="{ open: false }" class="relative ml-auto">
                             <button @click="open = !open" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white text-xs rounded-lg transition-colors flex items-center gap-1">
                                 Actions
@@ -86,6 +100,7 @@
                                 <button wire:click="deleteProject({{ $project->id }})" wire:confirm="Are you sure you want to delete this project? This cannot be undone." @click="open = false" class="w-full text-left px-3 py-1.5 text-xs text-red-400 hover:bg-gray-700 transition-colors">Delete</button>
                             </div>
                         </div>
+                        @endif
                     </div>
                 </div>
             @endforeach

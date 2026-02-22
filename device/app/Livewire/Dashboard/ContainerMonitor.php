@@ -102,7 +102,7 @@ class ContainerMonitor extends Component
         $this->containers = $projects->map(function (Project $project) use ($containerService) {
             match ($project->status) {
                 ProjectStatus::Running => $this->totalRunning++,
-                ProjectStatus::Stopped, ProjectStatus::Created => $this->totalStopped++,
+                ProjectStatus::Stopped, ProjectStatus::Created, ProjectStatus::Scaffolding, ProjectStatus::Cloning => $this->totalStopped++,
                 ProjectStatus::Error => $this->totalError++,
             };
 

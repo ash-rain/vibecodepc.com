@@ -1,4 +1,4 @@
-<div class="space-y-6">
+<div class="space-y-6" @if ($project->isProvisioning()) wire:poll.2s="refreshStatus" @endif>
     {{-- Header --}}
     <div class="flex items-center justify-between">
         <div>
@@ -12,26 +12,52 @@
                     'bg-amber-500/20 text-amber-400' => $project->status->color() === 'amber',
                     'bg-gray-500/20 text-gray-400' => $project->status->color() === 'gray',
                     'bg-red-500/20 text-red-400' => $project->status->color() === 'red',
+                    'bg-blue-500/20 text-blue-400' => $project->status->color() === 'blue',
                 ])>{{ $project->status->label() }}</span>
             </div>
         </div>
-        <div class="flex items-center gap-2">
-            @if ($project->isRunning())
-                @if ($project->port)
-                    <a
-                        href="http://localhost:{{ $project->port }}"
-                        target="_blank"
-                        class="px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-sm rounded-lg transition-colors"
-                    >Preview</a>
+        @if (! $project->isProvisioning())
+            <div class="flex items-center gap-2">
+                @if ($project->isRunning())
+                    @if ($project->port)
+                        <a
+                            href="http://localhost:{{ $project->port }}"
+                            target="_blank"
+                            class="px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-sm rounded-lg transition-colors"
+                        >Preview</a>
+                    @endif
+                    <button wire:click="stop" wire:loading.attr="disabled" class="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm rounded-lg transition-colors">Stop</button>
+                    <button wire:click="restart" wire:loading.attr="disabled" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm rounded-lg transition-colors">Restart</button>
+                @else
+                    <button wire:click="start" wire:loading.attr="disabled" class="px-4 py-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 text-sm rounded-lg transition-colors">Start</button>
                 @endif
-                <button wire:click="stop" wire:loading.attr="disabled" class="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm rounded-lg transition-colors">Stop</button>
-                <button wire:click="restart" wire:loading.attr="disabled" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm rounded-lg transition-colors">Restart</button>
-            @else
-                <button wire:click="start" wire:loading.attr="disabled" class="px-4 py-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 text-sm rounded-lg transition-colors">Start</button>
-            @endif
-            <button wire:click="openInEditor" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm rounded-lg transition-colors">Open Editor</button>
-        </div>
+                <button wire:click="openInEditor" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm rounded-lg transition-colors">Open Editor</button>
+            </div>
+        @endif
     </div>
+
+    {{-- Provisioning --}}
+    @if ($project->isProvisioning())
+        <div class="bg-blue-500/5 rounded-xl border border-blue-500/20 p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="relative flex h-3 w-3">
+                    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75"></span>
+                    <span class="relative inline-flex h-3 w-3 rounded-full bg-blue-500"></span>
+                </span>
+                <span class="text-blue-400 font-medium">Setting up your project...</span>
+            </div>
+
+            @if (count($provisioningLogs) > 0)
+                <div class="bg-gray-950 rounded-lg p-3 max-h-48 overflow-y-auto font-mono text-xs text-gray-400 space-y-0.5">
+                    @foreach ($provisioningLogs as $line)
+                        <div>{{ $line }}</div>
+                    @endforeach
+                </div>
+            @else
+                <p class="text-sm text-gray-500">Waiting for job to start...</p>
+            @endif
+        </div>
+    @endif
 
     {{-- Overview --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">

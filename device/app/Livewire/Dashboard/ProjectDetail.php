@@ -26,6 +26,9 @@ class ProjectDetail extends Component
     /** @var array<int, string> */
     public array $containerLogs = [];
 
+    /** @var array<int, string> */
+    public array $provisioningLogs = [];
+
     /** @var array{cpu: string, memory: string}|null */
     public ?array $resourceUsage = null;
 
@@ -34,9 +37,20 @@ class ProjectDetail extends Component
         $this->project = $project;
         $this->envVars = $project->env_vars ?? [];
 
-        if ($project->isRunning()) {
+        if ($project->isProvisioning()) {
+            $this->loadProvisioningLogs();
+        } elseif ($project->isRunning()) {
             $this->containerLogs = $containerService->getLogs($project, 30);
             $this->resourceUsage = $containerService->getResourceUsage($project);
+        }
+    }
+
+    public function refreshStatus(): void
+    {
+        $this->project->refresh();
+
+        if ($this->project->isProvisioning()) {
+            $this->loadProvisioningLogs();
         }
     }
 
@@ -122,6 +136,17 @@ class ProjectDetail extends Component
     public function render()
     {
         return view('livewire.dashboard.project-detail');
+    }
+
+    private function loadProvisioningLogs(): void
+    {
+        $this->provisioningLogs = $this->project->logs()
+            ->latest()
+            ->limit(20)
+            ->pluck('message')
+            ->reverse()
+            ->values()
+            ->all();
     }
 
     private function updateTunnelIngress(TunnelService $tunnelService): void

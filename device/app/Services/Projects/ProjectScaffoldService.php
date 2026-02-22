@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Projects;
 
+use App\Jobs\ScaffoldProjectJob;
 use App\Models\AiProviderConfig;
 use App\Models\Project;
 use App\Models\ProjectLog;
@@ -32,13 +33,20 @@ class ProjectScaffoldService
             'name' => $name,
             'slug' => $slug,
             'framework' => $framework,
-            'status' => ProjectStatus::Created,
+            'status' => ProjectStatus::Scaffolding,
             'path' => $path,
             'port' => $port,
         ]);
 
         $this->log($project, 'scaffold', "Scaffolding {$framework->label()} project...");
 
+        ScaffoldProjectJob::dispatch($project, $framework);
+
+        return $project;
+    }
+
+    public function runScaffold(Project $project, ProjectFramework $framework): void
+    {
         $scaffolded = match ($framework) {
             ProjectFramework::Laravel => $this->scaffoldLaravel($project),
             ProjectFramework::NextJs => $this->scaffoldNextJs($project),
@@ -51,13 +59,12 @@ class ProjectScaffoldService
         if ($scaffolded) {
             $this->generateDockerCompose($project);
             $this->injectAiConfigs($project);
+            $project->update(['status' => ProjectStatus::Created]);
             $this->log($project, 'scaffold', 'Project scaffolded successfully.');
         } else {
             $project->update(['status' => ProjectStatus::Error]);
             $this->log($project, 'error', 'Scaffolding failed.');
         }
-
-        return $project->fresh();
     }
 
     private function scaffoldLaravel(Project $project): bool

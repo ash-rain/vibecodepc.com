@@ -59,6 +59,11 @@ class Project extends Model
         return $this->status === ProjectStatus::Stopped;
     }
 
+    public function isProvisioning(): bool
+    {
+        return in_array($this->status, [ProjectStatus::Scaffolding, ProjectStatus::Cloning]);
+    }
+
     public function getPublicUrl(): ?string
     {
         if (! $this->tunnel_enabled || ! $this->tunnel_subdomain_path) {

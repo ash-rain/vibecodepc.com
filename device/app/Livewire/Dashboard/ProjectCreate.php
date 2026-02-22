@@ -13,7 +13,6 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use VibecodePC\Common\Enums\ProjectFramework;
-use VibecodePC\Common\Enums\ProjectStatus;
 
 #[Layout('layouts.dashboard', ['title' => 'New Project'])]
 #[Title('New Project — VibeCodePC')]
@@ -24,8 +23,6 @@ class ProjectCreate extends Component
     public string $framework = '';
 
     public int $step = 0;
-
-    public bool $scaffolding = false;
 
     public string $error = '';
 
@@ -180,26 +177,16 @@ class ProjectCreate extends Component
 
     public function scaffold(ProjectScaffoldService $scaffoldService): void
     {
-        $this->scaffolding = true;
         $this->error = '';
 
         $framework = ProjectFramework::from($this->framework);
-
         $project = $scaffoldService->scaffold($this->name, $framework);
-
-        if ($project->status === ProjectStatus::Error) {
-            $this->error = 'Scaffolding failed. Check project logs for details.';
-            $this->scaffolding = false;
-
-            return;
-        }
 
         $this->redirect(route('dashboard.projects.show', $project), navigate: false);
     }
 
     public function cloneProject(ProjectCloneService $cloneService): void
     {
-        $this->scaffolding = true;
         $this->error = '';
 
         try {
@@ -208,7 +195,6 @@ class ProjectCreate extends Component
 
                 if (! $credential) {
                     $this->error = 'No GitHub account connected.';
-                    $this->scaffolding = false;
 
                     return;
                 }
@@ -221,17 +207,9 @@ class ProjectCreate extends Component
 
             $project = $cloneService->clone($this->name, $cloneUrl);
 
-            if ($project->status === ProjectStatus::Error) {
-                $this->error = 'Clone failed. Check project logs for details.';
-                $this->scaffolding = false;
-
-                return;
-            }
-
             $this->redirect(route('dashboard.projects.show', $project), navigate: false);
         } catch (\Throwable $e) {
             $this->error = 'Clone failed: '.$e->getMessage();
-            $this->scaffolding = false;
         }
     }
 
