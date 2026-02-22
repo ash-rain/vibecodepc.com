@@ -13,10 +13,14 @@ class OpenRouterValidator implements AiProviderContract
         try {
             $response = Http::withToken($apiKey)
                 ->timeout(10)
-                ->get('https://openrouter.ai/api/v1/models');
+                ->get('https://openrouter.ai/api/v1/auth/key');
 
             if ($response->successful()) {
-                return AiValidationResult::success('Connected to OpenRouter.');
+                $label = $response->json('data.label', 'unknown');
+
+                return AiValidationResult::success("Connected to OpenRouter (key: {$label}).", [
+                    'label' => $label,
+                ]);
             }
 
             return AiValidationResult::failure('Invalid API key. Check your OpenRouter dashboard.');

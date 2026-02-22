@@ -1,5 +1,20 @@
 <div class="space-y-6">
-    <div class="bg-gray-900 rounded-xl border border-gray-800 p-8">
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-8 relative">
+        {{-- Loading overlay --}}
+        <div
+            wire:loading.flex
+            wire:target="applyTheme, installExtensions, startCodeServer, stopCodeServer"
+            class="absolute inset-0 z-10 items-center justify-center rounded-xl bg-gray-900/80 backdrop-blur-sm"
+        >
+            <div class="flex flex-col items-center gap-3">
+                <svg class="w-8 h-8 animate-spin text-amber-400" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span class="text-sm text-gray-300">Applying changes...</span>
+            </div>
+        </div>
+
         <h2 class="text-xl font-semibold text-white mb-2">VS Code Setup</h2>
         <p class="text-gray-400 text-sm mb-6">Configure code-server (VS Code in your browser) with your preferred theme and extensions.</p>
 
@@ -17,20 +32,40 @@
                         @endif
                     </dd>
                 </div>
-                <div class="flex justify-between">
+                <div class="flex justify-between items-center">
                     <dt class="text-gray-400">Running</dt>
-                    <dd>
+                    <dd class="flex items-center gap-3">
                         @if ($isRunning)
                             <span class="text-green-400">Active</span>
+                            <button
+                                wire:click="stopCodeServer"
+                                wire:loading.attr="disabled"
+                                wire:target="stopCodeServer"
+                                class="px-5 py-1.5 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-md transition-colors"
+                            >
+                                <span wire:loading.remove wire:target="stopCodeServer">Stop</span>
+                                <span wire:loading wire:target="stopCodeServer">Stopping...</span>
+                            </button>
                         @else
                             <span class="text-gray-500">Inactive</span>
+                            @if ($isInstalled)
+                                <button
+                                    wire:click="startCodeServer"
+                                    wire:loading.attr="disabled"
+                                    wire:target="startCodeServer"
+                                    class="px-5 py-1.5 text-xs bg-amber-500 hover:bg-amber-600 text-gray-950 font-medium rounded-md transition-colors"
+                                >
+                                    <span wire:loading.remove wire:target="startCodeServer">Start</span>
+                                    <span wire:loading wire:target="startCodeServer">Starting...</span>
+                                </button>
+                            @endif
                         @endif
                     </dd>
                 </div>
                 @if ($version)
                     <div class="flex justify-between">
                         <dt class="text-gray-400">Version</dt>
-                        <dd class="text-gray-200 font-mono">{{ $version }}</dd>
+                        <dd class="text-gray-200 font-mono text-xs" title="{{ $version }}">{{ Str::before($version, ' ') ?: $version }}</dd>
                     </div>
                 @endif
             </dl>
@@ -95,7 +130,7 @@
                 <div class="mb-6">
                     <h3 class="text-sm font-semibold text-gray-300 mb-3">Preview</h3>
                     <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden" style="height: 300px;">
-                        <iframe src="{{ $codeServerUrl }}" class="w-full h-full" title="VS Code Preview"></iframe>
+                        <iframe wire:key="preview-{{ $previewKey }}" src="{{ $codeServerUrl }}" class="w-full h-full" title="VS Code Preview"></iframe>
                     </div>
                 </div>
             @endif

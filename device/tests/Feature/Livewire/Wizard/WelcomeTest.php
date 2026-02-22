@@ -19,7 +19,7 @@ it('renders the welcome step', function () {
         ->assertSee('Welcome to VibeCodePC');
 });
 
-it('displays cloud credential info', function () {
+it('displays cloud credential info when paired', function () {
     CloudCredential::create([
         'pairing_token_encrypted' => 'test-token',
         'cloud_username' => 'testuser',
@@ -30,8 +30,34 @@ it('displays cloud credential info', function () {
     ]);
 
     Livewire::test(Welcome::class)
+        ->assertSet('isPaired', true)
         ->assertSet('cloudUsername', 'testuser')
-        ->assertSet('cloudEmail', 'test@example.com');
+        ->assertSet('cloudEmail', 'test@example.com')
+        ->assertSee('Cloud Account');
+});
+
+it('shows pairing button when no cloud account exists', function () {
+    Livewire::test(Welcome::class)
+        ->assertSet('isPaired', false)
+        ->assertSee('Connect Your Cloud Account')
+        ->assertSee('Pair This Device')
+        ->assertDontSee('Device Admin Password');
+});
+
+it('shows pairing button when credential exists but not paired', function () {
+    CloudCredential::create([
+        'pairing_token_encrypted' => 'test-token',
+        'cloud_username' => 'testuser',
+        'cloud_email' => 'test@example.com',
+        'cloud_url' => 'https://vibecodepc.com',
+        'is_paired' => false,
+        'paired_at' => null,
+    ]);
+
+    Livewire::test(Welcome::class)
+        ->assertSet('isPaired', false)
+        ->assertSee('Connect Your Cloud Account')
+        ->assertSee('Pair This Device');
 });
 
 it('validates required fields', function () {

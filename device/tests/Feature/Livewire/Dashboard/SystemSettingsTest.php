@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Livewire\Dashboard\SystemSettings;
+use App\Services\Tunnel\TunnelService;
 use Illuminate\Support\Facades\Process;
 use Livewire\Livewire;
 
@@ -35,4 +36,14 @@ it('can check for updates', function () {
     Livewire::test(SystemSettings::class)
         ->call('checkForUpdates')
         ->assertSet('statusMessage', 'Package list updated. Check for upgradable packages.');
+});
+
+it('factory reset calls artisan command and redirects', function () {
+    $tunnelMock = Mockery::mock(TunnelService::class);
+    $tunnelMock->shouldReceive('stop')->andReturn(null);
+    app()->instance(TunnelService::class, $tunnelMock);
+
+    Livewire::test(SystemSettings::class)
+        ->call('factoryReset')
+        ->assertRedirect('/');
 });

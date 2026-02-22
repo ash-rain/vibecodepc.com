@@ -7,18 +7,22 @@ use Illuminate\Support\Facades\Http;
 
 it('validates a successful openrouter api key', function () {
     Http::fake([
-        'openrouter.ai/api/v1/models' => Http::response(['data' => []], 200),
+        'openrouter.ai/api/v1/auth/key' => Http::response([
+            'data' => ['label' => 'my-key', 'usage' => 0, 'limit' => null],
+        ], 200),
     ]);
 
     $validator = new OpenRouterValidator;
     $result = $validator->validate('sk-or-test-key');
 
-    expect($result->valid)->toBeTrue();
+    expect($result->valid)->toBeTrue()
+        ->and($result->message)->toContain('my-key')
+        ->and($result->metadata['label'])->toBe('my-key');
 });
 
 it('rejects an invalid openrouter api key', function () {
     Http::fake([
-        'openrouter.ai/api/v1/models' => Http::response([], 401),
+        'openrouter.ai/api/v1/auth/key' => Http::response(['error' => 'Unauthorized'], 401),
     ]);
 
     $validator = new OpenRouterValidator;

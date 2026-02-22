@@ -153,43 +153,18 @@ install_cloudflared() {
 }
 
 configure_cloudflared() {
-    info "Configuring cloudflared..."
+    info "Configuring cloudflared directory..."
 
     mkdir -p /etc/cloudflared
+    chmod 755 /etc/cloudflared
 
-    # Placeholder credentials file so cloudflared doesn't crash looking for cert.pem.
-    # The wizard overwrites this with real credentials after the user claims a subdomain
-    # and the cloud edge provisions the tunnel.
-    if [[ ! -f /etc/cloudflared/credentials.json ]]; then
-        cat > /etc/cloudflared/credentials.json <<'EOF'
-{
-  "AccountTag": "",
-  "TunnelID": "00000000-0000-0000-0000-000000000000",
-  "TunnelSecret": ""
-}
-EOF
-        chmod 600 /etc/cloudflared/credentials.json
-        ok "cloudflared placeholder credentials written"
+    # The tunnel token will be written by the wizard after provisioning via the cloud API.
+    # No placeholder credentials or config needed — the token-based approach uses
+    # `cloudflared tunnel run --token <TOKEN>` directly.
+    if [[ -f /etc/cloudflared/tunnel.env ]]; then
+        ok "cloudflared tunnel.env already exists"
     else
-        ok "cloudflared credentials already exist, skipping"
-    fi
-
-    # Placeholder config — uses the tunnel UUID from credentials-file so cloudflared
-    # never needs cert.pem (which requires `cloudflared login`).
-    # The real config is written by the wizard after the user claims a subdomain.
-    if [[ ! -f /etc/cloudflared/config.yml ]]; then
-        cat > /etc/cloudflared/config.yml <<'EOF'
-# VibeCodePC tunnel config — populated after device pairing.
-# See: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/
-tunnel: 00000000-0000-0000-0000-000000000000
-credentials-file: /etc/cloudflared/credentials.json
-
-ingress:
-  - service: http_status:503
-EOF
-        ok "cloudflared placeholder config written"
-    else
-        ok "cloudflared config already exists, skipping"
+        ok "cloudflared directory ready (tunnel token written after wizard setup)"
     fi
 }
 
@@ -209,7 +184,8 @@ Wants=network-online.target
 
 [Service]
 Type=notify
-ExecStart=/usr/local/bin/cloudflared tunnel --config /etc/cloudflared/config.yml run
+EnvironmentFile=/etc/cloudflared/tunnel.env
+ExecStart=/usr/local/bin/cloudflared tunnel run --token ${TUNNEL_TOKEN}
 Restart=on-failure
 RestartSec=5
 TimeoutStartSec=0
@@ -221,8 +197,8 @@ EOF
     systemctl daemon-reload
     systemctl enable cloudflared
 
-    # Don't start yet — no credentials until the wizard completes pairing
-    ok "cloudflared service enabled (will start after tunnel is configured)"
+    # Don't start yet — no token until the wizard completes provisioning
+    ok "cloudflared service enabled (will start after tunnel is provisioned)"
 }
 
 # ---------- laravel app ----------

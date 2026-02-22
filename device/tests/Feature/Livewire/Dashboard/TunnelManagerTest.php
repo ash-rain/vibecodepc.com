@@ -15,7 +15,6 @@ beforeEach(function () {
         'running' => true,
         'configured' => true,
     ])->byDefault();
-    $this->tunnelMock->shouldReceive('updateIngress')->andReturn(true)->byDefault();
 
     $this->app->instance(TunnelService::class, $this->tunnelMock);
 

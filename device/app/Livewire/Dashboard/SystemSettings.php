@@ -6,6 +6,7 @@ namespace App\Livewire\Dashboard;
 
 use App\Services\DeviceHealthService;
 use App\Services\NetworkService;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Process;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -65,7 +66,9 @@ class SystemSettings extends Component
 
     public function factoryReset(): void
     {
-        Process::run('sudo vibecodepc reset');
+        Artisan::call('device:factory-reset', ['--force' => true]);
+
+        $this->redirect('/');
     }
 
     public function restartDevice(): void

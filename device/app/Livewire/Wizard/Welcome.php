@@ -16,6 +16,8 @@ class Welcome extends Component
 
     public string $cloudEmail = '';
 
+    public bool $isPaired = false;
+
     public string $adminPassword = '';
 
     public string $adminPasswordConfirmation = '';
@@ -31,7 +33,8 @@ class Welcome extends Component
     {
         $credential = CloudCredential::current();
 
-        if ($credential) {
+        if ($credential && $credential->isPaired()) {
+            $this->isPaired = true;
             $this->cloudUsername = $credential->cloud_username ?? '';
             $this->cloudEmail = $credential->cloud_email ?? '';
         }

@@ -88,7 +88,7 @@ class GitHub extends Component
             }
 
             $profile = $githubService->getUserProfile($result->accessToken);
-            $hasCopilot = $githubService->checkCopilotAccess($result->accessToken);
+            $hasCopilot = $githubService->checkCopilotAccess($profile);
 
             GitHubCredential::updateOrCreate(
                 ['github_username' => $profile->username],

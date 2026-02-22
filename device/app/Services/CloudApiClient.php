@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\CloudCredential;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use VibecodePC\Common\DTOs\DeviceStatusResult;
@@ -42,6 +43,27 @@ class CloudApiClient
         return $response->json('available', false);
     }
 
+    /**
+     * Provision a Cloudflare tunnel via the cloud API.
+     *
+     * @return array{tunnel_id: string, tunnel_token: string}
+     */
+    public function provisionTunnel(string $deviceId, string $subdomain): array
+    {
+        $response = $this->authenticatedHttp()
+            ->post("/api/devices/{$deviceId}/tunnel/provision", [
+                'subdomain' => $subdomain,
+            ]);
+
+        if (! $response->successful()) {
+            throw new \RuntimeException(
+                "HTTP request returned status code {$response->status()}: {$response->body()}"
+            );
+        }
+
+        return $response->json();
+    }
+
     private function http(): PendingRequest
     {
         $request = Http::baseUrl($this->cloudUrl)
@@ -50,6 +72,19 @@ class CloudApiClient
 
         if (config('app.env') === 'local') {
             $request->withoutVerifying();
+        }
+
+        return $request;
+    }
+
+    private function authenticatedHttp(): PendingRequest
+    {
+        $credential = CloudCredential::current();
+
+        $request = $this->http()->timeout(30);
+
+        if ($credential) {
+            $request->withToken($credential->getToken());
         }
 
         return $request;

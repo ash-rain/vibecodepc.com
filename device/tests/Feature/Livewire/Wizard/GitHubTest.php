@@ -128,6 +128,40 @@ it('backs off poll interval on slow_down', function () {
         ->assertSet('pollInterval', 11);
 });
 
+it('detects copilot access after successful auth', function () {
+    Http::fake([
+        'github.com/login/device/code' => Http::response([
+            'device_code' => 'device-123',
+            'user_code' => 'ABCD-1234',
+            'verification_uri' => 'https://github.com/login/device',
+            'expires_in' => 900,
+            'interval' => 5,
+        ]),
+        'github.com/login/oauth/access_token' => Http::response([
+            'access_token' => 'gho_test_token',
+            'token_type' => 'bearer',
+            'scope' => 'repo user read:org',
+        ]),
+        'api.github.com/user' => Http::response([
+            'login' => 'prouser',
+            'name' => 'Pro User',
+            'email' => 'pro@example.com',
+            'avatar_url' => null,
+            'plan' => ['name' => 'pro', 'space' => 976562499],
+        ]),
+    ]);
+
+    Livewire::test(GitHub::class)
+        ->call('startDeviceFlow')
+        ->call('checkAuthStatus')
+        ->assertSet('status', 'connected')
+        ->assertSet('hasCopilot', true)
+        ->assertSet('githubUsername', 'prouser');
+
+    $credential = GitHubCredential::current();
+    expect($credential->has_copilot)->toBeTrue();
+});
+
 it('skips the github step', function () {
     Livewire::test(GitHub::class)
         ->call('skip')

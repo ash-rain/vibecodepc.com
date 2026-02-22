@@ -7,6 +7,7 @@ namespace App\Livewire\Wizard;
 use App\Models\CloudCredential;
 use App\Models\TunnelConfig;
 use App\Services\CloudApiClient;
+use App\Services\DeviceRegistry\DeviceIdentityService;
 use App\Services\Tunnel\TunnelService;
 use App\Services\WizardProgressService;
 use Livewire\Component;
@@ -64,39 +65,48 @@ class Tunnel extends Component
         }
     }
 
-    public function setupTunnel(TunnelService $tunnelService): void
-    {
+    public function setupTunnel(
+        CloudApiClient $cloudApi,
+        DeviceIdentityService $identity,
+        TunnelService $tunnelService,
+    ): void {
         if (! $this->subdomainAvailable) {
             return;
         }
 
+        $this->status = 'provisioning';
+        $this->message = 'Provisioning tunnel with cloud...';
+
+        try {
+            $deviceId = $identity->getDeviceInfo()->id;
+            $result = $cloudApi->provisionTunnel($deviceId, $this->subdomain);
+        } catch (\Exception $e) {
+            $this->status = 'error';
+            $this->message = 'Failed to provision tunnel: '.$e->getMessage();
+
+            return;
+        }
+
         $this->status = 'configuring';
-        $this->message = '';
-
-        $success = $tunnelService->createTunnel($this->subdomain, '');
-
-        if (! $success) {
-            $this->status = 'error';
-            $this->message = 'Failed to create tunnel configuration.';
-
-            return;
-        }
-
-        $started = $tunnelService->start();
-
-        if (! $started) {
-            $this->status = 'error';
-            $this->message = 'Tunnel configured but failed to start.';
-
-            return;
-        }
+        $this->message = 'Starting tunnel...';
 
         TunnelConfig::updateOrCreate(
             ['subdomain' => $this->subdomain],
             [
+                'tunnel_id' => $result['tunnel_id'],
+                'tunnel_token_encrypted' => $result['tunnel_token'],
                 'status' => 'active',
             ],
         );
+
+        $startError = $tunnelService->start();
+
+        if ($startError !== null) {
+            $this->status = 'error';
+            $this->message = 'Tunnel provisioned but failed to start: '.$startError;
+
+            return;
+        }
 
         $this->status = 'active';
         $this->tunnelActive = true;

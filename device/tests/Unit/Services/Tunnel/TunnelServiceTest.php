@@ -5,7 +5,6 @@ declare(strict_types=1);
 use App\Models\TunnelConfig;
 use App\Services\Tunnel\TunnelService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 
 uses(RefreshDatabase::class);
@@ -40,22 +39,12 @@ it('checks if cloudflared is running', function () {
     expect($service->isRunning())->toBeTrue();
 });
 
-it('detects real credentials', function () {
+it('detects valid credentials when tunnel token exists', function () {
     TunnelConfig::factory()->verified()->create();
 
     $service = new TunnelService;
 
     expect($service->hasCredentials())->toBeTrue();
-});
-
-it('rejects placeholder credentials', function () {
-    TunnelConfig::factory()->create([
-        'tunnel_id' => '00000000-0000-0000-0000-000000000000',
-    ]);
-
-    $service = new TunnelService;
-
-    expect($service->hasCredentials())->toBeFalse();
 });
 
 it('rejects missing credentials when no tunnel config exists', function () {
@@ -64,9 +53,19 @@ it('rejects missing credentials when no tunnel config exists', function () {
     expect($service->hasCredentials())->toBeFalse();
 });
 
-it('rejects empty tunnel id', function () {
+it('rejects credentials when tunnel token is empty', function () {
     TunnelConfig::factory()->create([
-        'tunnel_id' => '',
+        'tunnel_token_encrypted' => null,
+    ]);
+
+    $service = new TunnelService;
+
+    expect($service->hasCredentials())->toBeFalse();
+});
+
+it('rejects credentials when tunnel token is empty string', function () {
+    TunnelConfig::factory()->create([
+        'tunnel_token_encrypted' => '',
     ]);
 
     $service = new TunnelService;
@@ -89,21 +88,6 @@ it('returns status array with configured key', function () {
         ->and($status['configured'])->toBeFalse();
 });
 
-it('creates tunnel config file', function () {
-    $configPath = storage_path('app/test-cloudflared/config.yml');
-
-    File::deleteDirectory(dirname($configPath));
-
-    $service = new TunnelService(configPath: $configPath);
-    $result = $service->createTunnel('mydevice', '');
-
-    expect($result)->toBeTrue()
-        ->and(File::exists($configPath))->toBeTrue()
-        ->and(File::get($configPath))->toContain('mydevice.vibecodepc.com');
-
-    File::deleteDirectory(dirname($configPath));
-});
-
 it('refuses to start without credentials', function () {
     Process::fake([
         '*cloudflared --version*' => Process::result(output: '2024.1.0'),
@@ -115,7 +99,7 @@ it('refuses to start without credentials', function () {
     expect($service->start())->toBe('Tunnel is not configured. Complete the setup wizard to provision tunnel credentials.');
 });
 
-it('starts the tunnel service with valid credentials', function () {
+it('starts the tunnel service with valid token', function () {
     TunnelConfig::factory()->verified()->create();
 
     Process::fake([
@@ -127,7 +111,7 @@ it('starts the tunnel service with valid credentials', function () {
         'sudo systemctl start*' => Process::result(),
     ]);
 
-    $service = new TunnelService;
+    $service = new TunnelService(configPath: storage_path('app/test-cloudflared/config.yml'));
 
     expect($service->start())->toBeNull();
 });
@@ -144,4 +128,22 @@ it('stops the tunnel service', function () {
     $service = new TunnelService;
 
     expect($service->stop())->toBeNull();
+});
+
+it('falls back to nohup with token when systemd fails', function () {
+    TunnelConfig::factory()->verified()->create();
+
+    Process::fake([
+        '*cloudflared --version*' => Process::result(output: '2024.1.0'),
+        'pgrep*' => Process::sequence([
+            Process::result(exitCode: 1),
+            Process::result(output: '12345'),
+        ]),
+        'sudo systemctl start*' => Process::result(exitCode: 1),
+        '*nohup cloudflared tunnel run --token*' => Process::result(output: '99999'),
+    ]);
+
+    $service = new TunnelService(configPath: storage_path('app/test-cloudflared/config.yml'));
+
+    expect($service->start())->toBeNull();
 });

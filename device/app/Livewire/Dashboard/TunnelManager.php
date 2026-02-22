@@ -41,7 +41,7 @@ class TunnelManager extends Component
         $this->loadProjects();
     }
 
-    public function toggleProjectTunnel(int $projectId, TunnelService $tunnelService): void
+    public function toggleProjectTunnel(int $projectId): void
     {
         $project = Project::findOrFail($projectId);
         $project->update([
@@ -50,7 +50,6 @@ class TunnelManager extends Component
         ]);
 
         $this->loadProjects();
-        $this->syncIngress($tunnelService);
     }
 
     public function restartTunnel(TunnelService $tunnelService): void
@@ -89,20 +88,5 @@ class TunnelManager extends Component
             'port' => $p->port,
             'tunnel_enabled' => $p->tunnel_enabled,
         ])->all();
-    }
-
-    private function syncIngress(TunnelService $tunnelService): void
-    {
-        if (! $this->subdomain) {
-            return;
-        }
-
-        $routes = Project::where('tunnel_enabled', true)
-            ->whereNotNull('tunnel_subdomain_path')
-            ->whereNotNull('port')
-            ->pluck('port', 'tunnel_subdomain_path')
-            ->all();
-
-        $tunnelService->updateIngress($this->subdomain, $routes);
     }
 }

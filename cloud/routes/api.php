@@ -44,6 +44,9 @@ Route::middleware(['auth:sanctum', 'device.owner'])
         Route::post('/tunnel/register', [DeviceTunnelController::class, 'register'])
             ->name('tunnel.register');
 
+        Route::post('/tunnel/provision', [DeviceTunnelController::class, 'provision'])
+            ->name('tunnel.provision');
+
         Route::post('/tunnel/routes', [DeviceTunnelController::class, 'updateRoutes'])
             ->name('tunnel.routes.update');
 

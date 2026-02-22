@@ -77,17 +77,16 @@ class GitHubDeviceFlowService
         return GitHubProfile::fromArray($response->json());
     }
 
-    public function checkCopilotAccess(string $token): bool
+    /**
+     * Detect Copilot access from the user's GitHub profile.
+     *
+     * All GitHub users have Copilot Free since Dec 2024.
+     * The old `copilot_internal/v2/token` endpoint only works with the
+     * official Copilot OAuth app's client_id, not custom apps.
+     */
+    public function checkCopilotAccess(GitHubProfile $profile): bool
     {
-        try {
-            $response = Http::withToken($token)
-                ->timeout(10)
-                ->get('https://api.github.com/copilot_internal/v2/token');
-
-            return $response->successful();
-        } catch (\Exception) {
-            return false;
-        }
+        return $profile->hasCopilotAccess();
     }
 
     public function configureGitIdentity(string $name, string $email): void

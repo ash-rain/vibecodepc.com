@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Services\GitHub\GitHubDeviceFlowService;
+use App\Services\GitHub\GitHubProfile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Process;
 
@@ -124,4 +125,69 @@ it('configures git identity', function () {
 
     Process::assertRan(fn ($process) => str_contains($process->command, 'git config --global user.name'));
     Process::assertRan(fn ($process) => str_contains($process->command, 'git config --global user.email'));
+});
+
+it('detects copilot access from profile', function () {
+    $service = new GitHubDeviceFlowService('test-client-id');
+
+    $profile = new GitHubProfile(
+        username: 'testuser',
+        name: 'Test User',
+        email: 'test@example.com',
+        avatarUrl: null,
+        plan: 'pro',
+    );
+
+    expect($service->checkCopilotAccess($profile))->toBeTrue();
+});
+
+it('detects copilot for free plan users', function () {
+    $service = new GitHubDeviceFlowService('test-client-id');
+
+    $profile = new GitHubProfile(
+        username: 'freeuser',
+        name: null,
+        email: null,
+        avatarUrl: null,
+        plan: 'free',
+    );
+
+    expect($service->checkCopilotAccess($profile))->toBeTrue();
+});
+
+it('parses plan from user profile response', function () {
+    Http::fake([
+        'api.github.com/user' => Http::response([
+            'login' => 'prouser',
+            'name' => 'Pro User',
+            'email' => 'pro@example.com',
+            'avatar_url' => null,
+            'plan' => ['name' => 'pro', 'space' => 976562499],
+        ]),
+    ]);
+
+    $service = new GitHubDeviceFlowService('test-client-id');
+    $profile = $service->getUserProfile('gho_test_token');
+
+    expect($profile->plan)->toBe('pro')
+        ->and($profile->copilotTier())->toBe('pro')
+        ->and($profile->hasCopilotAccess())->toBeTrue();
+});
+
+it('defaults plan to free when not present', function () {
+    Http::fake([
+        'api.github.com/user' => Http::response([
+            'login' => 'testuser',
+            'name' => 'Test User',
+            'email' => null,
+            'avatar_url' => null,
+        ]),
+    ]);
+
+    $service = new GitHubDeviceFlowService('test-client-id');
+    $profile = $service->getUserProfile('gho_test_token');
+
+    expect($profile->plan)->toBe('free')
+        ->and($profile->copilotTier())->toBe('free')
+        ->and($profile->hasCopilotAccess())->toBeTrue();
 });
