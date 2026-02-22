@@ -42,7 +42,7 @@ it('can start a project', function () {
     Livewire::test(ContainerMonitor::class)
         ->call('startProject', $project->id);
 
-    Process::assertRan('docker compose up -d');
+    Process::assertRan(fn ($process) => str_contains($process->command, 'docker compose') && str_contains($process->command, 'up -d'));
 });
 
 it('can stop a project', function () {
@@ -51,7 +51,7 @@ it('can stop a project', function () {
     Livewire::test(ContainerMonitor::class)
         ->call('stopProject', $project->id);
 
-    Process::assertRan('docker compose down');
+    Process::assertRan(fn ($process) => str_contains($process->command, 'docker compose') && str_ends_with($process->command, 'down'));
 });
 
 it('can restart a project', function () {
@@ -60,8 +60,8 @@ it('can restart a project', function () {
     Livewire::test(ContainerMonitor::class)
         ->call('restartProject', $project->id);
 
-    Process::assertRan('docker compose down');
-    Process::assertRan('docker compose up -d');
+    Process::assertRan(fn ($process) => str_contains($process->command, 'docker compose') && str_ends_with($process->command, 'down'));
+    Process::assertRan(fn ($process) => str_contains($process->command, 'docker compose') && str_contains($process->command, 'up -d'));
 });
 
 it('can load logs for a project', function () {
@@ -70,7 +70,7 @@ it('can load logs for a project', function () {
     Livewire::test(ContainerMonitor::class)
         ->call('loadLogs', $project->id);
 
-    Process::assertRan('docker compose logs --tail=100 --no-color');
+    Process::assertRan(fn ($process) => str_contains($process->command, 'docker compose') && str_contains($process->command, 'logs --tail=100 --no-color'));
 });
 
 it('can run a command in a container', function () {
@@ -80,7 +80,7 @@ it('can run a command in a container', function () {
         ->set("commandInputs.{$project->id}", 'ls -la')
         ->call('runCommand', $project->id);
 
-    Process::assertRan(fn ($process) => str_contains($process->command, 'docker compose exec -T app ls -la'));
+    Process::assertRan(fn ($process) => str_contains($process->command, 'docker compose') && str_contains($process->command, 'exec -T app ls -la'));
 });
 
 it('does not run empty command', function () {

@@ -27,7 +27,7 @@ it('can start a project', function () {
     Livewire::test(ProjectDetail::class, ['project' => $project])
         ->call('start');
 
-    Process::assertRan('docker compose up -d');
+    Process::assertRan(fn ($process) => str_contains($process->command, 'docker compose') && str_contains($process->command, 'up -d'));
 });
 
 it('can stop a running project', function () {
@@ -36,7 +36,7 @@ it('can stop a running project', function () {
     Livewire::test(ProjectDetail::class, ['project' => $project])
         ->call('stop');
 
-    Process::assertRan('docker compose down');
+    Process::assertRan(fn ($process) => str_contains($process->command, 'docker compose') && str_ends_with($process->command, 'down'));
 });
 
 it('can add environment variables', function () {

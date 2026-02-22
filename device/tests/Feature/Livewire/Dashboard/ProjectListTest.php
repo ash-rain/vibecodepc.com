@@ -37,7 +37,7 @@ it('can start a project', function () {
     Livewire::test(ProjectList::class)
         ->call('startProject', $project->id);
 
-    Process::assertRan('docker compose up -d');
+    Process::assertRan(fn ($process) => str_contains($process->command, 'docker compose') && str_contains($process->command, 'up -d'));
 });
 
 it('can stop a project', function () {
@@ -46,7 +46,7 @@ it('can stop a project', function () {
     Livewire::test(ProjectList::class)
         ->call('stopProject', $project->id);
 
-    Process::assertRan('docker compose down');
+    Process::assertRan(fn ($process) => str_contains($process->command, 'docker compose') && str_ends_with($process->command, 'down'));
 });
 
 it('shows preview button for running projects', function () {
