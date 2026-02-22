@@ -66,6 +66,14 @@ class DeviceTunnelProvisionTest extends TestCase
             'id' => $device->id,
             'tunnel_url' => 'https://mydevice.vibecodepc.com',
         ]);
+
+        $this->assertDatabaseHas('tunnel_routes', [
+            'device_id' => $device->id,
+            'subdomain' => 'mydevice',
+            'path' => '/',
+            'target_port' => config('cloudflare.device_app_port'),
+            'is_active' => true,
+        ]);
     }
 
     public function test_provision_requires_authentication(): void
@@ -163,7 +171,7 @@ class DeviceTunnelProvisionTest extends TestCase
 
         $this->cfMock->shouldReceive('configureTunnelIngress')
             ->once()
-            ->with('cf-tunnel-id', 'newuser.vibecodepc.com');
+            ->with('cf-tunnel-id', 'newuser.vibecodepc.com', (int) config('cloudflare.device_app_port'));
 
         $this->cfMock->shouldReceive('createDnsRecord')
             ->once()

@@ -42,6 +42,7 @@ class DeviceTunnelController extends Controller
         $device = $request->attributes->get('device');
         $user = $request->user();
         $subdomain = $request->validated('subdomain');
+        $deviceAppPort = (int) config('cloudflare.device_app_port');
 
         if (! $subdomainService->isAvailable($subdomain, $user->id)) {
             return response()->json(['error' => 'Subdomain is not available.'], 409);
@@ -52,12 +53,16 @@ class DeviceTunnelController extends Controller
         $tunnel = $cfService->createTunnel("device-{$device->uuid}");
         $tunnelId = $tunnel['id'];
 
-        $cfService->configureTunnelIngress($tunnelId, "{$subdomain}.vibecodepc.com");
+        $cfService->configureTunnelIngress($tunnelId, "{$subdomain}.vibecodepc.com", $deviceAppPort);
         $cfService->createDnsRecord($subdomain, $tunnelId);
 
         $token = $cfService->getTunnelToken($tunnelId);
 
         $device->update(['tunnel_url' => "https://{$subdomain}.vibecodepc.com"]);
+
+        $this->routing->updateRoutes($device, $subdomain, [
+            ['path' => '/', 'target_port' => $deviceAppPort],
+        ]);
 
         return response()->json([
             'tunnel_id' => $tunnelId,

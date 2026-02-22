@@ -103,7 +103,7 @@ class CloudflareTunnelService
     /**
      * Configure tunnel ingress rules remotely.
      */
-    public function configureTunnelIngress(string $tunnelId, string $hostname): void
+    public function configureTunnelIngress(string $tunnelId, string $hostname, int $port = 8001): void
     {
         $response = $this->http()
             ->put("accounts/{$this->accountId}/cfd_tunnel/{$tunnelId}/configurations", [
@@ -111,7 +111,7 @@ class CloudflareTunnelService
                     'ingress' => [
                         [
                             'hostname' => $hostname,
-                            'service' => 'http://localhost:80',
+                            'service' => "http://localhost:{$port}",
                         ],
                         [
                             'service' => 'http_status:404',
