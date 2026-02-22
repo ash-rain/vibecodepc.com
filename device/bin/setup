@@ -51,6 +51,45 @@ setup_user() {
     fi
 }
 
+# ---------- docker ----------
+
+install_docker() {
+    info "Installing Docker..."
+
+    if command_exists docker; then
+        ok "Docker already installed: $(docker --version)"
+    else
+        if $IS_LINUX; then
+            curl -fsSL https://get.docker.com | sh
+        else
+            fail "Install Docker Desktop manually: https://docs.docker.com/desktop/install/mac-install/"
+        fi
+        ok "Docker installed: $(docker --version)"
+    fi
+
+    # Verify docker compose plugin is available
+    if docker compose version &>/dev/null; then
+        ok "Docker Compose plugin: $(docker compose version --short)"
+    else
+        fail "Docker Compose plugin not found. Reinstall Docker."
+    fi
+
+    # Add device user to docker group so containers run without sudo
+    if $IS_LINUX; then
+        if ! id -nG "$DEVICE_USER" | grep -qw docker; then
+            usermod -aG docker "$DEVICE_USER"
+            ok "Added ${DEVICE_USER} to docker group"
+        fi
+    fi
+
+    # Enable and start Docker service
+    if $IS_LINUX; then
+        systemctl enable docker
+        systemctl start docker
+        ok "Docker service enabled and started"
+    fi
+}
+
 # ---------- code-server ----------
 
 install_code_server() {
@@ -249,6 +288,8 @@ main() {
     need_root
 
     setup_user
+
+    install_docker
 
     install_code_server
     configure_code_server
