@@ -102,7 +102,8 @@ class AppServiceProvider extends ServiceProvider
     {
         URL::forceHttps(
             app()->environment(['production', 'staging'])
-            || config('vibecodepc.tunnel.token_file_path') !== null
+            || (! app()->environment('local')
+                && config('vibecodepc.tunnel.token_file_path') !== null)
         );
 
         $this->ensureTunnelTokenFile();
