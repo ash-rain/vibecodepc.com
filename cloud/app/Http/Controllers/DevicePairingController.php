@@ -14,7 +14,6 @@ use App\Services\TunnelRoutingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
@@ -171,17 +170,14 @@ class DevicePairingController extends Controller
             return response()->json(['ready' => false]);
         }
 
-        try {
-            $response = Http::timeout(8)->withoutVerifying()->get($device->tunnel_url);
+        // Use database heartbeat status instead of HTTP fetch to avoid
+        // looping through the cloud proxy and triggering failure tracking.
+        $device->refresh();
 
-            // Cloudflare returns 522/523/524 when the tunnel connector isn't established
-            return response()->json([
-                'ready' => ! in_array($response->status(), [522, 523, 524]),
-                'tunnel_url' => $device->tunnel_url,
-            ]);
-        } catch (\Throwable) {
-            return response()->json(['ready' => false]);
-        }
+        return response()->json([
+            'ready' => $device->is_online,
+            'tunnel_url' => $device->tunnel_url,
+        ]);
     }
 
     public function success(Request $request, string $uuid): View
