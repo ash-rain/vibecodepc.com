@@ -21,7 +21,7 @@
     {{-- Providers --}}
     <div class="space-y-4">
         @foreach ($providers as $provider)
-            <div x-data="{ open: false }" class="bg-gray-900 rounded-xl border border-gray-800">
+            <div x-data="{ open: false }" class="bg-white/[0.02] rounded-2xl border border-white/[0.06]">
                 {{-- Provider Header --}}
                 <button
                     @click="open = !open"
@@ -62,7 +62,7 @@
                                 <input
                                     wire:model="customName"
                                     type="text"
-                                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                                    class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none"
                                     placeholder="My Provider"
                                 >
                             </div>
@@ -71,7 +71,7 @@
                                 <input
                                     wire:model="customBaseUrl"
                                     type="url"
-                                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                                    class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none"
                                     placeholder="https://api.example.com"
                                 >
                             </div>
@@ -82,7 +82,7 @@
                         <input
                             wire:model="apiKeys.{{ $provider['key'] }}"
                             type="password"
-                            class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                            class="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none"
                             placeholder="Enter API key..."
                         >
                         <button
@@ -101,7 +101,7 @@
                         </button>
                         <button
                             wire:click="saveProvider('{{ $provider['key'] }}')"
-                            class="px-3 py-2 bg-amber-500 hover:bg-amber-600 text-gray-950 text-sm font-medium rounded-lg transition-colors"
+                            class="px-3 py-2 bg-emerald-500 hover:bg-emerald-400 text-gray-950 text-sm font-medium rounded-xl transition-colors"
                         >Save</button>
                         @if ($statuses[$provider['key']] !== 'none')
                             <button
@@ -130,7 +130,7 @@
 
                     @if ($provider['url'])
                         <p class="text-xs text-gray-500">
-                            Get your API key: <a href="{{ $provider['url'] }}" target="_blank" class="text-amber-400 hover:underline">{{ $provider['url'] }}</a>
+                            Get your API key: <a href="{{ $provider['url'] }}" target="_blank" class="text-emerald-400 hover:underline">{{ $provider['url'] }}</a>
                         </p>
                     @endif
                 </div>

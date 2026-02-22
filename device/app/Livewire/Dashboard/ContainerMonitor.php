@@ -27,6 +27,12 @@ class ContainerMonitor extends Component
     /** @var array<int, string> */
     public array $commandInputs = [];
 
+    /** @var array<int, bool> */
+    public array $openLogPanels = [];
+
+    /** @var array<int, string> */
+    public array $actionErrors = [];
+
     public int $totalRunning = 0;
 
     public int $totalStopped = 0;
@@ -41,27 +47,65 @@ class ContainerMonitor extends Component
     public function poll(): void
     {
         $this->loadContainers();
+        $this->refreshOpenLogs();
+    }
+
+    public function subscribeToLogs(int $projectId): void
+    {
+        $this->openLogPanels[$projectId] = true;
+        $this->loadLogs($projectId, app(ProjectContainerService::class));
+    }
+
+    public function unsubscribeFromLogs(int $projectId): void
+    {
+        unset($this->openLogPanels[$projectId]);
     }
 
     public function startProject(int $projectId, ProjectContainerService $containerService): void
     {
         $project = Project::findOrFail($projectId);
-        $containerService->start($project);
+        $error = $containerService->start($project);
+
+        if ($error !== null) {
+            $this->actionErrors[$projectId] = $error;
+        } else {
+            unset($this->actionErrors[$projectId]);
+        }
+
         $this->loadContainers();
     }
 
     public function stopProject(int $projectId, ProjectContainerService $containerService): void
     {
         $project = Project::findOrFail($projectId);
-        $containerService->stop($project);
+        $error = $containerService->stop($project);
+
+        if ($error !== null) {
+            $this->actionErrors[$projectId] = $error;
+        } else {
+            unset($this->actionErrors[$projectId]);
+        }
+
         $this->loadContainers();
     }
 
     public function restartProject(int $projectId, ProjectContainerService $containerService): void
     {
         $project = Project::findOrFail($projectId);
-        $containerService->restart($project);
+        $error = $containerService->restart($project);
+
+        if ($error !== null) {
+            $this->actionErrors[$projectId] = $error;
+        } else {
+            unset($this->actionErrors[$projectId]);
+        }
+
         $this->loadContainers();
+    }
+
+    public function dismissError(int $projectId): void
+    {
+        unset($this->actionErrors[$projectId]);
     }
 
     public function loadLogs(int $projectId, ProjectContainerService $containerService): void
@@ -88,6 +132,23 @@ class ContainerMonitor extends Component
     public function render()
     {
         return view('livewire.dashboard.container-monitor');
+    }
+
+    private function refreshOpenLogs(): void
+    {
+        $containerService = app(ProjectContainerService::class);
+
+        foreach ($this->openLogPanels as $projectId => $active) {
+            if (! $active) {
+                continue;
+            }
+
+            $project = Project::find($projectId);
+
+            if ($project) {
+                $this->logs[$projectId] = $containerService->getLogs($project, 100);
+            }
+        }
     }
 
     private function loadContainers(): void

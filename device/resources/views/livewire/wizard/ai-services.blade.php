@@ -1,11 +1,11 @@
 <div class="space-y-6">
-    <div class="bg-gray-900 rounded-xl border border-gray-800 p-8">
+    <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-8">
         <h2 class="text-xl font-semibold text-white mb-2">AI Services</h2>
         <p class="text-gray-400 text-sm mb-6">Connect your AI providers. You can configure multiple or skip this step and set them up later.</p>
 
         <div class="space-y-4">
             @foreach ($providers as $provider)
-                <div x-data="{ open: false }" class="bg-gray-800/50 rounded-lg border border-gray-700">
+                <div x-data="{ open: false }" class="bg-white/[0.03] rounded-lg border border-white/10">
                     {{-- Provider Header --}}
                     <button
                         @click="open = !open"
@@ -38,7 +38,7 @@
                                     <input
                                         wire:model="customName"
                                         type="text"
-                                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                                        class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none"
                                         placeholder="My Provider"
                                     >
                                 </div>
@@ -47,7 +47,7 @@
                                     <input
                                         wire:model="customBaseUrl"
                                         type="url"
-                                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                                        class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none"
                                         placeholder="https://api.example.com"
                                     >
                                 </div>
@@ -58,14 +58,14 @@
                             <input
                                 wire:model="apiKeys.{{ $provider['key'] }}"
                                 type="password"
-                                class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                                class="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none"
                                 placeholder="Enter API key..."
                             >
                             <button
                                 wire:click="testConnection('{{ $provider['key'] }}')"
                                 wire:loading.attr="disabled"
                                 wire:target="testConnection('{{ $provider['key'] }}')"
-                                class="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors whitespace-nowrap"
+                                class="px-3 py-2 bg-white/[0.06] hover:bg-white/10 text-white text-sm rounded-lg transition-colors whitespace-nowrap"
                             >
                                 <span wire:loading.remove wire:target="testConnection('{{ $provider['key'] }}')">Test</span>
                                 <span wire:loading wire:target="testConnection('{{ $provider['key'] }}')">
@@ -77,7 +77,7 @@
                             </button>
                             <button
                                 wire:click="saveProvider('{{ $provider['key'] }}')"
-                                class="px-3 py-2 bg-amber-500 hover:bg-amber-600 text-gray-950 text-sm font-medium rounded-lg transition-colors"
+                                class="px-3 py-2 bg-emerald-500 hover:bg-emerald-400 text-gray-950 text-sm font-medium rounded-xl transition-colors"
                             >
                                 Save
                             </button>
@@ -104,7 +104,7 @@
 
                         @if ($provider['url'])
                             <p class="text-xs text-gray-500">
-                                Get your API key: <a href="{{ $provider['url'] }}" target="_blank" class="text-amber-400 hover:underline">{{ $provider['url'] }}</a>
+                                Get your API key: <a href="{{ $provider['url'] }}" target="_blank" class="text-emerald-400 hover:underline">{{ $provider['url'] }}</a>
                             </p>
                         @endif
                     </div>
@@ -123,7 +123,7 @@
         </button>
         <button
             wire:click="complete"
-            class="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-gray-950 font-semibold rounded-lg transition-colors"
+            class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold rounded-xl transition-colors"
         >
             Continue
         </button>

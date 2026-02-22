@@ -16,11 +16,11 @@
                     wire:click="navigateToStep('{{ $step['step'] }}')"
                     @class([
                         'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all',
-                        'bg-amber-500 text-gray-950' => $isCurrent,
+                        'bg-emerald-500 text-gray-950' => $isCurrent,
                         'bg-green-500 text-white' => $isCompleted,
                         'bg-gray-600 text-gray-300' => $isSkipped,
                         'bg-gray-800 text-gray-500 border border-gray-700' => !$isCurrent && !$isDone,
-                        'cursor-pointer hover:ring-2 hover:ring-amber-400/50' => $isDone,
+                        'cursor-pointer hover:ring-2 hover:ring-emerald-400/50' => $isDone,
                         'cursor-default' => !$isDone && !$isCurrent,
                     ])
                     @if(!$isDone && !$isCurrent) disabled @endif
@@ -39,7 +39,7 @@
                 </button>
                 <span @class([
                     'text-xs mt-1.5 whitespace-nowrap',
-                    'text-amber-400 font-semibold' => $isCurrent,
+                    'text-emerald-400 font-semibold' => $isCurrent,
                     'text-green-400' => $isCompleted,
                     'text-gray-500' => $isSkipped,
                     'text-gray-600' => !$isCurrent && !$isDone,
@@ -53,7 +53,7 @@
                 <div @class([
                     'flex-1 h-0.5 mx-1 mb-5',
                     'bg-green-500' => $isDone,
-                    'bg-amber-500/30' => $isCurrent,
+                    'bg-emerald-500/30' => $isCurrent,
                     'bg-gray-800' => !$isCurrent && !$isDone,
                 ])></div>
             @endif

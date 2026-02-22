@@ -16,10 +16,10 @@
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <button
                 wire:click="selectMode('template')"
-                class="bg-gray-900 rounded-xl border border-gray-800 hover:border-amber-500/50 p-6 text-left transition-colors group"
+                class="bg-white/[0.02] rounded-2xl border border-white/[0.06] hover:border-emerald-500/50 p-6 text-left transition-colors group"
             >
-                <div class="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center mb-4 group-hover:bg-amber-500/20 transition-colors">
-                    <svg class="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <div class="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center mb-4 group-hover:bg-emerald-500/20 transition-colors">
+                    <svg class="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                     </svg>
                 </div>
@@ -31,12 +31,12 @@
                 wire:click="selectMode('github')"
                 @disabled(! $hasGitHub)
                 @class([
-                    'bg-gray-900 rounded-xl border p-6 text-left transition-colors group',
-                    'border-gray-800 hover:border-amber-500/50' => $hasGitHub,
-                    'border-gray-800/50 opacity-50 cursor-not-allowed' => ! $hasGitHub,
+                    'bg-white/[0.02] rounded-2xl border p-6 text-left transition-colors group',
+                    'border-white/[0.06] hover:border-emerald-500/50' => $hasGitHub,
+                    'border-white/[0.06] opacity-50 cursor-not-allowed' => ! $hasGitHub,
                 ])
             >
-                <div class="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center mb-4 group-hover:bg-gray-700 transition-colors">
+                <div class="w-10 h-10 rounded-lg bg-white/[0.06] flex items-center justify-center mb-4 group-hover:bg-white/10 transition-colors">
                     <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
                     </svg>
@@ -53,9 +53,9 @@
 
             <button
                 wire:click="selectMode('git-url')"
-                class="bg-gray-900 rounded-xl border border-gray-800 hover:border-amber-500/50 p-6 text-left transition-colors group"
+                class="bg-white/[0.02] rounded-2xl border border-white/[0.06] hover:border-emerald-500/50 p-6 text-left transition-colors group"
             >
-                <div class="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center mb-4 group-hover:bg-gray-700 transition-colors">
+                <div class="w-10 h-10 rounded-lg bg-white/[0.06] flex items-center justify-center mb-4 group-hover:bg-white/10 transition-colors">
                     <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.86-2.03a4.5 4.5 0 00-1.242-7.244l4.5-4.5a4.5 4.5 0 016.364 6.364l-1.757 1.757" />
                     </svg>
@@ -68,14 +68,14 @@
 
     {{-- Step 1: Template mode --}}
     @if ($step === 1 && $mode === 'template')
-        <div class="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-5">
+        <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6 space-y-5">
             <div>
                 <label for="name" class="block text-sm font-medium text-gray-300 mb-1.5">Project Name</label>
                 <input
                     wire:model="name"
                     id="name"
                     type="text"
-                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white placeholder-gray-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white placeholder-gray-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none"
                     placeholder="my-awesome-project"
                 >
                 @error('name') <p class="text-red-400 text-sm mt-1">{{ $message }}</p> @enderror
@@ -90,8 +90,8 @@
                             wire:key="fw-{{ $fw['value'] }}"
                             @class([
                                 'p-4 rounded-lg border text-left transition-colors',
-                                'border-amber-500 bg-amber-500/10' => $framework === $fw['value'],
-                                'border-gray-700 bg-gray-800/50 hover:border-gray-600' => $framework !== $fw['value'],
+                                'border-emerald-500 bg-emerald-500/10' => $framework === $fw['value'],
+                                'border-white/10 bg-white/[0.03] hover:border-white/20' => $framework !== $fw['value'],
                             ])
                         >
                             <div class="text-sm font-medium text-white">{{ $fw['label'] }}</div>
@@ -109,7 +109,7 @@
                 >Back</button>
                 <button
                     wire:click="nextStep"
-                    class="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-gray-950 font-semibold rounded-lg transition-colors"
+                    class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold rounded-xl transition-colors"
                 >
                     Next
                 </button>
@@ -119,7 +119,7 @@
 
     {{-- Step 1: GitHub mode --}}
     @if ($step === 1 && $mode === 'github')
-        <div class="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-5">
+        <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6 space-y-5">
             <div>
                 <label for="repoSearch" class="block text-sm font-medium text-gray-300 mb-1.5">Search Repositories</label>
                 <input
@@ -127,7 +127,7 @@
                     wire:change="searchRepos"
                     id="repoSearch"
                     type="text"
-                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white placeholder-gray-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white placeholder-gray-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none"
                     placeholder="Search your repos..."
                 >
             </div>
@@ -150,8 +150,8 @@
                             wire:key="repo-{{ $repo['fullName'] }}"
                             @class([
                                 'w-full p-3 rounded-lg border text-left transition-colors',
-                                'border-amber-500 bg-amber-500/10' => $selectedRepo === $repo['fullName'],
-                                'border-gray-700 bg-gray-800/50 hover:border-gray-600' => $selectedRepo !== $repo['fullName'],
+                                'border-emerald-500 bg-emerald-500/10' => $selectedRepo === $repo['fullName'],
+                                'border-white/10 bg-white/[0.03] hover:border-white/20' => $selectedRepo !== $repo['fullName'],
                             ])
                         >
                             <div class="flex items-center gap-2">
@@ -179,7 +179,7 @@
                     wire:model="name"
                     id="name"
                     type="text"
-                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white placeholder-gray-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white placeholder-gray-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none"
                     placeholder="my-awesome-project"
                 >
                 @error('name') <p class="text-red-400 text-sm mt-1">{{ $message }}</p> @enderror
@@ -192,7 +192,7 @@
                 >Back</button>
                 <button
                     wire:click="nextStep"
-                    class="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-gray-950 font-semibold rounded-lg transition-colors"
+                    class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold rounded-xl transition-colors"
                 >
                     Next
                 </button>
@@ -202,14 +202,14 @@
 
     {{-- Step 1: Git URL mode --}}
     @if ($step === 1 && $mode === 'git-url')
-        <div class="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-5">
+        <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6 space-y-5">
             <div>
                 <label for="name" class="block text-sm font-medium text-gray-300 mb-1.5">Project Name</label>
                 <input
                     wire:model="name"
                     id="name"
                     type="text"
-                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white placeholder-gray-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white placeholder-gray-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none"
                     placeholder="my-awesome-project"
                 >
                 @error('name') <p class="text-red-400 text-sm mt-1">{{ $message }}</p> @enderror
@@ -221,7 +221,7 @@
                     wire:model="gitUrl"
                     id="gitUrl"
                     type="text"
-                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white placeholder-gray-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white placeholder-gray-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none"
                     placeholder="https://github.com/user/repo.git"
                 >
                 @error('gitUrl') <p class="text-red-400 text-sm mt-1">{{ $message }}</p> @enderror
@@ -234,7 +234,7 @@
                 >Back</button>
                 <button
                     wire:click="nextStep"
-                    class="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-gray-950 font-semibold rounded-lg transition-colors"
+                    class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold rounded-xl transition-colors"
                 >
                     Next
                 </button>
@@ -244,10 +244,10 @@
 
     {{-- Step 2: Confirm (template mode) --}}
     @if ($step === 2 && $mode === 'template')
-        <div class="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-5">
+        <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6 space-y-5">
             <h3 class="text-white font-medium">Confirm Project</h3>
 
-            <div class="bg-gray-800/50 rounded-lg p-4 space-y-2">
+            <div class="bg-white/[0.03] rounded-lg p-4 space-y-2">
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-400">Name</span>
                     <span class="text-white">{{ $name }}</span>
@@ -267,7 +267,7 @@
                     wire:click="scaffold"
                     wire:loading.attr="disabled"
                     wire:target="scaffold"
-                    class="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-gray-950 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-wait"
+                    class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-wait"
                 >
                     <span wire:loading.remove wire:target="scaffold">Create Project</span>
                     <span wire:loading.flex wire:target="scaffold" class="items-center gap-2">
@@ -284,10 +284,10 @@
 
     {{-- Step 2: Confirm (clone modes) --}}
     @if ($step === 2 && in_array($mode, ['github', 'git-url']))
-        <div class="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-5">
+        <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6 space-y-5">
             <h3 class="text-white font-medium">Confirm Clone</h3>
 
-            <div class="bg-gray-800/50 rounded-lg p-4 space-y-2">
+            <div class="bg-white/[0.03] rounded-lg p-4 space-y-2">
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-400">Name</span>
                     <span class="text-white">{{ $name }}</span>
@@ -311,7 +311,7 @@
                     wire:click="cloneProject"
                     wire:loading.attr="disabled"
                     wire:target="cloneProject"
-                    class="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-gray-950 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-wait"
+                    class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-wait"
                 >
                     <span wire:loading.remove wire:target="cloneProject">Clone Project</span>
                     <span wire:loading.flex wire:target="cloneProject" class="items-center gap-2">

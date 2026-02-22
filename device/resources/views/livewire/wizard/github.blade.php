@@ -1,5 +1,5 @@
 <div class="space-y-6">
-    <div class="bg-gray-900 rounded-xl border border-gray-800 p-8">
+    <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-8">
         <h2 class="text-xl font-semibold text-white mb-2">Connect GitHub</h2>
         <p class="text-gray-400 text-sm mb-6">Link your GitHub account for repository access and Copilot integration.</p>
 
@@ -32,13 +32,13 @@
 
         @elseif ($status === 'polling')
             <div wire:poll.{{ $pollInterval }}s="checkAuthStatus" class="text-center py-8">
-                <div class="bg-gray-800 rounded-lg p-6 inline-block mb-4">
+                <div class="bg-white/[0.03] rounded-lg p-6 inline-block mb-4">
                     <p class="text-sm text-gray-400 mb-2">Enter this code on GitHub:</p>
-                    <p class="text-3xl font-mono font-bold text-amber-400 tracking-widest">{{ $userCode }}</p>
+                    <p class="text-3xl font-mono font-bold text-emerald-400 tracking-widest">{{ $userCode }}</p>
                 </div>
 
                 <p class="text-sm text-gray-400 mb-4">
-                    Open <a href="{{ $verificationUri }}" target="_blank" class="text-amber-400 hover:underline">{{ $verificationUri }}</a> and enter the code above.
+                    Open <a href="{{ $verificationUri }}" target="_blank" class="text-emerald-400 hover:underline">{{ $verificationUri }}</a> and enter the code above.
                 </p>
 
                 <div class="inline-flex items-center gap-2 text-sm text-gray-500">
@@ -102,7 +102,7 @@
         @if ($status === 'connected')
             <button
                 wire:click="complete"
-                class="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-gray-950 font-semibold rounded-lg transition-colors"
+                class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold rounded-xl transition-colors"
             >
                 Continue
             </button>

@@ -16,16 +16,36 @@ use Livewire\Component;
 #[Title('Projects — VibeCodePC')]
 class ProjectList extends Component
 {
+    /** @var array<int, string> */
+    public array $actionErrors = [];
+
     public function startProject(int $projectId, ProjectContainerService $containerService): void
     {
         $project = Project::findOrFail($projectId);
-        $containerService->start($project);
+        $error = $containerService->start($project);
+
+        if ($error !== null) {
+            $this->actionErrors[$projectId] = $error;
+        } else {
+            unset($this->actionErrors[$projectId]);
+        }
     }
 
     public function stopProject(int $projectId, ProjectContainerService $containerService): void
     {
         $project = Project::findOrFail($projectId);
-        $containerService->stop($project);
+        $error = $containerService->stop($project);
+
+        if ($error !== null) {
+            $this->actionErrors[$projectId] = $error;
+        } else {
+            unset($this->actionErrors[$projectId]);
+        }
+    }
+
+    public function dismissError(int $projectId): void
+    {
+        unset($this->actionErrors[$projectId]);
     }
 
     public function deleteProject(int $projectId, ProjectContainerService $containerService): void

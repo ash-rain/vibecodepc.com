@@ -1,13 +1,13 @@
 <div x-data="{ polling: true }" x-init="setInterval(() => { if (polling) $wire.checkPairingStatus() }, 5000)"
     class="min-h-screen flex flex-col items-center justify-center px-4 py-12">
     <div class="mb-8 text-center">
-        <h1 class="text-3xl font-bold text-amber-400 mb-2">VibeCodePC</h1>
+        <h1 class="text-3xl font-bold text-emerald-400 mb-2">VibeCodePC</h1>
         <p class="text-gray-400 text-sm">Personal AI Coding Workstation</p>
     </div>
 
     <div class="w-full max-w-lg space-y-6">
         {{-- QR Code & Pairing Info --}}
-        <div class="bg-gray-900 rounded-xl border border-gray-800 p-8 text-center">
+        <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-8 text-center">
             <h2 class="text-xl font-semibold mb-4">Scan to Pair</h2>
 
             @if ($pairingUrl)
@@ -18,7 +18,7 @@
 
                 <p class="text-sm text-gray-400 mb-2">Or visit this URL:</p>
                 <a href="{{ $pairingUrl }}" target="_blank"
-                    class="font-mono text-amber-400 text-sm break-all underline hover:text-amber-300">{{ $pairingUrl }}</a>
+                    class="font-mono text-emerald-400 text-sm break-all underline hover:text-emerald-300">{{ $pairingUrl }}</a>
             @else
                 <div class="text-red-400 py-8">
                     <p class="font-semibold">No device identity found</p>
@@ -28,7 +28,7 @@
         </div>
 
         {{-- Device Info --}}
-        <div class="bg-gray-900 rounded-xl border border-gray-800 p-6">
+        <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6">
             <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Device Info</h3>
             <dl class="space-y-2 text-sm">
                 <div class="flex justify-between">

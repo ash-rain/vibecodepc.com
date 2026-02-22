@@ -32,6 +32,8 @@ class ProjectDetail extends Component
     /** @var array{cpu: string, memory: string}|null */
     public ?array $resourceUsage = null;
 
+    public string $actionError = '';
+
     public function mount(Project $project, ProjectContainerService $containerService): void
     {
         $this->project = $project;
@@ -56,20 +58,28 @@ class ProjectDetail extends Component
 
     public function start(ProjectContainerService $containerService): void
     {
-        $containerService->start($this->project);
+        $error = $containerService->start($this->project);
+        $this->actionError = $error ?? '';
         $this->project->refresh();
     }
 
     public function stop(ProjectContainerService $containerService): void
     {
-        $containerService->stop($this->project);
+        $error = $containerService->stop($this->project);
+        $this->actionError = $error ?? '';
         $this->project->refresh();
     }
 
     public function restart(ProjectContainerService $containerService): void
     {
-        $containerService->restart($this->project);
+        $error = $containerService->restart($this->project);
+        $this->actionError = $error ?? '';
         $this->project->refresh();
+    }
+
+    public function dismissError(): void
+    {
+        $this->actionError = '';
     }
 
     public function toggleTunnel(TunnelService $tunnelService): void

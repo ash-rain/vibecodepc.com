@@ -1,4 +1,4 @@
-<div class="bg-gray-900 rounded-xl border border-gray-800 p-6">
+<div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6">
     <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Network Setup</h3>
 
     @if ($hasEthernet)
@@ -16,7 +16,7 @@
                     id="ssid"
                     wire:model="ssid"
                     placeholder="Network name (SSID)"
-                    class="w-full rounded-lg bg-gray-800 border-gray-700 text-white px-4 py-2 text-sm focus:border-amber-500 focus:ring-amber-500"
+                    class="w-full rounded-lg bg-white/5 border-white/10 text-white px-4 py-2 text-sm focus:border-emerald-500/50 focus:ring-emerald-500/20"
                 >
                 @error('ssid')
                     <p class="mt-1 text-xs text-red-400">{{ $message }}</p>
@@ -30,7 +30,7 @@
                     id="password"
                     wire:model="password"
                     placeholder="WiFi password"
-                    class="w-full rounded-lg bg-gray-800 border-gray-700 text-white px-4 py-2 text-sm focus:border-amber-500 focus:ring-amber-500"
+                    class="w-full rounded-lg bg-white/5 border-white/10 text-white px-4 py-2 text-sm focus:border-emerald-500/50 focus:ring-emerald-500/20"
                 >
                 @error('password')
                     <p class="mt-1 text-xs text-red-400">{{ $message }}</p>
@@ -40,7 +40,7 @@
             <button
                 type="submit"
                 wire:loading.attr="disabled"
-                class="w-full rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-amber-400 transition-colors disabled:opacity-50"
+                class="w-full rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-gray-950 hover:bg-emerald-400 transition-colors disabled:opacity-50"
             >
                 <span wire:loading.remove>Connect</span>
                 <span wire:loading>Connecting...</span>

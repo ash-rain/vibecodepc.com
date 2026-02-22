@@ -5,24 +5,24 @@
     </div>
 
     @if ($statusMessage)
-        <div class="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 text-amber-400 text-sm">
+        <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4 text-emerald-400 text-sm">
             {{ $statusMessage }}
         </div>
     @endif
 
     {{-- Tabs --}}
-    <div class="border-b border-gray-800 flex gap-1 overflow-x-auto">
+    <div class="border-b border-white/[0.06] flex gap-1 overflow-x-auto">
         @foreach (['network' => 'Network', 'storage' => 'Storage', 'updates' => 'Updates', 'ssh' => 'SSH', 'backup' => 'Backup', 'power' => 'Power'] as $key => $label)
             <button
                 @click="tab = '{{ $key }}'"
-                :class="tab === '{{ $key }}' ? 'text-amber-400 border-amber-400' : 'text-gray-500 border-transparent hover:text-gray-300'"
+                :class="tab === '{{ $key }}' ? 'text-emerald-400 border-emerald-400' : 'text-gray-500 border-transparent hover:text-gray-300'"
                 class="px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap"
             >{{ $label }}</button>
         @endforeach
     </div>
 
     {{-- Network Tab --}}
-    <div x-show="tab === 'network'" class="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-4">
+    <div x-show="tab === 'network'" class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6 space-y-4">
         <h3 class="text-sm font-medium text-gray-400">Network Configuration</h3>
         <div class="space-y-3">
             <div class="flex justify-between text-sm">
@@ -45,7 +45,7 @@
     </div>
 
     {{-- Storage Tab --}}
-    <div x-show="tab === 'storage'" class="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-4">
+    <div x-show="tab === 'storage'" class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6 space-y-4">
         <h3 class="text-sm font-medium text-gray-400">Disk Usage</h3>
         @php $diskPercent = $diskTotalGb > 0 ? ($diskUsedGb / $diskTotalGb) * 100 : 0; @endphp
         <div>
@@ -68,13 +68,13 @@
     </div>
 
     {{-- Updates Tab --}}
-    <div x-show="tab === 'updates'" class="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-4">
+    <div x-show="tab === 'updates'" class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6 space-y-4">
         <h3 class="text-sm font-medium text-gray-400">System Updates</h3>
         <p class="text-sm text-gray-500">Check for available system and package updates.</p>
         <button
             wire:click="checkForUpdates"
             wire:loading.attr="disabled"
-            class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm rounded-lg transition-colors"
+            class="px-4 py-2 bg-white/[0.06] hover:bg-white/10 text-white text-sm rounded-lg transition-colors"
         >
             <span wire:loading.remove wire:target="checkForUpdates">Check for Updates</span>
             <span wire:loading wire:target="checkForUpdates">Checking...</span>
@@ -82,7 +82,7 @@
     </div>
 
     {{-- SSH Tab --}}
-    <div x-show="tab === 'ssh'" class="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-4">
+    <div x-show="tab === 'ssh'" class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6 space-y-4">
         <h3 class="text-sm font-medium text-gray-400">SSH Access</h3>
         <div class="flex items-center justify-between">
             <div>
@@ -93,7 +93,7 @@
                 wire:click="toggleSsh"
                 @class([
                     'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200',
-                    'bg-amber-500' => $sshEnabled,
+                    'bg-emerald-500' => $sshEnabled,
                     'bg-gray-700' => !$sshEnabled,
                 ])
             >
@@ -105,14 +105,14 @@
             </button>
         </div>
         @if ($sshEnabled && $localIp)
-            <div class="bg-gray-800/50 rounded-lg p-3 text-sm font-mono text-gray-400">
+            <div class="bg-white/[0.03] rounded-lg p-3 text-sm font-mono text-gray-400">
                 ssh vibecodepc@{{ $localIp }}
             </div>
         @endif
     </div>
 
     {{-- Backup Tab --}}
-    <div x-show="tab === 'backup'" class="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-6">
+    <div x-show="tab === 'backup'" class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6 space-y-6">
         <h3 class="text-sm font-medium text-gray-400">Backup & Restore</h3>
 
         <div>
@@ -120,21 +120,21 @@
             <button
                 wire:click="createBackup"
                 wire:loading.attr="disabled"
-                class="px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-gray-950 text-sm font-medium rounded-lg transition-colors"
+                class="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-gray-950 text-sm font-medium rounded-xl transition-colors"
             >
                 <span wire:loading.remove wire:target="createBackup">Download Backup</span>
                 <span wire:loading wire:target="createBackup">Creating backup...</span>
             </button>
         </div>
 
-        <div class="pt-4 border-t border-gray-800">
+        <div class="pt-4 border-t border-white/[0.06]">
             <p class="text-sm text-gray-500 mb-3">Restore a previously downloaded backup file. This will overwrite current settings.</p>
             <div class="space-y-3">
                 <input
                     wire:model="backupFile"
                     type="file"
                     accept=".zip"
-                    class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-gray-800 file:text-white hover:file:bg-gray-700"
+                    class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-white/[0.06] file:text-white hover:file:bg-white/10"
                 >
                 @error('backupFile')
                     <p class="text-xs text-red-400">{{ $message }}</p>
@@ -144,7 +144,7 @@
                     wire:confirm="This will overwrite your current configuration with the backup. Are you sure?"
                     wire:loading.attr="disabled"
                     @disabled(! $backupFile)
-                    class="px-4 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-white text-sm rounded-lg transition-colors"
+                    class="px-4 py-2 bg-white/[0.06] hover:bg-white/10 disabled:opacity-50 text-white text-sm rounded-lg transition-colors"
                 >
                     <span wire:loading.remove wire:target="restoreBackup">Restore from Backup</span>
                     <span wire:loading wire:target="restoreBackup">Restoring...</span>
@@ -154,13 +154,13 @@
     </div>
 
     {{-- Power Tab --}}
-    <div x-show="tab === 'power'" class="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-4">
+    <div x-show="tab === 'power'" class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6 space-y-4">
         <h3 class="text-sm font-medium text-gray-400">Power Management</h3>
         <div class="flex flex-wrap gap-3">
             <button
                 wire:click="restartDevice"
                 wire:confirm="Are you sure you want to restart the device?"
-                class="px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-sm rounded-lg transition-colors"
+                class="px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-sm rounded-lg transition-colors"
             >Restart Device</button>
             <button
                 wire:click="shutdownDevice"
@@ -169,7 +169,7 @@
             >Shutdown</button>
         </div>
 
-        <div class="pt-4 mt-4 border-t border-gray-800">
+        <div class="pt-4 mt-4 border-t border-white/[0.06]">
             <h4 class="text-sm font-medium text-red-400 mb-2">Factory Reset</h4>
             <p class="text-xs text-gray-500 mb-3">This will erase all settings and return the device to its initial state. This cannot be undone.</p>
             <button

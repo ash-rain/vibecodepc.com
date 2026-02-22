@@ -11,53 +11,78 @@ use VibecodePC\Common\Enums\ProjectStatus;
 
 class ProjectContainerService
 {
-    public function start(Project $project): bool
+    /**
+     * Start a project container.
+     *
+     * @return string|null null on success, error message on failure
+     */
+    public function start(Project $project): ?string
     {
         $result = Process::path($project->path)
             ->timeout(120)
             ->run('docker compose up -d');
 
-        $this->log($project, 'docker', "Start: {$result->output()}");
-
         if ($result->successful()) {
+            $this->log($project, 'docker', "Start: {$result->output()}");
+
             $project->update([
                 'status' => ProjectStatus::Running,
                 'container_id' => $this->getContainerId($project),
                 'last_started_at' => now(),
             ]);
 
-            return true;
+            return null;
         }
+
+        $error = trim($result->errorOutput() ?: $result->output());
+        $this->log($project, 'docker', "Start failed: {$error}");
 
         $project->update(['status' => ProjectStatus::Error]);
 
-        return false;
+        return $error ?: 'Failed to start container (no output).';
     }
 
-    public function stop(Project $project): bool
+    /**
+     * Stop a project container.
+     *
+     * @return string|null null on success, error message on failure
+     */
+    public function stop(Project $project): ?string
     {
         $result = Process::path($project->path)
             ->timeout(60)
             ->run('docker compose down');
 
-        $this->log($project, 'docker', "Stop: {$result->output()}");
-
         if ($result->successful()) {
+            $this->log($project, 'docker', "Stop: {$result->output()}");
+
             $project->update([
                 'status' => ProjectStatus::Stopped,
                 'container_id' => null,
                 'last_stopped_at' => now(),
             ]);
 
-            return true;
+            return null;
         }
 
-        return false;
+        $error = trim($result->errorOutput() ?: $result->output());
+        $this->log($project, 'docker', "Stop failed: {$error}");
+
+        return $error ?: 'Failed to stop container (no output).';
     }
 
-    public function restart(Project $project): bool
+    /**
+     * Restart a project container.
+     *
+     * @return string|null null on success, error message on failure
+     */
+    public function restart(Project $project): ?string
     {
-        $this->stop($project);
+        $stopError = $this->stop($project);
+
+        if ($stopError !== null) {
+            return "Stop failed: {$stopError}";
+        }
 
         return $this->start($project);
     }

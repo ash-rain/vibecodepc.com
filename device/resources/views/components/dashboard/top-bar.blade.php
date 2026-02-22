@@ -1,6 +1,6 @@
 @props(['title' => 'Dashboard'])
 
-<header class="sticky top-0 z-20 bg-gray-950/80 backdrop-blur-sm border-b border-gray-800">
+<header class="sticky top-0 z-20 bg-gray-950/80 backdrop-blur-xl border-b border-white/[0.06]">
     <div class="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
         <div class="flex items-center gap-3">
             {{-- Mobile hamburger --}}

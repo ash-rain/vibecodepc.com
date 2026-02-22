@@ -1,6 +1,6 @@
 <div class="space-y-6">
     {{-- Tunnel Status --}}
-    <div class="bg-gray-900 rounded-xl border border-gray-800 p-6">
+    <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6">
         <div class="flex items-center justify-between mb-4">
             <div>
                 <h2 class="text-lg font-semibold text-white">Cloudflare Tunnel</h2>
@@ -18,7 +18,7 @@
                     <button
                         wire:click="restartTunnel"
                         wire:loading.attr="disabled"
-                        class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-white text-xs rounded-lg transition-colors"
+                        class="px-3 py-1.5 bg-white/[0.06] hover:bg-white/10 disabled:opacity-50 text-white text-xs rounded-lg transition-colors"
                     >
                         <span wire:loading.remove wire:target="restartTunnel">Restart</span>
                         <span wire:loading wire:target="restartTunnel">Restarting...</span>
@@ -34,9 +34,9 @@
         @endif
 
         @if ($subdomain)
-            <div class="bg-gray-800/50 rounded-lg p-3 text-sm">
+            <div class="bg-white/[0.03] rounded-lg p-3 text-sm">
                 <span class="text-gray-500">Device URL:</span>
-                <span class="text-amber-400 font-mono ml-1">https://{{ $subdomain }}.vibecodepc.com</span>
+                <span class="text-emerald-400 font-mono ml-1">https://{{ $subdomain }}.vibecodepc.com</span>
             </div>
         @else
             <p class="text-gray-500 text-sm">No tunnel configured. Complete the setup wizard to configure tunnel access.</p>
@@ -44,7 +44,7 @@
     </div>
 
     {{-- Per-Project Routing --}}
-    <div class="bg-gray-900 rounded-xl border border-gray-800 p-6">
+    <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6">
         <h3 class="text-sm font-medium text-gray-400 mb-4">Project Routing</h3>
 
         @if (count($projects) === 0)
@@ -52,13 +52,13 @@
         @else
             <div class="space-y-3">
                 @foreach ($projects as $project)
-                    <div class="flex items-center justify-between bg-gray-800/50 rounded-lg p-4">
+                    <div class="flex items-center justify-between bg-white/[0.03] rounded-lg p-4">
                         <div>
                             <div class="text-sm text-white font-medium">{{ $project['name'] }}</div>
                             @if ($project['tunnel_enabled'] && $subdomain)
                                 <div class="text-xs text-gray-500 font-mono mt-0.5 space-y-0.5">
                                     <div>/{{ $project['slug'] }} &rarr; localhost:{{ $project['port'] }}</div>
-                                    <div class="text-amber-400/70">{{ $project['slug'] }}--{{ $subdomain }}.vibecodepc.com</div>
+                                    <div class="text-emerald-400/70">{{ $project['slug'] }}--{{ $subdomain }}.vibecodepc.com</div>
                                 </div>
                             @endif
                         </div>
@@ -66,7 +66,7 @@
                             wire:click="toggleProjectTunnel({{ $project['id'] }})"
                             @class([
                                 'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200',
-                                'bg-amber-500' => $project['tunnel_enabled'],
+                                'bg-emerald-500' => $project['tunnel_enabled'],
                                 'bg-gray-700' => !$project['tunnel_enabled'],
                             ])
                         >
@@ -84,11 +84,11 @@
 
     {{-- Traffic Stats --}}
     @if (count($trafficStats) > 0)
-        <div class="bg-gray-900 rounded-xl border border-gray-800 p-6">
+        <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6">
             <h3 class="text-sm font-medium text-gray-400 mb-4">Traffic Stats (24h)</h3>
             <div class="space-y-2">
                 @foreach ($trafficStats as $stat)
-                    <div class="flex items-center justify-between bg-gray-800/50 rounded-lg px-4 py-3">
+                    <div class="flex items-center justify-between bg-white/[0.03] rounded-lg px-4 py-3">
                         <span class="text-sm text-white">{{ $stat['project'] }}</span>
                         <div class="flex items-center gap-4 text-xs text-gray-400">
                             <span>{{ number_format($stat['requests']) }} requests</span>

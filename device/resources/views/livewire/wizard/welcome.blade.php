@@ -1,13 +1,13 @@
 <div class="space-y-6">
-    <div class="bg-gray-900 rounded-xl border border-gray-800 p-8">
+    <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-8">
         <h2 class="text-xl font-semibold text-white mb-2">Welcome to VibeCodePC</h2>
         <p class="text-gray-400 text-sm mb-6">Let's get your workstation set up. First, confirm your account and configure basic settings.</p>
 
         @if (!$isPaired)
             {{-- No Cloud Account — Pairing CTA --}}
             <div class="text-center py-8">
-                <div class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-8 mb-6">
-                    <svg class="w-16 h-16 mx-auto text-amber-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-8 mb-6">
+                    <svg class="w-16 h-16 mx-auto text-emerald-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.86-2.07a4.5 4.5 0 00-6.364-6.364L4.757 8.243a4.5 4.5 0 003.182 7.682" />
                     </svg>
                     <h3 class="text-lg font-semibold text-white mb-2">Connect Your Cloud Account</h3>
@@ -16,7 +16,7 @@
                     </p>
                     <a
                         href="{{ route('pairing') }}"
-                        class="inline-flex items-center gap-3 px-8 py-4 bg-amber-500 hover:bg-amber-600 text-gray-950 font-semibold text-lg rounded-xl transition-colors"
+                        class="inline-flex items-center gap-3 px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold text-lg rounded-xl transition-colors"
                     >
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
@@ -28,12 +28,12 @@
             </div>
         @else
             {{-- Account Info --}}
-            <div class="bg-gray-800/50 rounded-lg p-4 mb-6">
+            <div class="bg-white/[0.03] rounded-lg p-4 mb-6">
                 <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Cloud Account</h3>
                 <dl class="space-y-2 text-sm">
                     <div class="flex justify-between">
                         <dt class="text-gray-400">Username</dt>
-                        <dd class="text-amber-400 font-mono">{{ $cloudUsername }}</dd>
+                        <dd class="text-emerald-400 font-mono">{{ $cloudUsername }}</dd>
                     </div>
                     <div class="flex justify-between">
                         <dt class="text-gray-400">Email</dt>
@@ -52,7 +52,7 @@
                         wire:model="adminPassword"
                         type="password"
                         id="adminPassword"
-                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                        class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-gray-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none"
                         placeholder="Minimum 8 characters"
                     >
                     @error('adminPassword')
@@ -68,7 +68,7 @@
                         wire:model="adminPasswordConfirmation"
                         type="password"
                         id="adminPasswordConfirmation"
-                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                        class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-gray-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none"
                         placeholder="Re-enter your password"
                     >
                 </div>
@@ -81,7 +81,7 @@
                     <select
                         wire:model="timezone"
                         id="timezone"
-                        class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                        class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none"
                     >
                         @foreach ($timezones as $tz)
                             <option value="{{ $tz }}">{{ $tz }}</option>
@@ -98,10 +98,10 @@
                         wire:model="acceptedTos"
                         type="checkbox"
                         id="acceptedTos"
-                        class="mt-1 h-4 w-4 rounded border-gray-600 bg-gray-800 text-amber-500 focus:ring-amber-500"
+                        class="mt-1 h-4 w-4 rounded border-gray-600 bg-white/5 text-emerald-500 focus:ring-emerald-500"
                     >
                     <label for="acceptedTos" class="text-sm text-gray-400">
-                        I agree to the <a href="https://vibecodepc.com/terms" target="_blank" class="text-amber-400 hover:underline">Terms of Service</a> and <a href="https://vibecodepc.com/privacy" target="_blank" class="text-amber-400 hover:underline">Privacy Policy</a>.
+                        I agree to the <a href="https://vibecodepc.com/terms" target="_blank" class="text-emerald-400 hover:underline">Terms of Service</a> and <a href="https://vibecodepc.com/privacy" target="_blank" class="text-emerald-400 hover:underline">Privacy Policy</a>.
                     </label>
                 </div>
                 @error('acceptedTos')
@@ -111,7 +111,7 @@
                 {{-- Submit --}}
                 <button
                     type="submit"
-                    class="w-full bg-amber-500 hover:bg-amber-600 text-gray-950 font-semibold py-3 rounded-lg transition-colors"
+                    class="w-full bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold py-3 rounded-xl transition-colors"
                     wire:loading.attr="disabled"
                     wire:loading.class="opacity-50 cursor-wait"
                 >

@@ -23,18 +23,36 @@
                         <a
                             href="http://localhost:{{ $project->port }}"
                             target="_blank"
-                            class="px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-sm rounded-lg transition-colors"
+                            class="px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-sm rounded-lg transition-colors"
                         >Preview</a>
                     @endif
                     <button wire:click="stop" wire:loading.attr="disabled" class="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm rounded-lg transition-colors">Stop</button>
-                    <button wire:click="restart" wire:loading.attr="disabled" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm rounded-lg transition-colors">Restart</button>
+                    <button wire:click="restart" wire:loading.attr="disabled" class="px-4 py-2 bg-white/[0.06] hover:bg-white/10 text-white text-sm rounded-lg transition-colors">Restart</button>
                 @else
                     <button wire:click="start" wire:loading.attr="disabled" class="px-4 py-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 text-sm rounded-lg transition-colors">Start</button>
                 @endif
-                <button wire:click="openInEditor" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm rounded-lg transition-colors">Open Editor</button>
+                <button wire:click="openInEditor" class="px-4 py-2 bg-white/[0.06] hover:bg-white/10 text-white text-sm rounded-lg transition-colors">Open Editor</button>
             </div>
         @endif
     </div>
+
+    {{-- Error banner --}}
+    @if ($actionError)
+        <div class="flex items-start gap-3 bg-red-500/5 rounded-2xl border border-red-500/20 p-4">
+            <svg class="w-5 h-5 text-red-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-red-400">Action failed</p>
+                <pre class="mt-1 text-xs text-red-300/80 whitespace-pre-wrap font-mono break-words">{{ $actionError }}</pre>
+            </div>
+            <button wire:click="dismissError" class="text-red-400/60 hover:text-red-400 shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+    @endif
 
     {{-- Provisioning --}}
     @if ($project->isProvisioning())
@@ -61,19 +79,19 @@
 
     {{-- Overview --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+        <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-5">
             <div class="text-gray-500 text-xs mb-1">Port</div>
             <div class="text-white font-medium">{{ $project->port ?? '—' }}</div>
         </div>
-        <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+        <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-5">
             <div class="text-gray-500 text-xs mb-1">Path</div>
             <div class="text-white font-medium text-sm truncate">{{ $project->path }}</div>
         </div>
-        <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+        <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-5">
             <div class="text-gray-500 text-xs mb-1">Public URL</div>
             <div class="text-sm truncate">
                 @if ($project->getPublicUrl())
-                    <a href="{{ $project->getPublicUrl() }}" target="_blank" class="text-amber-400 hover:underline">{{ $project->getPublicUrl() }}</a>
+                    <a href="{{ $project->getPublicUrl() }}" target="_blank" class="text-emerald-400 hover:underline">{{ $project->getPublicUrl() }}</a>
                 @else
                     <span class="text-gray-500">Not published</span>
                 @endif
@@ -83,7 +101,7 @@
 
     {{-- Resource Usage --}}
     @if ($resourceUsage)
-        <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+        <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-5">
             <h3 class="text-sm font-medium text-gray-400 mb-3">Resource Usage</h3>
             <div class="flex gap-6 text-sm">
                 <div><span class="text-gray-500">CPU:</span> <span class="text-white">{{ $resourceUsage['cpu'] }}</span></div>
@@ -93,7 +111,7 @@
     @endif
 
     {{-- Tunnel --}}
-    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+    <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-5">
         <div class="flex items-center justify-between">
             <div>
                 <h3 class="text-sm font-medium text-white">Tunnel Access</h3>
@@ -103,7 +121,7 @@
                 wire:click="toggleTunnel"
                 @class([
                     'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200',
-                    'bg-amber-500' => $project->tunnel_enabled,
+                    'bg-emerald-500' => $project->tunnel_enabled,
                     'bg-gray-700' => !$project->tunnel_enabled,
                 ])
             >
@@ -117,7 +135,7 @@
     </div>
 
     {{-- Environment Variables --}}
-    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+    <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-5">
         <h3 class="text-sm font-medium text-gray-400 mb-3">Environment Variables</h3>
 
         @if (count($envVars) > 0)
@@ -133,14 +151,14 @@
         @endif
 
         <div class="flex gap-2">
-            <input wire:model="newEnvKey" type="text" placeholder="KEY" class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white font-mono placeholder-gray-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none">
-            <input wire:model="newEnvValue" type="text" placeholder="value" class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white font-mono placeholder-gray-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none">
+            <input wire:model="newEnvKey" type="text" placeholder="KEY" class="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white font-mono placeholder-gray-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none">
+            <input wire:model="newEnvValue" type="text" placeholder="value" class="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white font-mono placeholder-gray-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none">
             <button wire:click="addEnvVar" class="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors">Add</button>
         </div>
     </div>
 
     {{-- Container Logs --}}
-    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+    <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-5">
         <div class="flex items-center justify-between mb-3">
             <h3 class="text-sm font-medium text-gray-400">Logs</h3>
             <button wire:click="refreshLogs" class="text-xs text-gray-500 hover:text-white transition-colors">Refresh</button>
@@ -158,7 +176,7 @@
     </div>
 
     {{-- Danger Zone --}}
-    <div class="bg-gray-900 rounded-xl border border-red-500/20 p-5">
+    <div class="bg-white/[0.02] rounded-2xl border border-red-500/20 p-5">
         <h3 class="text-sm font-medium text-red-400 mb-3">Danger Zone</h3>
         <button
             wire:click="deleteProject"

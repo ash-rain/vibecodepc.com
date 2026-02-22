@@ -1,6 +1,6 @@
 <div class="space-y-6">
     {{-- Welcome --}}
-    <div class="bg-gray-900 rounded-xl border border-gray-800 p-6">
+    <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6">
         <h2 class="text-xl font-semibold text-white">Welcome back, {{ $username }}</h2>
         <p class="text-gray-400 text-sm mt-1">Here's what's happening on your VibeCodePC.</p>
     </div>
@@ -8,19 +8,19 @@
     {{-- Quick Stats --}}
     <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {{-- Projects --}}
-        <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+        <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-5">
             <div class="text-gray-500 text-sm">Projects</div>
             <div class="text-2xl font-bold text-white mt-1">{{ $projectCount }}</div>
         </div>
 
         {{-- Running --}}
-        <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+        <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-5">
             <div class="text-gray-500 text-sm">Running</div>
             <div class="text-2xl font-bold text-green-400 mt-1">{{ $runningCount }}</div>
         </div>
 
         {{-- Tunnel --}}
-        <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+        <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-5">
             <div class="text-gray-500 text-sm">Tunnel</div>
             <div class="mt-1">
                 @if ($tunnelRunning)
@@ -32,13 +32,13 @@
         </div>
 
         {{-- AI Providers --}}
-        <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+        <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-5">
             <div class="text-gray-500 text-sm">AI Providers</div>
-            <div class="text-2xl font-bold text-amber-400 mt-1">{{ $aiProviderCount }}</div>
+            <div class="text-2xl font-bold text-emerald-400 mt-1">{{ $aiProviderCount }}</div>
         </div>
 
         {{-- Copilot --}}
-        <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+        <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-5">
             <div class="text-gray-500 text-sm">Copilot</div>
             <div class="mt-1">
                 @if ($hasCopilot)
@@ -51,19 +51,19 @@
     </div>
 
     {{-- Quick Actions --}}
-    <div class="bg-gray-900 rounded-xl border border-gray-800 p-6">
+    <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6">
         <h3 class="text-sm font-medium text-gray-400 mb-4">Quick Actions</h3>
         <div class="flex flex-wrap gap-3">
-            <a href="{{ route('dashboard.projects.create') }}" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-gray-950 font-medium text-sm rounded-lg transition-colors">
+            <a href="{{ route('dashboard.projects.create') }}" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-medium text-sm rounded-xl transition-colors">
                 New Project
             </a>
-            <a href="{{ route('dashboard.code-editor') }}" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm rounded-lg transition-colors">
+            <a href="{{ route('dashboard.code-editor') }}" class="px-4 py-2 bg-white/[0.06] hover:bg-white/10 text-white text-sm rounded-lg transition-colors">
                 Open Editor
             </a>
-            <a href="{{ route('dashboard.ai-services') }}" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm rounded-lg transition-colors">
+            <a href="{{ route('dashboard.ai-services') }}" class="px-4 py-2 bg-white/[0.06] hover:bg-white/10 text-white text-sm rounded-lg transition-colors">
                 Manage AI Keys
             </a>
-            <a href="{{ route('dashboard.tunnels') }}" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm rounded-lg transition-colors">
+            <a href="{{ route('dashboard.tunnels') }}" class="px-4 py-2 bg-white/[0.06] hover:bg-white/10 text-white text-sm rounded-lg transition-colors">
                 Tunnel Settings
             </a>
         </div>
@@ -71,7 +71,7 @@
 
     {{-- Recent Activity --}}
     @if (count($recentActivity) > 0)
-        <div class="bg-gray-900 rounded-xl border border-gray-800 p-6">
+        <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6">
             <h3 class="text-sm font-medium text-gray-400 mb-4">Recent Activity</h3>
             <div class="space-y-3">
                 @foreach ($recentActivity as $activity)

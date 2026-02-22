@@ -4,10 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Dashboard — VibeCodePC')</title>
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700|jetbrains-mono:400,500" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>
-<body class="bg-gray-950 text-white antialiased min-h-screen" x-data="{ sidebarOpen: false }">
+<body class="bg-gray-950 text-white antialiased font-sans min-h-screen" x-data="{ sidebarOpen: false }">
     <div class="flex min-h-screen">
         {{-- Sidebar --}}
         <x-dashboard.sidebar />

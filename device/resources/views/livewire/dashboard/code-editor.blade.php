@@ -1,9 +1,9 @@
 <div class="flex flex-col h-screen">
     {{-- Branded header bar --}}
-    <header class="h-12 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-4 shrink-0">
+    <header class="h-12 bg-gray-950 border-b border-white/[0.06] flex items-center justify-between px-4 shrink-0">
         <div class="flex items-center gap-3">
-            <a href="{{ route('dashboard') }}" class="flex items-center gap-2 text-white hover:text-amber-400 transition-colors">
-                <div class="w-7 h-7 bg-amber-500 rounded-lg flex items-center justify-center">
+            <a href="{{ route('dashboard') }}" class="flex items-center gap-2 text-white hover:text-emerald-400 transition-colors">
+                <div class="w-7 h-7 bg-emerald-500 rounded-lg flex items-center justify-center">
                     <svg class="w-4 h-4 text-gray-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                     </svg>
@@ -34,7 +34,7 @@
                         wire:click="restart"
                         wire:confirm="This will restart code-server and reload the editor. Any unsaved changes may be lost."
                         wire:loading.attr="disabled"
-                        class="px-3 py-1 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-white text-xs rounded-lg transition-colors"
+                        class="px-3 py-1 bg-white/[0.06] hover:bg-white/10 disabled:opacity-50 text-white text-xs rounded-lg transition-colors"
                     >
                         <span wire:loading.remove wire:target="restart">Restart</span>
                         <span wire:loading wire:target="restart">Restarting...</span>
@@ -44,7 +44,7 @@
                         target="_blank"
                         wire:loading.class="pointer-events-none opacity-50"
                         wire:target="restart"
-                        class="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-gray-950 font-medium text-xs rounded-lg transition-colors"
+                        class="px-3 py-1 bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-medium text-xs rounded-xl transition-colors"
                     >
                         Open in New Tab
                     </a>
@@ -52,7 +52,7 @@
                     <button
                         wire:click="start"
                         wire:loading.attr="disabled"
-                        class="px-3 py-1 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-gray-950 font-medium text-xs rounded-lg transition-colors"
+                        class="px-3 py-1 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-gray-950 font-medium text-xs rounded-xl transition-colors"
                     >
                         <span wire:loading.remove wire:target="start">Start Editor</span>
                         <span wire:loading wire:target="start">Starting...</span>
@@ -64,8 +64,8 @@
 
     {{-- Extensions Panel --}}
     @if ($isInstalled)
-        <div x-data="{ open: false }" class="bg-gray-900 border-b border-gray-800 shrink-0">
-            <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-2 text-left hover:bg-gray-800/50 transition-colors">
+        <div x-data="{ open: false }" class="bg-gray-950 border-b border-white/[0.06] shrink-0">
+            <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-2 text-left hover:bg-white/[0.04] transition-colors">
                 <span class="text-xs font-medium text-gray-400">Extensions ({{ count($extensions) }})</span>
                 <svg :class="open ? 'rotate-180' : ''" class="w-3.5 h-3.5 text-gray-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -74,7 +74,7 @@
 
             <div x-show="open" x-collapse class="px-4 pb-3 space-y-3">
                 @if ($extensionMessage)
-                    <p class="text-xs text-amber-400">{{ $extensionMessage }}</p>
+                    <p class="text-xs text-emerald-400">{{ $extensionMessage }}</p>
                 @endif
 
                 <div class="flex gap-2">
@@ -82,13 +82,13 @@
                         wire:model="newExtensionId"
                         type="text"
                         placeholder="Extension ID (e.g. ms-python.python)"
-                        class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                        class="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none"
                     >
                     <button
                         wire:click="installExtension"
                         wire:loading.attr="disabled"
                         wire:target="installExtension"
-                        class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-gray-950 font-medium text-xs rounded-lg transition-colors"
+                        class="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-gray-950 font-medium text-xs rounded-xl transition-colors"
                     >
                         <span wire:loading.remove wire:target="installExtension">Install</span>
                         <span wire:loading wire:target="installExtension">Installing...</span>
@@ -98,7 +98,7 @@
                 @if (count($extensions) > 0)
                     <div class="max-h-48 overflow-y-auto space-y-1">
                         @foreach ($extensions as $ext)
-                            <div class="flex items-center justify-between py-1 px-2 rounded bg-gray-800/50 text-xs">
+                            <div class="flex items-center justify-between py-1 px-2 rounded bg-white/[0.03] text-xs">
                                 <div>
                                     <span class="text-white">{{ $ext['id'] }}</span>
                                     <span class="text-gray-500 ml-1">v{{ $ext['version'] }}</span>
@@ -147,7 +147,7 @@
                 class="absolute inset-0 items-center justify-center bg-gray-950/80 z-10"
             >
                 <div class="text-center">
-                    <svg class="w-8 h-8 text-amber-500 animate-spin mx-auto mb-3" fill="none" viewBox="0 0 24 24">
+                    <svg class="w-8 h-8 text-emerald-500 animate-spin mx-auto mb-3" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
@@ -177,7 +177,7 @@
                 <button
                     wire:click="start"
                     wire:loading.attr="disabled"
-                    class="px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-gray-950 font-medium text-sm rounded-lg transition-colors"
+                    class="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-gray-950 font-medium text-sm rounded-xl transition-colors"
                 >
                     <span wire:loading.remove wire:target="start">Start Editor</span>
                     <span wire:loading wire:target="start">Starting...</span>

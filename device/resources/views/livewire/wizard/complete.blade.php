@@ -1,5 +1,5 @@
 <div class="space-y-6">
-    <div class="bg-gray-900 rounded-xl border border-gray-800 p-8 text-center">
+    <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-8 text-center">
         <div class="mb-6">
             <svg class="w-16 h-16 mx-auto text-green-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -9,7 +9,7 @@
         </div>
 
         {{-- Summary --}}
-        <div class="bg-gray-800/50 rounded-lg p-6 mb-6 text-left">
+        <div class="bg-white/[0.03] rounded-lg p-6 mb-6 text-left">
             <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Configuration Summary</h3>
             <div class="space-y-3">
                 @foreach ($summary as $item)
@@ -37,20 +37,20 @@
 
         {{-- Quick Actions --}}
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-            <a href="{{ route('dashboard') }}" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg p-4 transition-colors block">
-                <svg class="w-8 h-8 mx-auto text-amber-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <a href="{{ route('dashboard') }}" class="bg-white/[0.06] hover:bg-white/10 border border-white/10 rounded-lg p-4 transition-colors block">
+                <svg class="w-8 h-8 mx-auto text-emerald-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
                 </svg>
                 <span class="text-sm text-gray-300">View Dashboard</span>
             </a>
-            <a href="{{ $codeServerUrl }}" target="_blank" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg p-4 transition-colors block">
-                <svg class="w-8 h-8 mx-auto text-amber-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <a href="{{ $codeServerUrl }}" target="_blank" class="bg-white/[0.06] hover:bg-white/10 border border-white/10 rounded-lg p-4 transition-colors block">
+                <svg class="w-8 h-8 mx-auto text-emerald-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                 </svg>
                 <span class="text-sm text-gray-300">Open VS Code</span>
             </a>
-            <a href="{{ route('dashboard') }}" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg p-4 transition-colors block">
-                <svg class="w-8 h-8 mx-auto text-amber-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <a href="{{ route('dashboard') }}" class="bg-white/[0.06] hover:bg-white/10 border border-white/10 rounded-lg p-4 transition-colors block">
+                <svg class="w-8 h-8 mx-auto text-emerald-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
                 <span class="text-sm text-gray-300">Create Project</span>
@@ -61,7 +61,7 @@
     {{-- Go to Dashboard --}}
     <button
         wire:click="goToDashboard"
-        class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-gray-950 font-semibold rounded-lg transition-colors"
+        class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold rounded-xl transition-colors"
     >
         Go to Dashboard
     </button>
