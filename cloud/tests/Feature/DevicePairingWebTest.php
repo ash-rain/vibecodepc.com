@@ -28,7 +28,7 @@ class DevicePairingWebTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->get('/id/' . Str::uuid());
+        $response = $this->actingAs($user)->get('/id/'.Str::uuid());
 
         $response->assertStatus(404);
     }
@@ -100,6 +100,18 @@ class DevicePairingWebTest extends TestCase
             ->assertViewIs('pairing.success')
             ->assertViewHas('device', $device)
             ->assertViewHas('user', $user);
+    }
+
+    public function test_success_page_contains_device_access_link(): void
+    {
+        $user = User::factory()->create();
+        $device = Device::factory()->claimed($user)->create();
+
+        $response = $this->actingAs($user)->get("/id/{$device->uuid}/success");
+
+        $response->assertOk()
+            ->assertSee('vibecodepc.local')
+            ->assertSee('http://vibecodepc.local');
     }
 
     public function test_success_returns_403_for_non_owner(): void

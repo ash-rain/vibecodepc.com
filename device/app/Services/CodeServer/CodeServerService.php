@@ -74,7 +74,8 @@ class CodeServerService
         $port = $this->getPort();
 
         $result = Process::run(sprintf(
-            '/usr/sbin/lsof -iTCP:%d -sTCP:LISTEN -t 2>/dev/null || lsof -iTCP:%d -sTCP:LISTEN -t 2>/dev/null || ss -tlnp sport = :%d 2>/dev/null | grep -q LISTEN',
+            '/usr/sbin/lsof -iTCP:%d -sTCP:LISTEN -t 2>/dev/null || lsof -iTCP:%d -sTCP:LISTEN -t 2>/dev/null || ss -tlnp sport = :%d 2>/dev/null | grep -q LISTEN || curl -sf -o /dev/null http://127.0.0.1:%d/healthz 2>/dev/null',
+            $port,
             $port,
             $port,
             $port,
@@ -98,6 +99,44 @@ class CodeServerService
         }
 
         return null;
+    }
+
+    /**
+     * @return array<int, array{id: string, version: string}>
+     */
+    public function listExtensions(): array
+    {
+        $result = Process::timeout(30)->run(
+            $this->shell('code-server --list-extensions --show-versions 2>/dev/null'),
+        );
+
+        if (! $result->successful()) {
+            return [];
+        }
+
+        $extensions = [];
+
+        foreach (explode("\n", trim($result->output())) as $line) {
+            $line = trim($line);
+
+            if ($line === '' || ! str_contains($line, '@')) {
+                continue;
+            }
+
+            [$id, $version] = explode('@', $line, 2);
+            $extensions[] = ['id' => $id, 'version' => $version];
+        }
+
+        return $extensions;
+    }
+
+    public function uninstallExtension(string $id): bool
+    {
+        $result = Process::timeout(60)->run(
+            $this->shell(sprintf('code-server --uninstall-extension %s 2>&1', escapeshellarg($id))),
+        );
+
+        return $result->successful();
     }
 
     /**
@@ -257,7 +296,6 @@ class CodeServerService
 
         // Force kill if SIGTERM wasn't enough
         $this->killByPort($this->getPort(), force: true);
-        Process::run('pkill -9 -f "code-server" 2>/dev/null');
 
         usleep(500_000);
 
@@ -276,8 +314,9 @@ class CodeServerService
         ));
 
         if (! $result->successful()) {
-            // Fallback to pkill
-            Process::run(sprintf('pkill %s -f "code-server" 2>/dev/null', $force ? '-9' : ''));
+            // Fallback: pgrep + kill. The [c] trick prevents matching the shell running this command.
+            $signal = $force ? '-9' : '';
+            Process::run(sprintf('pgrep -f "[c]ode-server" | xargs kill %s 2>/dev/null', $signal));
 
             return;
         }

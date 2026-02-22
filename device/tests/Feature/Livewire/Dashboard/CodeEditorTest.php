@@ -12,6 +12,7 @@ it('renders the code editor page', function () {
     $mock->shouldReceive('isRunning')->andReturn(true);
     $mock->shouldReceive('getVersion')->andReturn('4.23.1');
     $mock->shouldReceive('getUrl')->andReturn('http://localhost:8443');
+    $mock->shouldReceive('listExtensions')->andReturn([]);
     app()->instance(CodeServerService::class, $mock);
 
     Livewire::test(CodeEditor::class)
@@ -25,6 +26,7 @@ it('shows running status and version', function () {
     $mock->shouldReceive('isRunning')->andReturn(true);
     $mock->shouldReceive('getVersion')->andReturn('4.23.1');
     $mock->shouldReceive('getUrl')->andReturn('http://localhost:8443');
+    $mock->shouldReceive('listExtensions')->andReturn([]);
     app()->instance(CodeServerService::class, $mock);
 
     Livewire::test(CodeEditor::class)
@@ -38,6 +40,7 @@ it('shows stopped status when not running', function () {
     $mock->shouldReceive('isRunning')->andReturn(false);
     $mock->shouldReceive('getVersion')->andReturn('4.23.1');
     $mock->shouldReceive('getUrl')->andReturn('http://localhost:8443');
+    $mock->shouldReceive('listExtensions')->andReturn([]);
     app()->instance(CodeServerService::class, $mock);
 
     Livewire::test(CodeEditor::class)
@@ -51,6 +54,7 @@ it('shows not installed state', function () {
     $mock->shouldReceive('isRunning')->andReturn(false);
     $mock->shouldReceive('getVersion')->andReturn(null);
     $mock->shouldReceive('getUrl')->andReturn('http://localhost:8443');
+    $mock->shouldReceive('listExtensions')->andReturn([]);
     app()->instance(CodeServerService::class, $mock);
 
     Livewire::test(CodeEditor::class)
@@ -65,6 +69,7 @@ it('can start the editor', function () {
     $mock->shouldReceive('getVersion')->andReturn('4.23.1');
     $mock->shouldReceive('getUrl')->andReturn('http://localhost:8443');
     $mock->shouldReceive('start')->once()->andReturn(null);
+    $mock->shouldReceive('listExtensions')->andReturn([]);
     app()->instance(CodeServerService::class, $mock);
 
     Livewire::test(CodeEditor::class)
@@ -81,6 +86,7 @@ it('shows error when start fails', function () {
     $mock->shouldReceive('getVersion')->andReturn('4.23.1');
     $mock->shouldReceive('getUrl')->andReturn('http://localhost:8443');
     $mock->shouldReceive('start')->once()->andReturn('code-server started but not responding on port 8443.');
+    $mock->shouldReceive('listExtensions')->andReturn([]);
     app()->instance(CodeServerService::class, $mock);
 
     Livewire::test(CodeEditor::class)
@@ -96,6 +102,7 @@ it('can restart the editor', function () {
     $mock->shouldReceive('getVersion')->andReturn('4.23.1');
     $mock->shouldReceive('getUrl')->andReturn('http://localhost:8443');
     $mock->shouldReceive('restart')->once()->andReturn(null);
+    $mock->shouldReceive('listExtensions')->andReturn([]);
     app()->instance(CodeServerService::class, $mock);
 
     Livewire::test(CodeEditor::class)

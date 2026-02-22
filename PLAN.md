@@ -28,8 +28,8 @@ Two codebases:
 - [x] `laravel new cloud` — Laravel 12, PHP 8.4
 - [x] MySQL database, Redis cache/queue
 - [x] Install Laravel Sanctum (API auth for device ↔ cloud)
-- [ ] DNS wildcard setup: `*.vibecodepc.com` → cloud edge
-- [ ] Cloudflare integration for tunnel management
+- [ ] DNS wildcard setup: `*.vibecodepc.com` → cloud edge (ops task — requires Cloudflare dashboard config)
+- [x] Cloudflare integration for tunnel management
 
 ### 0.4 Device Identity System
 - [x] Script to generate unique Device ID (UUID v4) and write to `/etc/vibecodepc/device.json`
@@ -41,32 +41,32 @@ Two codebases:
 ## Phase 1: Device Pairing & Onboarding (Week 2–4)
 
 ### 1.1 Cloud: Device Registry
-- [ ] `devices` table: `id, uuid, status (unclaimed|claimed|deactivated), user_id, paired_at, ip_hint`
-- [ ] `users` table: standard Laravel auth + `username` (for subdomain)
-- [ ] API endpoint: `POST /api/devices/{uuid}/claim` — validates device exists & unclaimed, issues pairing token
-- [ ] API endpoint: `GET /api/devices/{uuid}/status` — device polls this to check if claimed
+- [x] `devices` table: `id, uuid, status (unclaimed|claimed|deactivated), user_id, paired_at, ip_hint`
+- [x] `users` table: standard Laravel auth + `username` (for subdomain)
+- [x] API endpoint: `POST /api/devices/{uuid}/claim` — validates device exists & unclaimed, issues pairing token
+- [x] API endpoint: `GET /api/devices/{uuid}/status` — device polls this to check if claimed
 
 ### 1.2 Cloud: Pairing Web Flow
-- [ ] Route: `id.vibecodepc.com/{device-uuid}` — landing page
-- [ ] If device unclaimed → show "Claim this VibeCodePC" → register/login → claim
-- [ ] If device already claimed by current user → redirect to device local IP
-- [ ] If device claimed by another user → show "Already claimed" message
-- [ ] After claiming → display device local IP + link to open wizard
+- [x] Route: `id.vibecodepc.com/{device-uuid}` — landing page
+- [x] If device unclaimed → show "Claim this VibeCodePC" → register/login → claim
+- [x] If device already claimed by current user → redirect to device local IP
+- [x] If device claimed by another user → show "Already claimed" message
+- [ ] After claiming → display device local IP + link to open wizard (ip_hint stored but not shown on success page)
 - [ ] mDNS/network discovery hint: `vibecodepc.local` fallback
 
 ### 1.3 Device: Pairing Listener
-- [ ] On first boot, device starts in **pairing mode**
-- [ ] Background job polls `GET /api/devices/{uuid}/status` every 5 seconds
-- [ ] When status changes to `claimed`, device receives pairing token + user info
-- [ ] Device stores cloud credentials in encrypted SQLite
-- [ ] Device transitions from pairing mode → wizard mode
-- [ ] Pairing screen on device (if monitor connected): shows QR code + device ID + local IP
+- [x] On first boot, device starts in **pairing mode**
+- [x] Background job polls `GET /api/devices/{uuid}/status` every 5 seconds
+- [x] When status changes to `claimed`, device receives pairing token + user info
+- [x] Device stores cloud credentials in encrypted SQLite
+- [x] Device transitions from pairing mode → wizard mode
+- [x] Pairing screen on device (if monitor connected): shows QR code + device ID + local IP
 
 ### 1.4 Device: Network Setup
-- [ ] Auto-detect Ethernet connectivity (preferred)
-- [ ] Wi-Fi configuration page (if no Ethernet detected)
-- [ ] Connectivity test (ping cloud edge + DNS resolution)
-- [ ] Display local IP address prominently for LAN access
+- [x] Auto-detect Ethernet connectivity (preferred)
+- [x] Wi-Fi configuration page (if no Ethernet detected)
+- [x] Connectivity test (ping cloud edge + DNS resolution)
+- [x] Display local IP address prominently for LAN access
 
 ---
 
@@ -169,10 +169,10 @@ Storage:
 ### 3.4 Deployments & Tunnels
 - [x] Each project can be exposed via tunnel
 - [x] Routing: `username.vibecodepc.com` → default project, `username.vibecodepc.com/projectname` → specific project
-- [ ] Or: `projectname-username.vibecodepc.com` (subdomain per project)
+- [ ] Or: `projectname-username.vibecodepc.com` (subdomain per project — path-based routing exists, subdomain-per-project not yet)
 - [x] HTTPS automatic via Cloudflare
 - [x] Toggle tunnel on/off per project
-- [ ] Bandwidth/request stats from cloud edge
+- [ ] Bandwidth/request stats from cloud edge (TunnelRequestLog model exists, needs dashboard UI)
 
 ### 3.5 AI Services Hub
 - [x] View connected AI providers and their status
@@ -184,7 +184,7 @@ Storage:
 - [x] Embedded code-server iframe (full-screen option)
 - [x] Or: direct link to `vibecodepc.local:8443`
 - [ ] Extension management from dashboard
-- [ ] Copilot status indicator
+- [ ] Copilot status indicator (GitHubCredential.has_copilot exists, needs dashboard UI)
 
 ### 3.7 System Settings
 - [x] Network settings (Wi-Fi, static IP)
@@ -225,7 +225,7 @@ Storage:
 - [x] `POST /api/devices/{uuid}/tunnel/register` — register tunnel endpoint
 - [x] `GET /api/devices/{uuid}/config` — pull remote config updates
 - [x] `POST /api/devices/{uuid}/tunnel/routes` — update routing table
-- [ ] Webhook: notify device of config changes
+- [ ] Webhook: notify device of config changes (config_version polling exists, true push not yet)
 
 ---
 

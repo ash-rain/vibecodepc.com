@@ -3,6 +3,7 @@
 use App\Models\CloudCredential;
 use App\Models\Project;
 use App\Services\CloudApiClient;
+use App\Services\ConfigSyncService;
 use App\Services\DeviceHealthService;
 use App\Services\Tunnel\TunnelService;
 use Illuminate\Foundation\Inspiring;
@@ -41,4 +42,6 @@ Schedule::call(function () {
     $metrics['firmware_version'] = $deviceJson['firmware_version'] ?? 'unknown';
 
     app(CloudApiClient::class)->sendHeartbeat($deviceId, $metrics);
+
+    app(ConfigSyncService::class)->syncIfNeeded($deviceId);
 })->everyThreeMinutes()->name('device-heartbeat');

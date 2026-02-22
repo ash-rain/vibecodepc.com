@@ -2,18 +2,20 @@
 
 namespace App\Models;
 
+use App\Enums\SubscriptionTier;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Cashier\Billable;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable;
+    use Billable, HasApiTokens, HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -63,5 +65,30 @@ class User extends Authenticatable implements FilamentUser
     public function canAccessPanel(Panel $panel): bool
     {
         return $this->is_admin;
+    }
+
+    public function subscriptionTier(): SubscriptionTier
+    {
+        if ($this->subscribed('default')) {
+            $subscription = $this->subscription('default');
+
+            foreach ([SubscriptionTier::Team, SubscriptionTier::Pro, SubscriptionTier::Starter] as $tier) {
+                if ($subscription->hasPrice($tier->stripePriceId())) {
+                    return $tier;
+                }
+            }
+        }
+
+        return SubscriptionTier::Free;
+    }
+
+    public function canUseTunnel(): bool
+    {
+        return $this->subscriptionTier()->canUseTunnel();
+    }
+
+    public function maxSubdomains(): int
+    {
+        return $this->subscriptionTier()->maxSubdomains();
     }
 }

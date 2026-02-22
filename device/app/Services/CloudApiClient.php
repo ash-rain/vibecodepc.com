@@ -89,6 +89,44 @@ class CloudApiClient
         }
     }
 
+    /**
+     * @return array{period: string, routes: array<int, array{project: string, requests: int, avg_response_time_ms: int}>}|null
+     */
+    public function fetchTrafficStats(string $deviceId): ?array
+    {
+        try {
+            $response = $this->authenticatedHttp()
+                ->get("/api/devices/{$deviceId}/stats");
+
+            if ($response->successful()) {
+                return $response->json();
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Failed to fetch traffic stats: '.$e->getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array{config_version: int, subdomain: string|null}|null
+     */
+    public function getDeviceConfig(string $deviceId): ?array
+    {
+        try {
+            $response = $this->authenticatedHttp()
+                ->get("/api/devices/{$deviceId}/config");
+
+            if ($response->successful()) {
+                return $response->json();
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Failed to fetch device config: '.$e->getMessage());
+        }
+
+        return null;
+    }
+
     private function http(): PendingRequest
     {
         $request = Http::baseUrl($this->cloudUrl)

@@ -56,8 +56,9 @@
                         <div>
                             <div class="text-sm text-white font-medium">{{ $project['name'] }}</div>
                             @if ($project['tunnel_enabled'] && $subdomain)
-                                <div class="text-xs text-gray-500 font-mono mt-0.5">
-                                    /{{ $project['slug'] }} &rarr; localhost:{{ $project['port'] }}
+                                <div class="text-xs text-gray-500 font-mono mt-0.5 space-y-0.5">
+                                    <div>/{{ $project['slug'] }} &rarr; localhost:{{ $project['port'] }}</div>
+                                    <div class="text-amber-400/70">{{ $project['slug'] }}--{{ $subdomain }}.vibecodepc.com</div>
                                 </div>
                             @endif
                         </div>
@@ -80,4 +81,22 @@
             </div>
         @endif
     </div>
+
+    {{-- Traffic Stats --}}
+    @if (count($trafficStats) > 0)
+        <div class="bg-gray-900 rounded-xl border border-gray-800 p-6">
+            <h3 class="text-sm font-medium text-gray-400 mb-4">Traffic Stats (24h)</h3>
+            <div class="space-y-2">
+                @foreach ($trafficStats as $stat)
+                    <div class="flex items-center justify-between bg-gray-800/50 rounded-lg px-4 py-3">
+                        <span class="text-sm text-white">{{ $stat['project'] }}</span>
+                        <div class="flex items-center gap-4 text-xs text-gray-400">
+                            <span>{{ number_format($stat['requests']) }} requests</span>
+                            <span>{{ $stat['avg_response_time_ms'] }} ms avg</span>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
 </div>

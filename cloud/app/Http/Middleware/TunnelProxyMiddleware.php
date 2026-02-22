@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use App\Http\Controllers\TunnelProxyController;
+use App\Models\Device;
 use App\Models\TunnelRequestLog;
 use App\Services\CustomDomainService;
 use App\Services\TunnelRoutingService;
@@ -29,6 +30,17 @@ class TunnelProxyMiddleware
             abort(429, 'Too many requests to this subdomain.');
         }
         RateLimiter::hit($rateLimitKey, 60);
+
+        // Check if device owner has an active subscription for tunnel access
+        $subdomain = $this->extractSubdomain($host);
+        if ($subdomain) {
+            $device = Device::whereHas('tunnelRoutes', fn ($q) => $q->where('subdomain', $subdomain)->where('is_active', true))
+                ->first();
+
+            if ($device?->user && ! $device->user->canUseTunnel()) {
+                abort(402, 'Device owner subscription required for tunnel access.');
+            }
+        }
 
         $startTime = microtime(true);
 
@@ -64,7 +76,13 @@ class TunnelProxyMiddleware
         }
     }
 
-    private function extractSubdomain(string $host): ?string
+    /**
+     * Extract the subdomain from the host. Supports both simple subdomains
+     * (username.vibecodepc.com) and compound subdomains (project--username.vibecodepc.com).
+     *
+     * @return array{subdomain: string, project: string|null}|null
+     */
+    private function extractSubdomainParts(string $host): ?array
     {
         $baseDomain = config('app.tunnel_domain', 'vibecodepc.com');
         $host = strtolower($host);
@@ -73,19 +91,34 @@ class TunnelProxyMiddleware
             return null;
         }
 
-        $subdomain = substr($host, 0, -(strlen($baseDomain) + 1));
+        $prefix = substr($host, 0, -(strlen($baseDomain) + 1));
 
-        if ($subdomain === '' || str_contains($subdomain, '.')) {
+        if ($prefix === '' || str_contains($prefix, '.')) {
             return null;
         }
 
-        return $subdomain;
+        if (str_contains($prefix, '--')) {
+            [$project, $subdomain] = explode('--', $prefix, 2);
+
+            return ['subdomain' => $subdomain, 'project' => $project];
+        }
+
+        return ['subdomain' => $prefix, 'project' => null];
+    }
+
+    private function extractSubdomain(string $host): ?string
+    {
+        $parts = $this->extractSubdomainParts($host);
+
+        return $parts['subdomain'] ?? null;
     }
 
     private function logRequest(Request $request, Response $response, float $startTime): void
     {
         $host = $request->getHost();
-        $subdomain = $this->extractSubdomain($host);
+        $parts = $this->extractSubdomainParts($host);
+        $subdomain = $parts['subdomain'] ?? null;
+        $projectSlug = $parts['project'] ?? null;
 
         // For custom domains, resolve the subdomain
         if ($subdomain === null) {
@@ -98,10 +131,10 @@ class TunnelProxyMiddleware
 
         $routingService = app(TunnelRoutingService::class);
         $path = '/'.ltrim($request->path(), '/');
-        $route = $routingService->resolveRoute($subdomain, $path);
+        $route = $routingService->resolveRoute($subdomain, $path, $projectSlug);
 
         if (! $route && $path !== '/') {
-            $route = $routingService->resolveRoute($subdomain, '/');
+            $route = $routingService->resolveRoute($subdomain, '/', $projectSlug);
         }
 
         if (! $route) {

@@ -32,6 +32,8 @@ class DashboardTest extends TestCase
             ->assertViewHas('devices')
             ->assertViewHas('onlineCount', 1)
             ->assertViewHas('totalCount', 1)
+            ->assertViewHas('currentTier')
+            ->assertViewHas('activeSubdomainCount')
             ->assertSee('Online');
     }
 

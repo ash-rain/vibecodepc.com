@@ -28,6 +28,7 @@ class DeviceHeartbeatController extends Controller
 
         return response()->json([
             'heartbeat' => new DeviceHeartbeatResource($heartbeat),
+            'config_version' => $device->config_version ?? 0,
             'message' => 'Heartbeat recorded',
         ], 201);
     }

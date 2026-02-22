@@ -20,7 +20,9 @@ class TunnelProxyController extends Controller
     public function __invoke(Request $request): SymfonyResponse
     {
         $host = $request->getHost();
-        $subdomain = $this->extractSubdomain($host);
+        $parts = $this->extractSubdomainParts($host);
+        $subdomain = $parts['subdomain'] ?? null;
+        $projectSlug = $parts['project'] ?? null;
 
         if (! $subdomain) {
             // Try custom domain resolution
@@ -32,11 +34,11 @@ class TunnelProxyController extends Controller
         }
 
         $path = '/'.ltrim($request->path(), '/');
-        $route = $this->routingService->resolveRoute($subdomain, $path);
+        $route = $this->routingService->resolveRoute($subdomain, $path, $projectSlug);
 
         // Fall back to root path if specific path not found
         if (! $route && $path !== '/') {
-            $route = $this->routingService->resolveRoute($subdomain, '/');
+            $route = $this->routingService->resolveRoute($subdomain, '/', $projectSlug);
         }
 
         if (! $route) {
@@ -74,7 +76,10 @@ class TunnelProxyController extends Controller
         }
     }
 
-    private function extractSubdomain(string $host): ?string
+    /**
+     * @return array{subdomain: string, project: string|null}|null
+     */
+    private function extractSubdomainParts(string $host): ?array
     {
         $baseDomain = config('app.tunnel_domain', 'vibecodepc.com');
         $host = strtolower($host);
@@ -83,12 +88,18 @@ class TunnelProxyController extends Controller
             return null;
         }
 
-        $subdomain = substr($host, 0, -(strlen($baseDomain) + 1));
+        $prefix = substr($host, 0, -(strlen($baseDomain) + 1));
 
-        if ($subdomain === '' || str_contains($subdomain, '.')) {
+        if ($prefix === '' || str_contains($prefix, '.')) {
             return null;
         }
 
-        return $subdomain;
+        if (str_contains($prefix, '--')) {
+            [$project, $subdomain] = explode('--', $prefix, 2);
+
+            return ['subdomain' => $subdomain, 'project' => $project];
+        }
+
+        return ['subdomain' => $prefix, 'project' => null];
     }
 }

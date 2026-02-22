@@ -122,6 +122,12 @@
                         </p>
                     @endif
 
+                    @if (! empty($projectUsage[$provider['key']]))
+                        <p class="text-xs text-gray-500">
+                            Used by: <span class="text-gray-400">{{ implode(', ', $projectUsage[$provider['key']]) }}</span>
+                        </p>
+                    @endif
+
                     @if ($provider['url'])
                         <p class="text-xs text-gray-500">
                             Get your API key: <a href="{{ $provider['url'] }}" target="_blank" class="text-amber-400 hover:underline">{{ $provider['url'] }}</a>

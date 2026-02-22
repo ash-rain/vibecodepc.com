@@ -12,7 +12,7 @@
 
     {{-- Tabs --}}
     <div class="border-b border-gray-800 flex gap-1 overflow-x-auto">
-        @foreach (['network' => 'Network', 'storage' => 'Storage', 'updates' => 'Updates', 'ssh' => 'SSH', 'power' => 'Power'] as $key => $label)
+        @foreach (['network' => 'Network', 'storage' => 'Storage', 'updates' => 'Updates', 'ssh' => 'SSH', 'backup' => 'Backup', 'power' => 'Power'] as $key => $label)
             <button
                 @click="tab = '{{ $key }}'"
                 :class="tab === '{{ $key }}' ? 'text-amber-400 border-amber-400' : 'text-gray-500 border-transparent hover:text-gray-300'"
@@ -109,6 +109,48 @@
                 ssh vibecodepc@{{ $localIp }}
             </div>
         @endif
+    </div>
+
+    {{-- Backup Tab --}}
+    <div x-show="tab === 'backup'" class="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-6">
+        <h3 class="text-sm font-medium text-gray-400">Backup & Restore</h3>
+
+        <div>
+            <p class="text-sm text-gray-500 mb-3">Download an encrypted backup of your device configuration (AI keys, tunnel settings, credentials).</p>
+            <button
+                wire:click="createBackup"
+                wire:loading.attr="disabled"
+                class="px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-gray-950 text-sm font-medium rounded-lg transition-colors"
+            >
+                <span wire:loading.remove wire:target="createBackup">Download Backup</span>
+                <span wire:loading wire:target="createBackup">Creating backup...</span>
+            </button>
+        </div>
+
+        <div class="pt-4 border-t border-gray-800">
+            <p class="text-sm text-gray-500 mb-3">Restore a previously downloaded backup file. This will overwrite current settings.</p>
+            <div class="space-y-3">
+                <input
+                    wire:model="backupFile"
+                    type="file"
+                    accept=".zip"
+                    class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-gray-800 file:text-white hover:file:bg-gray-700"
+                >
+                @error('backupFile')
+                    <p class="text-xs text-red-400">{{ $message }}</p>
+                @enderror
+                <button
+                    wire:click="restoreBackup"
+                    wire:confirm="This will overwrite your current configuration with the backup. Are you sure?"
+                    wire:loading.attr="disabled"
+                    @disabled(! $backupFile)
+                    class="px-4 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-white text-sm rounded-lg transition-colors"
+                >
+                    <span wire:loading.remove wire:target="restoreBackup">Restore from Backup</span>
+                    <span wire:loading wire:target="restoreBackup">Restoring...</span>
+                </button>
+            </div>
+        </div>
     </div>
 
     {{-- Power Tab --}}

@@ -79,6 +79,21 @@ class Project extends Model
         return "https://{$tunnelConfig->subdomain}.vibecodepc.com/{$this->tunnel_subdomain_path}";
     }
 
+    public function getSubdomainUrl(): ?string
+    {
+        if (! $this->tunnel_enabled) {
+            return null;
+        }
+
+        $tunnelConfig = TunnelConfig::current();
+
+        if (! $tunnelConfig) {
+            return null;
+        }
+
+        return "https://{$this->slug}--{$tunnelConfig->subdomain}.vibecodepc.com";
+    }
+
     /** @param Builder<Project> $query */
     public function scopeRunning(Builder $query): void
     {

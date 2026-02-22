@@ -47,13 +47,17 @@ class TunnelRoutingService
         return $tunnelRoutes;
     }
 
-    public function resolveRoute(string $subdomain, string $path = '/'): ?TunnelRoute
+    public function resolveRoute(string $subdomain, string $path = '/', ?string $projectSlug = null): ?TunnelRoute
     {
-        return TunnelRoute::query()
+        $query = TunnelRoute::query()
             ->active()
-            ->where('subdomain', $subdomain)
-            ->where('path', $path)
-            ->first();
+            ->where('subdomain', $subdomain);
+
+        if ($projectSlug !== null) {
+            return $query->where('project_name', $projectSlug)->first();
+        }
+
+        return $query->where('path', $path)->first();
     }
 
     public function deactivateDeviceRoutes(Device $device): int

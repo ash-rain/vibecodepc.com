@@ -6,6 +6,7 @@ namespace App\Livewire\Dashboard;
 
 use App\Models\AiProviderConfig;
 use App\Models\CloudCredential;
+use App\Models\GitHubCredential;
 use App\Models\Project;
 use App\Models\ProjectLog;
 use App\Services\Tunnel\TunnelService;
@@ -27,6 +28,8 @@ class Overview extends Component
 
     public int $aiProviderCount = 0;
 
+    public bool $hasCopilot = false;
+
     /** @var array<int, array{message: string, type: string, created_at: string}> */
     public array $recentActivity = [];
 
@@ -39,6 +42,7 @@ class Overview extends Component
         $this->runningCount = Project::running()->count();
         $this->tunnelRunning = $tunnelService->isRunning();
         $this->aiProviderCount = AiProviderConfig::whereNotNull('validated_at')->count();
+        $this->hasCopilot = GitHubCredential::current()?->hasCopilot() ?? false;
 
         $this->recentActivity = ProjectLog::with('project')
             ->latest()

@@ -34,7 +34,7 @@ class DashboardStatsTest extends TestCase
 
         $response->assertOk()
             ->assertViewHas('trafficStats')
-            ->assertSee('Traffic Stats')
+            ->assertSee('Traffic Per Route')
             ->assertSee($route->full_url);
     }
 
@@ -47,7 +47,7 @@ class DashboardStatsTest extends TestCase
 
         $response->assertOk()
             ->assertViewHas('trafficStats')
-            ->assertDontSee('Traffic Stats');
+            ->assertDontSee('Traffic Per Route');
     }
 
     public function test_tunnel_request_log_belongs_to_tunnel_route(): void

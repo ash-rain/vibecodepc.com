@@ -92,6 +92,32 @@ install_docker() {
     fi
 }
 
+# ---------- avahi / mDNS ----------
+
+install_avahi() {
+    if ! $IS_LINUX; then
+        warn "Skipping Avahi setup on macOS (Bonjour handles mDNS)"
+        return
+    fi
+
+    if $IS_DOCKER_BUILD; then
+        warn "Skipping Avahi setup in Docker build"
+        return
+    fi
+
+    info "Installing Avahi for mDNS discovery..."
+
+    apt-get install -y -qq avahi-daemon avahi-utils libnss-mdns > /dev/null
+
+    # Set hostname to vibecodepc so device is reachable at vibecodepc.local
+    hostnamectl set-hostname vibecodepc
+
+    systemctl enable avahi-daemon
+    systemctl start avahi-daemon
+
+    ok "Avahi installed — device discoverable as vibecodepc.local"
+}
+
 # ---------- code-server ----------
 
 install_code_server() {
@@ -108,7 +134,16 @@ install_code_server() {
 configure_code_server() {
     info "Configuring code-server..."
 
-    local config_dir="${APP_DIR}/storage/code-server"
+    # Write config to the default code-server location for the user that runs PHP.
+    # On RPi this is the vibecodepc user; in Docker it's www-data.
+    local php_user="${DEVICE_USER}"
+    if $IS_DOCKER_BUILD; then
+        php_user="www-data"
+    fi
+
+    local user_home
+    user_home="$(eval echo "~${php_user}")"
+    local config_dir="${user_home}/.config/code-server"
     local config_file="${config_dir}/config.yaml"
 
     mkdir -p "$config_dir"
@@ -119,7 +154,7 @@ auth: none
 cert: false
 EOF
 
-    chown -R "${DEVICE_USER}" "$config_dir"
+    chown -R "${php_user}" "$config_dir"
 
     ok "code-server config written to ${config_file}"
 }
@@ -310,6 +345,8 @@ main() {
     else
         warn "Skipping Docker installation (VIBECODEPC_SKIP_DOCKER=1)"
     fi
+
+    install_avahi
 
     install_code_server
     configure_code_server

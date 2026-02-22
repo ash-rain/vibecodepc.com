@@ -26,6 +26,15 @@ class CodeEditor extends Component
 
     public ?string $folder = null;
 
+    public int $iframeKey = 0;
+
+    /** @var array<int, array{id: string, version: string}> */
+    public array $extensions = [];
+
+    public string $newExtensionId = '';
+
+    public string $extensionMessage = '';
+
     public function mount(CodeServerService $codeServerService): void
     {
         $this->folder = request()->query('folder');
@@ -35,6 +44,49 @@ class CodeEditor extends Component
 
         $github = GitHubCredential::current();
         $this->hasCopilot = $github?->hasCopilot() ?? false;
+
+        $this->loadExtensions($codeServerService);
+    }
+
+    public function loadExtensions(?CodeServerService $codeServerService = null): void
+    {
+        $codeServerService ??= app(CodeServerService::class);
+        $this->extensions = $codeServerService->listExtensions();
+    }
+
+    public function installExtension(CodeServerService $codeServerService): void
+    {
+        $this->extensionMessage = '';
+
+        $id = trim($this->newExtensionId);
+
+        if ($id === '') {
+            $this->extensionMessage = 'Please enter an extension ID.';
+
+            return;
+        }
+
+        $failed = $codeServerService->installExtensions([$id]);
+
+        if (empty($failed)) {
+            $this->extensionMessage = "Extension {$id} installed successfully.";
+            $this->newExtensionId = '';
+            $this->loadExtensions($codeServerService);
+        } else {
+            $this->extensionMessage = "Failed to install {$id}.";
+        }
+    }
+
+    public function removeExtension(string $id, CodeServerService $codeServerService): void
+    {
+        $this->extensionMessage = '';
+
+        if ($codeServerService->uninstallExtension($id)) {
+            $this->extensionMessage = "Extension {$id} removed.";
+            $this->loadExtensions($codeServerService);
+        } else {
+            $this->extensionMessage = "Failed to remove {$id}.";
+        }
     }
 
     public function start(CodeServerService $codeServerService): void
@@ -60,6 +112,8 @@ class CodeEditor extends Component
 
         if ($error !== null) {
             $this->error = $error;
+        } else {
+            $this->iframeKey++;
         }
     }
 

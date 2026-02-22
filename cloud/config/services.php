@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    'stripe' => [
+        'prices' => [
+            'starter' => env('STRIPE_PRICE_STARTER'),
+            'pro' => env('STRIPE_PRICE_PRO'),
+            'team' => env('STRIPE_PRICE_TEAM'),
+        ],
+    ],
+
 ];

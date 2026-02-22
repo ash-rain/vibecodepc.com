@@ -6,7 +6,7 @@
     </div>
 
     {{-- Quick Stats --}}
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {{-- Projects --}}
         <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
             <div class="text-gray-500 text-sm">Projects</div>
@@ -35,6 +35,18 @@
         <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
             <div class="text-gray-500 text-sm">AI Providers</div>
             <div class="text-2xl font-bold text-amber-400 mt-1">{{ $aiProviderCount }}</div>
+        </div>
+
+        {{-- Copilot --}}
+        <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+            <div class="text-gray-500 text-sm">Copilot</div>
+            <div class="mt-1">
+                @if ($hasCopilot)
+                    <span class="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">Active</span>
+                @else
+                    <span class="text-xs bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full">Not configured</span>
+                @endif
+            </div>
         </div>
     </div>
 

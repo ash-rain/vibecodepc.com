@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Livewire\Dashboard;
 
+use App\Models\DeviceState;
 use App\Models\Project;
 use App\Models\TunnelConfig;
+use App\Services\CloudApiClient;
 use App\Services\Tunnel\TunnelService;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -28,6 +30,9 @@ class TunnelManager extends Component
     /** @var array<int, array{id: int, name: string, slug: string, port: int|null, tunnel_enabled: bool}> */
     public array $projects = [];
 
+    /** @var array<int, array{project: string, requests: int, avg_response_time_ms: int}> */
+    public array $trafficStats = [];
+
     public function mount(TunnelService $tunnelService): void
     {
         $status = $tunnelService->getStatus();
@@ -39,6 +44,7 @@ class TunnelManager extends Component
         $this->subdomain = $tunnelConfig?->subdomain;
 
         $this->loadProjects();
+        $this->loadTrafficStats();
     }
 
     public function toggleProjectTunnel(int $projectId): void
@@ -88,5 +94,19 @@ class TunnelManager extends Component
             'port' => $p->port,
             'tunnel_enabled' => $p->tunnel_enabled,
         ])->all();
+    }
+
+    private function loadTrafficStats(): void
+    {
+        $deviceId = DeviceState::getValue('device_uuid');
+
+        if (! $deviceId) {
+            return;
+        }
+
+        $cloudApi = app(CloudApiClient::class);
+        $stats = $cloudApi->fetchTrafficStats($deviceId);
+
+        $this->trafficStats = $stats['routes'] ?? [];
     }
 }

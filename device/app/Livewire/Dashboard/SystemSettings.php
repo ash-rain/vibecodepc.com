@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Dashboard;
 
+use App\Services\BackupService;
 use App\Services\DeviceHealthService;
 use App\Services\NetworkService;
 use Illuminate\Support\Facades\Artisan;
@@ -11,11 +12,15 @@ use Illuminate\Support\Facades\Process;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
 
 #[Layout('layouts.dashboard', ['title' => 'Settings'])]
 #[Title('Settings — VibeCodePC')]
 class SystemSettings extends Component
 {
+    use WithFileUploads;
+
     public ?string $localIp = null;
 
     public bool $hasEthernet = false;
@@ -29,6 +34,9 @@ class SystemSettings extends Component
     public bool $sshEnabled = false;
 
     public string $statusMessage = '';
+
+    /** @var TemporaryUploadedFile|null */
+    public $backupFile = null;
 
     public function mount(NetworkService $networkService, DeviceHealthService $healthService): void
     {
@@ -81,6 +89,32 @@ class SystemSettings extends Component
     {
         $this->statusMessage = 'Shutting down...';
         Process::run('sudo shutdown now');
+    }
+
+    public function createBackup(BackupService $backupService): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $path = $backupService->createBackup();
+
+        return response()->streamDownload(function () use ($path): void {
+            echo file_get_contents($path);
+            @unlink($path);
+        }, basename($path), ['Content-Type' => 'application/zip']);
+    }
+
+    public function restoreBackup(BackupService $backupService): void
+    {
+        $this->validate([
+            'backupFile' => ['required', 'file', 'mimes:zip', 'max:50000'],
+        ]);
+
+        try {
+            $backupService->restoreBackup($this->backupFile->getRealPath());
+            $this->statusMessage = 'Backup restored successfully. Some settings may require a restart to take effect.';
+        } catch (\RuntimeException $e) {
+            $this->statusMessage = 'Restore failed: '.$e->getMessage();
+        }
+
+        $this->backupFile = null;
     }
 
     public function render()

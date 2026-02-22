@@ -33,10 +33,26 @@
         </dl>
     </div>
 
+    <div class="bg-gray-800/50 rounded-lg border border-gray-700 p-5 mb-6">
+        <h3 class="text-sm font-medium text-gray-300 mb-3">Access Your Device</h3>
+        <a
+            href="http://vibecodepc.local"
+            class="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 font-mono text-sm transition-colors"
+        >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
+            http://vibecodepc.local
+        </a>
+        <p class="text-xs text-gray-500 mt-2">
+            If this link doesn't work, check your router's device list for the VibeCodePC IP address.
+        </p>
+    </div>
+
     <div class="space-y-3">
         <div class="rounded-lg bg-amber-500/10 border border-amber-500/20 p-4">
             <p class="text-sm text-amber-200">
-                <span class="font-semibold">Next step:</span> Return to your device — the setup wizard will start automatically.
+                <span class="font-semibold">Next step:</span> Open the link above to reach your device — the setup wizard will start automatically.
             </p>
         </div>
 

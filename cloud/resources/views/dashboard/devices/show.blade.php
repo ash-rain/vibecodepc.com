@@ -173,10 +173,69 @@
                 </div>
             </div>
 
-            {{-- Traffic Stats --}}
+            {{-- Traffic Overview: Hourly Chart + Status Codes + Error Rate --}}
+            @if ($device->tunnelRoutes->isNotEmpty() && $totalRequests24h > 0)
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {{-- Hourly Traffic (bar chart) --}}
+                    <div class="lg:col-span-2 rounded-2xl border border-white/5 bg-white/[0.02] p-6">
+                        <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-5">Hourly Traffic (24h)</h3>
+                        @if ($hourlyStats->isNotEmpty())
+                            @php $maxRequests = $hourlyStats->max('requests'); @endphp
+                            <div class="flex items-end gap-1 h-32">
+                                @foreach ($hourlyStats as $stat)
+                                    @php $barHeight = $maxRequests > 0 ? ($stat->requests / $maxRequests) * 100 : 0; @endphp
+                                    <div class="flex-1 flex flex-col items-center gap-1 group relative">
+                                        <div class="w-full bg-emerald-500/60 rounded-t transition-all hover:bg-emerald-400/80" style="height: {{ max(2, $barHeight) }}%"></div>
+                                        <div class="absolute -top-6 left-1/2 -translate-x-1/2 hidden group-hover:block bg-gray-800 text-[10px] text-gray-300 px-1.5 py-0.5 rounded whitespace-nowrap">
+                                            {{ $stat->requests }} req &middot; {{ \Carbon\Carbon::parse($stat->hour)->format('H:i') }}
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-sm text-gray-600">No traffic in the last 24 hours.</p>
+                        @endif
+                    </div>
+
+                    {{-- Status Codes + Error Rate --}}
+                    <div class="space-y-6">
+                        <div class="rounded-2xl border border-white/5 bg-white/[0.02] p-6">
+                            <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-4">Status Codes (24h)</h3>
+                            <div class="space-y-2">
+                                @foreach (['2xx' => 'emerald', '3xx' => 'blue', '4xx' => 'amber', '5xx' => 'red'] as $group => $color)
+                                    @php $count = $statusCodeDistribution->get($group)?->count ?? 0; @endphp
+                                    <div class="flex items-center justify-between text-xs">
+                                        <span class="flex items-center gap-2">
+                                            <span class="w-2 h-2 rounded-full bg-{{ $color }}-500"></span>
+                                            <span class="text-gray-400">{{ $group }}</span>
+                                        </span>
+                                        <span class="font-mono text-gray-300">{{ number_format($count) }}</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <div class="rounded-2xl border border-white/5 bg-white/[0.02] p-6">
+                            <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Error Rate (24h)</h3>
+                            <div class="flex items-baseline gap-1">
+                                <span @class([
+                                    'text-2xl font-bold font-mono',
+                                    'text-emerald-400' => $errorRate < 5,
+                                    'text-amber-400' => $errorRate >= 5 && $errorRate < 20,
+                                    'text-red-400' => $errorRate >= 20,
+                                ])>{{ $errorRate }}</span>
+                                <span class="text-sm text-gray-500">%</span>
+                            </div>
+                            <p class="text-xs text-gray-600 mt-1">{{ number_format($totalRequests24h) }} total requests</p>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            {{-- Traffic Stats Per Route --}}
             @if ($device->tunnelRoutes->isNotEmpty() && $trafficStats->isNotEmpty())
                 <div class="rounded-2xl border border-white/5 bg-white/[0.02] p-6">
-                    <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-5">Traffic Stats</h3>
+                    <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-5">Traffic Per Route</h3>
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm">
                             <thead>

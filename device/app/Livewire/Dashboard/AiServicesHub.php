@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Dashboard;
 
 use App\Models\AiProviderConfig;
+use App\Models\Project;
 use App\Services\AiProviders\AiProviderResolverService;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -30,6 +31,9 @@ class AiServicesHub extends Component
     public string $customName = '';
 
     public string $customBaseUrl = '';
+
+    /** @var array<string, array<int, string>> */
+    public array $projectUsage = [];
 
     public string $quickTestResult = '';
 
@@ -58,6 +62,31 @@ class AiServicesHub extends Component
             if ($config->provider === AiProvider::Custom) {
                 $this->customName = $config->display_name ?? '';
                 $this->customBaseUrl = $config->base_url ?? '';
+            }
+        }
+
+        $this->loadProjectUsage();
+    }
+
+    private function loadProjectUsage(): void
+    {
+        $keyPatterns = [
+            'openai' => 'OPENAI_API_KEY',
+            'anthropic' => 'ANTHROPIC_API_KEY',
+            'openrouter' => 'OPENROUTER_API_KEY',
+            'huggingface' => 'HUGGINGFACE_API_KEY',
+            'custom' => 'CUSTOM_API_KEY',
+        ];
+
+        $projects = Project::all(['name', 'env_vars']);
+
+        foreach ($projects as $project) {
+            $envVars = $project->env_vars ?? [];
+
+            foreach ($keyPatterns as $providerKey => $envKey) {
+                if (! empty($envVars[$envKey])) {
+                    $this->projectUsage[$providerKey][] = $project->name;
+                }
             }
         }
     }

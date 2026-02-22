@@ -32,13 +32,20 @@
                 @if ($isRunning)
                     <button
                         wire:click="restart"
+                        wire:confirm="This will restart code-server and reload the editor. Any unsaved changes may be lost."
                         wire:loading.attr="disabled"
                         class="px-3 py-1 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-white text-xs rounded-lg transition-colors"
                     >
                         <span wire:loading.remove wire:target="restart">Restart</span>
                         <span wire:loading wire:target="restart">Restarting...</span>
                     </button>
-                    <a href="{{ $editorUrl }}" target="_blank" class="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-gray-950 font-medium text-xs rounded-lg transition-colors">
+                    <a
+                        href="{{ $editorUrl }}"
+                        target="_blank"
+                        wire:loading.class="pointer-events-none opacity-50"
+                        wire:target="restart"
+                        class="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-gray-950 font-medium text-xs rounded-lg transition-colors"
+                    >
                         Open in New Tab
                     </a>
                 @else
@@ -55,6 +62,62 @@
         </div>
     </header>
 
+    {{-- Extensions Panel --}}
+    @if ($isInstalled)
+        <div x-data="{ open: false }" class="bg-gray-900 border-b border-gray-800 shrink-0">
+            <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-2 text-left hover:bg-gray-800/50 transition-colors">
+                <span class="text-xs font-medium text-gray-400">Extensions ({{ count($extensions) }})</span>
+                <svg :class="open ? 'rotate-180' : ''" class="w-3.5 h-3.5 text-gray-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+
+            <div x-show="open" x-collapse class="px-4 pb-3 space-y-3">
+                @if ($extensionMessage)
+                    <p class="text-xs text-amber-400">{{ $extensionMessage }}</p>
+                @endif
+
+                <div class="flex gap-2">
+                    <input
+                        wire:model="newExtensionId"
+                        type="text"
+                        placeholder="Extension ID (e.g. ms-python.python)"
+                        class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                    >
+                    <button
+                        wire:click="installExtension"
+                        wire:loading.attr="disabled"
+                        wire:target="installExtension"
+                        class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-gray-950 font-medium text-xs rounded-lg transition-colors"
+                    >
+                        <span wire:loading.remove wire:target="installExtension">Install</span>
+                        <span wire:loading wire:target="installExtension">Installing...</span>
+                    </button>
+                </div>
+
+                @if (count($extensions) > 0)
+                    <div class="max-h-48 overflow-y-auto space-y-1">
+                        @foreach ($extensions as $ext)
+                            <div class="flex items-center justify-between py-1 px-2 rounded bg-gray-800/50 text-xs">
+                                <div>
+                                    <span class="text-white">{{ $ext['id'] }}</span>
+                                    <span class="text-gray-500 ml-1">v{{ $ext['version'] }}</span>
+                                </div>
+                                <button
+                                    wire:click="removeExtension('{{ $ext['id'] }}')"
+                                    wire:loading.attr="disabled"
+                                    class="text-red-400 hover:text-red-300 disabled:opacity-50 transition-colors"
+                                >Remove</button>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="text-xs text-gray-500">No extensions installed.</p>
+                @endif
+            </div>
+        </div>
+    @endif
+
     {{-- Error message --}}
     @if ($error)
         <div class="bg-red-500/10 border-b border-red-500/30 px-4 py-3 shrink-0">
@@ -69,11 +132,29 @@
 
     {{-- Editor iframe or placeholder --}}
     @if ($isRunning)
-        <iframe
-            src="{{ $editorUrl }}"
-            class="flex-1 w-full border-0"
-            allow="clipboard-read; clipboard-write"
-        ></iframe>
+        <div class="relative flex-1">
+            <iframe
+                wire:key="editor-{{ $iframeKey }}"
+                src="{{ $editorUrl }}"
+                class="w-full h-full border-0"
+                allow="clipboard-read; clipboard-write"
+            ></iframe>
+
+            {{-- Spinner overlay during restart/start --}}
+            <div
+                wire:loading.flex
+                wire:target="restart, start"
+                class="absolute inset-0 items-center justify-center bg-gray-950/80 z-10"
+            >
+                <div class="text-center">
+                    <svg class="w-8 h-8 text-amber-500 animate-spin mx-auto mb-3" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p class="text-white text-sm font-medium">Restarting code-server...</p>
+                </div>
+            </div>
+        </div>
     @elseif (! $isInstalled)
         <div class="flex-1 flex items-center justify-center">
             <div class="text-center">
