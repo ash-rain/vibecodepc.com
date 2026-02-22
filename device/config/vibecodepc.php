@@ -27,5 +27,6 @@ return [
 
     'docker' => [
         'socket' => env('DOCKER_HOST', 'unix:///var/run/docker.sock'),
+        'host_projects_path' => env('DOCKER_HOST_PROJECTS_PATH'),
     ],
 ];

@@ -12,6 +12,9 @@ services:
       - ./device:/var/www/html
       - ./packages:/var/www/packages
       - tunnel-data:/tunnel
+      - /var/run/docker.sock:/var/run/docker.sock
+    group_add:
+      - "${DOCKER_GID:-0}"
     ports:
       - "8081:8080"
     environment:
@@ -25,6 +28,7 @@ services:
       REDIS_HOST: redis-device
       DEVICE_APP_PORT: 8080
       TUNNEL_TOKEN_PATH: /tunnel/token
+      DOCKER_HOST_PROJECTS_PATH: "${PWD}/device/storage/app/projects"
 
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -58,12 +62,17 @@ services:
       - device
 
   device-queue:
-    image: serversideup/php:8.4-fpm-nginx
+    build:
+      context: .
+      dockerfile: device/Dockerfile
     working_dir: /var/www/html
     command: ["php", "artisan", "queue:work", "database", "--sleep=3", "--tries=1", "--timeout=540"]
     volumes:
       - ./device:/var/www/html
       - ./packages:/var/www/packages
+      - /var/run/docker.sock:/var/run/docker.sock
+    group_add:
+      - "${DOCKER_GID:-0}"
     environment:
       APP_NAME: VibeCodePC
       APP_ENV: local
@@ -74,6 +83,7 @@ services:
       VIBECODEPC_CLOUD_URL: https://vibecodepc.com
       REDIS_HOST: redis-device
       DEVICE_APP_PORT: 8080
+      DOCKER_HOST_PROJECTS_PATH: "${PWD}/device/storage/app/projects"
     depends_on:
       - device
 

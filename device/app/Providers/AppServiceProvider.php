@@ -69,7 +69,14 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(DeviceHealthService::class);
         $this->app->singleton(NetworkService::class);
-        $this->app->singleton(ProjectContainerService::class);
+        $this->app->singleton(ProjectContainerService::class, function () {
+            $hostProjectsPath = config('vibecodepc.docker.host_projects_path');
+
+            return new ProjectContainerService(
+                hostProjectsPath: $hostProjectsPath,
+                containerProjectsPath: $hostProjectsPath ? config('vibecodepc.projects.base_path') : null,
+            );
+        });
         $this->app->singleton(PortAllocatorService::class);
 
         $this->app->singleton(ProjectScaffoldService::class, function () {

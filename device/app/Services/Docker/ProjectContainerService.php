@@ -11,6 +11,11 @@ use VibecodePC\Common\Enums\ProjectStatus;
 
 class ProjectContainerService
 {
+    public function __construct(
+        private ?string $hostProjectsPath = null,
+        private ?string $containerProjectsPath = null,
+    ) {}
+
     /**
      * Start a project container.
      *
@@ -20,7 +25,7 @@ class ProjectContainerService
     {
         $result = Process::path($project->path)
             ->timeout(120)
-            ->run('docker compose up -d');
+            ->run($this->composeCommand($project, 'up -d'));
 
         if ($result->successful()) {
             $this->log($project, 'docker', "Start: {$result->output()}");
@@ -51,7 +56,7 @@ class ProjectContainerService
     {
         $result = Process::path($project->path)
             ->timeout(60)
-            ->run('docker compose down');
+            ->run($this->composeCommand($project, 'down'));
 
         if ($result->successful()) {
             $this->log($project, 'docker', "Stop: {$result->output()}");
@@ -90,7 +95,7 @@ class ProjectContainerService
     public function isRunning(Project $project): bool
     {
         $result = Process::path($project->path)
-            ->run('docker compose ps --format json');
+            ->run($this->composeCommand($project, 'ps --format json'));
 
         if (! $result->successful()) {
             return false;
@@ -105,7 +110,7 @@ class ProjectContainerService
     public function getLogs(Project $project, int $lines = 50): array
     {
         $result = Process::path($project->path)
-            ->run(sprintf('docker compose logs --tail=%d --no-color', $lines));
+            ->run($this->composeCommand($project, sprintf('logs --tail=%d --no-color', $lines)));
 
         if (! $result->successful()) {
             return [];
@@ -156,7 +161,7 @@ class ProjectContainerService
 
         $result = Process::path($project->path)
             ->timeout(30)
-            ->run(sprintf('docker compose exec -T app %s', $command));
+            ->run($this->composeCommand($project, sprintf('exec -T app %s', $command)));
 
         $output = trim($result->output() ?: $result->errorOutput());
 
@@ -172,17 +177,59 @@ class ProjectContainerService
     {
         $result = Process::path($project->path)
             ->timeout(60)
-            ->run('docker compose down -v --rmi local');
+            ->run($this->composeCommand($project, 'down -v --rmi local'));
 
         $this->log($project, 'docker', "Remove: {$result->output()}");
 
         return $result->successful();
     }
 
+    /**
+     * Build the `docker compose` command prefix with path translation when running
+     * inside a dev container that talks to the host Docker daemon via socket mount.
+     */
+    public function composeCommand(Project $project, string $subcommand): string
+    {
+        $hostPath = $this->translateProjectPath($project->path);
+
+        if ($hostPath !== null) {
+            $composeFile = $project->path.'/docker-compose.yml';
+
+            return sprintf(
+                'docker compose -f %s --project-directory %s %s',
+                escapeshellarg($composeFile),
+                escapeshellarg($hostPath),
+                $subcommand,
+            );
+        }
+
+        return "docker compose {$subcommand}";
+    }
+
+    /**
+     * Translate a container project path to the equivalent host path.
+     *
+     * Returns null when path translation is not active (production / no host path set).
+     */
+    public function translateProjectPath(string $containerPath): ?string
+    {
+        if ($this->hostProjectsPath === null || $this->containerProjectsPath === null) {
+            return null;
+        }
+
+        if (! str_starts_with($containerPath, $this->containerProjectsPath)) {
+            return null;
+        }
+
+        $relativePath = substr($containerPath, strlen($this->containerProjectsPath));
+
+        return $this->hostProjectsPath.$relativePath;
+    }
+
     private function getContainerId(Project $project): ?string
     {
         $result = Process::path($project->path)
-            ->run('docker compose ps -q');
+            ->run($this->composeCommand($project, 'ps -q'));
 
         if (! $result->successful()) {
             return null;
