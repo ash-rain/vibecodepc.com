@@ -27,7 +27,7 @@ how_it_works:
   steps:
     - number: "1"
       title: "Digitaliza o Codigo QR"
-      description: "Liga o teu VibeCodePC e digitaliza o codigo QR no dispositivo com o teu telemovel. Cria a tua conta e regista o teu dispositivo em <strong class=\"text-gray-300\">id.vibecodepc.com</strong>."
+      description: "Liga o teu VibeCodePC e digitaliza o codigo QR no dispositivo com o teu telemovel. Cria a tua conta e regista o teu dispositivo em <strong class=\"text-gray-300\">vibecodepc.com/pair</strong>."
     - number: "2"
       title: "Liga a Tua IA e Codigo"
       description: "Um assistente guiado ajuda-te a ligar OpenAI, Anthropic, Copilot e mais. O VS Code ja vem pre-instalado e configurado automaticamente."

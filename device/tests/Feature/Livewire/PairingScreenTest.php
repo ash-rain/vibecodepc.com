@@ -25,7 +25,7 @@ function mockDeviceIdentityForLivewire(string $uuid): void
         manufacturedAt: '2026-01-01T00:00:00Z',
         firmwareVersion: '1.0.0',
     ));
-    $identity->shouldReceive('getPairingUrl')->andReturn("https://vibecodepc.com/id/{$uuid}");
+    $identity->shouldReceive('getPairingUrl')->andReturn("https://vibecodepc.com/pair/{$uuid}");
 
     app()->instance(DeviceIdentityService::class, $identity);
 }
@@ -86,7 +86,7 @@ it('shows device ID and pairing URL', function () {
 
     Livewire::test(PairingScreen::class)
         ->assertSee(Str::limit($uuid, 16))
-        ->assertSee("https://vibecodepc.com/id/{$uuid}");
+        ->assertSee("https://vibecodepc.com/pair/{$uuid}");
 });
 
 it('shows QR code SVG', function () {

@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 use App\Models\CloudCredential;
+use App\Models\DeviceState;
 use App\Models\TunnelConfig;
 use App\Models\WizardProgress;
+use App\Services\DeviceStateService;
 use App\Services\Tunnel\TunnelService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -59,6 +61,15 @@ it('reseeds wizard progress after reset', function () {
 
     expect(WizardProgress::count())->toBeGreaterThan(0)
         ->and(WizardProgress::where('status', 'pending')->count())->toBe(WizardProgress::count());
+});
+
+it('resets device mode to wizard after reset', function () {
+    DeviceState::setValue(DeviceStateService::MODE_KEY, DeviceStateService::MODE_DASHBOARD);
+
+    $this->artisan('device:factory-reset', ['--force' => true])
+        ->assertSuccessful();
+
+    expect(DeviceState::getValue(DeviceStateService::MODE_KEY))->toBe(DeviceStateService::MODE_WIZARD);
 });
 
 it('stops the tunnel during reset', function () {

@@ -27,7 +27,7 @@ how_it_works:
   steps:
     - number: "1"
       title: "Сканирай QR кода"
-      description: "Включи своя VibeCodePC и сканирай QR кода на устройството с телефона си. Създай акаунт и регистрирай устройството си на <strong class=\"text-gray-300\">id.vibecodepc.com</strong>."
+      description: "Включи своя VibeCodePC и сканирай QR кода на устройството с телефона си. Създай акаунт и регистрирай устройството си на <strong class=\"text-gray-300\">vibecodepc.com/pair</strong>."
     - number: "2"
       title: "Свържи AI и инструментите си"
       description: "Интерактивен помощник те води през свързването на OpenAI, Anthropic, Copilot и други. VS Code е предварително инсталиран и конфигуриран автоматично."

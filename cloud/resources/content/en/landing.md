@@ -27,7 +27,7 @@ how_it_works:
   steps:
     - number: "1"
       title: "Scan the QR Code"
-      description: "Plug in your VibeCodePC and scan the QR code on the device with your phone. Create your account and claim your device at <strong class=\"text-gray-300\">id.vibecodepc.com</strong>."
+      description: "Plug in your VibeCodePC and scan the QR code on the device with your phone. Create your account and claim your device at <strong class=\"text-gray-300\">vibecodepc.com/pair</strong>."
     - number: "2"
       title: "Connect Your AI & Code"
       description: "A guided wizard walks you through connecting OpenAI, Anthropic, Copilot, and more. VS Code is pre-installed and configured automatically."

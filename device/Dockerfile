@@ -5,9 +5,6 @@ USER root
 
 WORKDIR /var/www/html
 
-# Create device config directory
-RUN mkdir -p /etc/vibecodepc
-
 # Copy app and shared packages
 COPY device/ /var/www/html/
 COPY packages/ /var/www/packages/

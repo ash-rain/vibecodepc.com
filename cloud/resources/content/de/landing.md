@@ -27,7 +27,7 @@ how_it_works:
   steps:
     - number: "1"
       title: "QR-Code scannen"
-      description: "Schliess deinen VibeCodePC an und scanne den QR-Code auf dem Gerat mit deinem Handy. Erstelle dein Konto und registriere dein Gerat auf <strong class=\"text-gray-300\">id.vibecodepc.com</strong>."
+      description: "Schliess deinen VibeCodePC an und scanne den QR-Code auf dem Gerat mit deinem Handy. Erstelle dein Konto und registriere dein Gerat auf <strong class=\"text-gray-300\">vibecodepc.com/pair</strong>."
     - number: "2"
       title: "KI und Code verbinden"
       description: "Ein gefuhrter Assistent begleitet dich durch die Einrichtung von OpenAI, Anthropic, Copilot und mehr. VS Code ist vorinstalliert und wird automatisch konfiguriert."

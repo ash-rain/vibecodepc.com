@@ -27,7 +27,7 @@ how_it_works:
   steps:
     - number: "1"
       title: "Scan de QR-code"
-      description: "Sluit je VibeCodePC aan en scan de QR-code op het apparaat met je telefoon. Maak een account aan en claim je apparaat op <strong class=\"text-gray-300\">id.vibecodepc.com</strong>."
+      description: "Sluit je VibeCodePC aan en scan de QR-code op het apparaat met je telefoon. Maak een account aan en claim je apparaat op <strong class=\"text-gray-300\">vibecodepc.com/pair</strong>."
     - number: "2"
       title: "Koppel je AI & code-omgeving"
       description: "Een stapsgewijze wizard helpt je bij het koppelen van OpenAI, Anthropic, Copilot en meer. VS Code is vooraf geinstalleerd en automatisch geconfigureerd."

@@ -19,7 +19,7 @@ class DevicePairingWebTest extends TestCase
     {
         $device = Device::factory()->create();
 
-        $response = $this->get("/id/{$device->uuid}");
+        $response = $this->get("/pair/{$device->uuid}");
 
         $response->assertRedirect(route('login'));
     }
@@ -28,7 +28,7 @@ class DevicePairingWebTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->get('/id/'.Str::uuid());
+        $response = $this->actingAs($user)->get('/pair/'.Str::uuid());
 
         $response->assertStatus(404);
     }
@@ -38,7 +38,7 @@ class DevicePairingWebTest extends TestCase
         $user = User::factory()->create();
         $device = Device::factory()->create();
 
-        $response = $this->actingAs($user)->get("/id/{$device->uuid}");
+        $response = $this->actingAs($user)->get("/pair/{$device->uuid}");
 
         $response->assertOk()
             ->assertViewIs('pairing.claim')
@@ -52,7 +52,7 @@ class DevicePairingWebTest extends TestCase
         $otherUser = User::factory()->create();
         $device = Device::factory()->claimed($owner)->create();
 
-        $response = $this->actingAs($otherUser)->get("/id/{$device->uuid}");
+        $response = $this->actingAs($otherUser)->get("/pair/{$device->uuid}");
 
         $response->assertOk()
             ->assertViewIs('pairing.already-claimed')
@@ -64,7 +64,7 @@ class DevicePairingWebTest extends TestCase
         $user = User::factory()->create();
         $device = Device::factory()->claimed($user)->create();
 
-        $response = $this->actingAs($user)->get("/id/{$device->uuid}");
+        $response = $this->actingAs($user)->get("/pair/{$device->uuid}");
 
         $response->assertOk()
             ->assertViewIs('pairing.owned')
@@ -78,7 +78,7 @@ class DevicePairingWebTest extends TestCase
 
         $response = $this->actingAs($user)
             ->withSession(['_token' => 'test'])
-            ->post("/id/{$device->uuid}/claim", ['_token' => 'test']);
+            ->post("/pair/{$device->uuid}/claim", ['_token' => 'test']);
 
         $response->assertRedirect(route('pairing.success', $device->uuid));
 
@@ -94,7 +94,7 @@ class DevicePairingWebTest extends TestCase
         $user = User::factory()->create();
         $device = Device::factory()->claimed($user)->create();
 
-        $response = $this->actingAs($user)->get("/id/{$device->uuid}/success");
+        $response = $this->actingAs($user)->get("/pair/{$device->uuid}/success");
 
         $response->assertOk()
             ->assertViewIs('pairing.success')
@@ -107,7 +107,7 @@ class DevicePairingWebTest extends TestCase
         $user = User::factory()->create();
         $device = Device::factory()->claimed($user)->create();
 
-        $response = $this->actingAs($user)->get("/id/{$device->uuid}/success");
+        $response = $this->actingAs($user)->get("/pair/{$device->uuid}/success");
 
         $response->assertOk()
             ->assertSee('vibecodepc.local')
@@ -120,7 +120,7 @@ class DevicePairingWebTest extends TestCase
         $otherUser = User::factory()->create();
         $device = Device::factory()->claimed($owner)->create();
 
-        $response = $this->actingAs($otherUser)->get("/id/{$device->uuid}/success");
+        $response = $this->actingAs($otherUser)->get("/pair/{$device->uuid}/success");
 
         $response->assertStatus(403);
     }

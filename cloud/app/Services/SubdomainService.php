@@ -11,7 +11,7 @@ class SubdomainService
     /** @var list<string> */
     private const array RESERVED_WORDS = [
         'admin', 'api', 'app', 'blog', 'cdn', 'cloud', 'dashboard',
-        'dev', 'docs', 'ftp', 'git', 'help', 'id', 'login', 'mail',
+        'dev', 'docs', 'ftp', 'git', 'help', 'login', 'mail',
         'ns1', 'ns2', 'panel', 'pop', 'root', 'smtp', 'ssh', 'ssl',
         'staging', 'status', 'support', 'test', 'vpn', 'www',
     ];

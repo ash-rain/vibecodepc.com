@@ -32,7 +32,7 @@ Two codebases:
 - [x] Cloudflare integration for tunnel management
 
 ### 0.4 Device Identity System
-- [x] Script to generate unique Device ID (UUID v4) and write to `/etc/vibecodepc/device.json`
+- [x] Script to generate unique Device ID (UUID v4) and write to `storage/device.json`
 - [x] QR code generation (printed label / on-screen during first boot)
 - [x] `device.json` schema: `{ id, hardware_serial, manufactured_at, firmware_version }`
 
@@ -47,7 +47,7 @@ Two codebases:
 - [x] API endpoint: `GET /api/devices/{uuid}/status` — device polls this to check if claimed
 
 ### 1.2 Cloud: Pairing Web Flow
-- [x] Route: `id.vibecodepc.com/{device-uuid}` — landing page
+- [x] Route: `vibecodepc.com/pair/{device-uuid}` — landing page
 - [x] If device unclaimed → show "Claim this VibeCodePC" → register/login → claim
 - [x] If device already claimed by current user → redirect to device local IP
 - [x] If device claimed by another user → show "Already claimed" message

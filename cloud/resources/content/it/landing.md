@@ -27,7 +27,7 @@ how_it_works:
   steps:
     - number: "1"
       title: "Scansiona il Codice QR"
-      description: "Collega il tuo VibeCodePC e scansiona il codice QR sul dispositivo con il telefono. Crea il tuo account e registra il tuo dispositivo su <strong class=\"text-gray-300\">id.vibecodepc.com</strong>."
+      description: "Collega il tuo VibeCodePC e scansiona il codice QR sul dispositivo con il telefono. Crea il tuo account e registra il tuo dispositivo su <strong class=\"text-gray-300\">vibecodepc.com/pair</strong>."
     - number: "2"
       title: "Collega la tua AI e il Codice"
       description: "Una procedura guidata ti accompagna nel collegamento di OpenAI, Anthropic, Copilot e altro. VS Code e preinstallato e configurato automaticamente."

@@ -76,4 +76,4 @@ Key variables in `.env` (see `.env.example` for the full list):
 | `GITHUB_CLIENT_ID` | — | GitHub OAuth client ID |
 | `CLOUDFLARED_CONFIG` | `/etc/cloudflared/config.yml` | Cloudflare tunnel config path |
 
-> On the actual Raspberry Pi, `VIBECODEPC_DEVICE_JSON` should be set to `/etc/vibecodepc/device.json`.
+> On the actual Raspberry Pi, `VIBECODEPC_DEVICE_JSON` defaults to `storage/device.json`.

@@ -33,7 +33,7 @@ VibeCodePC is a product + platform business. We sell a **pre-configured Raspberr
 ┌──────────────────┐      ┌─────────────────────┐
 │ vibecodepc.com   │      │ OpenAI / Anthropic / │
 │ (cloud edge)     │      │ OpenRouter / HF /    │
-│ ├─ id.vibe...    │      │ GitHub Copilot       │
+│ ├─ /pair/...     │      │ GitHub Copilot       │
 │ ├─ user.vibe...  │      └─────────────────────┘
 │ └─ api.vibe...   │
 └──────────────────┘
@@ -85,10 +85,10 @@ app/
 
 ## Device Onboarding Flow
 
-1. Each device ships with a **unique Device ID** (UUID v4) burned into `/etc/vibecodepc/device.json`
-2. A **QR code** on the device/box encodes `https://id.vibecodepc.com/{device-id}`
+1. Each device ships with a **unique Device ID** (UUID v4) stored in `storage/device.json`
+2. A **QR code** on the device/box encodes `https://vibecodepc.com/pair/{device-id}`
 3. User scans QR (or types the URL) on their phone/laptop
-4. Cloud edge (`id.vibecodepc.com`) looks up device ID, confirms it's unclaimed
+4. Cloud edge (`vibecodepc.com/pair/{device-id}`) looks up device ID, confirms it's unclaimed
 5. User creates account (or logs in), claims the device
 6. Cloud edge returns a **pairing token** and redirects to the device's local IP
 7. Device receives the pairing token, links to the cloud account

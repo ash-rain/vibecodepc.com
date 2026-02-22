@@ -58,9 +58,9 @@ Route::middleware('auth')->group(function () {
 });
 
 // Device pairing flow (QR code entry point)
-Route::get('/id/{uuid}', [DevicePairingController::class, 'show'])->name('pairing.show');
-Route::post('/id/{uuid}/claim', [DevicePairingController::class, 'claim'])->name('pairing.claim');
-Route::get('/id/{uuid}/success', [DevicePairingController::class, 'success'])->name('pairing.success');
+Route::get('/pair/{uuid}', [DevicePairingController::class, 'show'])->name('pairing.show');
+Route::post('/pair/{uuid}/claim', [DevicePairingController::class, 'claim'])->name('pairing.claim');
+Route::get('/pair/{uuid}/success', [DevicePairingController::class, 'success'])->name('pairing.success');
 
 // Stripe webhook (Cashier handles this route automatically via service provider)
 // Configure STRIPE_WEBHOOK_SECRET in .env
