@@ -65,6 +65,15 @@ class CloudApiClient
         return $response->json();
     }
 
+    public function reconfigureTunnel(string $deviceId, int $port): void
+    {
+        $this->authenticatedHttp()
+            ->post("/api/devices/{$deviceId}/tunnel/reconfigure", [
+                'port' => $port,
+            ])
+            ->throw();
+    }
+
     /**
      * @param  array{cpu_percent: float, ram_used_mb: int, ram_total_mb: int, disk_used_gb: float, disk_total_gb: float, temperature_c: float|null, running_projects: int, tunnel_active: bool, firmware_version: string}  $metrics
      */

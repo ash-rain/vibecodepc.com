@@ -87,6 +87,39 @@ class DeviceTunnelController extends Controller
         ]);
     }
 
+    public function reconfigure(
+        Request $request,
+        string $uuid,
+        CloudflareTunnelService $cfService,
+    ): JsonResponse {
+        $device = $request->attributes->get('device');
+        $port = (int) ($request->input('port') ?? config('cloudflare.device_app_port'));
+
+        $route = $device->tunnelRoutes()->active()->first();
+
+        if (! $route) {
+            return response()->json(['error' => 'No active tunnel route found.'], 404);
+        }
+
+        $tunnelName = "device-{$device->uuid}";
+        $tunnel = $cfService->findTunnelByName($tunnelName);
+
+        if (! $tunnel) {
+            return response()->json(['error' => 'Cloudflare tunnel not found.'], 404);
+        }
+
+        $hostname = "{$route->subdomain}.vibecodepc.com";
+        $cfService->configureTunnelIngress($tunnel['id'], $hostname, $port);
+
+        $route->update(['target_port' => $port]);
+
+        return response()->json([
+            'message' => 'Tunnel ingress reconfigured',
+            'hostname' => $hostname,
+            'port' => $port,
+        ]);
+    }
+
     public function routes(Request $request, string $uuid): JsonResponse
     {
         $device = $request->attributes->get('device');

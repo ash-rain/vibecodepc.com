@@ -48,6 +48,9 @@ Route::middleware(['auth:sanctum', 'device.owner'])
         Route::post('/tunnel/provision', [DeviceTunnelController::class, 'provision'])
             ->name('tunnel.provision');
 
+        Route::post('/tunnel/reconfigure', [DeviceTunnelController::class, 'reconfigure'])
+            ->name('tunnel.reconfigure');
+
         Route::post('/tunnel/routes', [DeviceTunnelController::class, 'updateRoutes'])
             ->name('tunnel.routes.update');
 

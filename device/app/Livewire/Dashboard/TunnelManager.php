@@ -8,7 +8,9 @@ use App\Models\DeviceState;
 use App\Models\Project;
 use App\Models\TunnelConfig;
 use App\Services\CloudApiClient;
+use App\Services\DeviceRegistry\DeviceIdentityService;
 use App\Services\Tunnel\TunnelService;
+use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -58,9 +60,14 @@ class TunnelManager extends Component
         $this->loadProjects();
     }
 
-    public function restartTunnel(TunnelService $tunnelService): void
-    {
+    public function restartTunnel(
+        TunnelService $tunnelService,
+        CloudApiClient $cloudApi,
+        DeviceIdentityService $identity,
+    ): void {
         $this->error = '';
+
+        $this->syncIngressConfig($cloudApi, $identity);
 
         $stopError = $tunnelService->stop();
 
@@ -78,6 +85,21 @@ class TunnelManager extends Component
         }
 
         $this->tunnelRunning = $tunnelService->isRunning();
+    }
+
+    private function syncIngressConfig(CloudApiClient $cloudApi, DeviceIdentityService $identity): void
+    {
+        if (! $identity->hasIdentity()) {
+            return;
+        }
+
+        $port = (int) config('vibecodepc.tunnel.device_app_port');
+
+        try {
+            $cloudApi->reconfigureTunnel($identity->getDeviceInfo()->id, $port);
+        } catch (\Throwable $e) {
+            Log::warning('Failed to sync tunnel ingress config', ['error' => $e->getMessage()]);
+        }
     }
 
     public function render()
