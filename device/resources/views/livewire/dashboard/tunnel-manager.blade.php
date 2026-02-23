@@ -249,4 +249,126 @@
             </div>
         @endif
     @endif
+
+    {{-- Quick Tunnels --}}
+    <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6"
+        @if (collect($quickTunnelApps)->pluck('tunnel')->filter()->isNotEmpty())
+            wire:poll.30s="refreshQuickTunnels"
+        @endif
+    >
+        <div class="flex items-center justify-between mb-1">
+            <h3 class="text-sm font-medium text-gray-400">Quick Tunnels</h3>
+            @if (collect($quickTunnelApps)->pluck('tunnel')->filter()->isNotEmpty())
+                <button wire:click="refreshQuickTunnels" wire:loading.attr="disabled" wire:target="refreshQuickTunnels"
+                    class="p-1.5 text-gray-500 hover:text-white transition-colors rounded-lg hover:bg-white/[0.06]"
+                    title="Refresh status">
+                    <svg class="w-3.5 h-3.5" wire:loading.class="animate-spin" wire:target="refreshQuickTunnels" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182M2.985 19.644l3.181-3.18" />
+                    </svg>
+                </button>
+            @endif
+        </div>
+        <p class="text-gray-600 text-xs mb-4">Free temporary tunnels via <a href="https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/do-more-with-tunnels/trycloudflare/" target="_blank" class="text-gray-500 hover:text-gray-400 underline">TryCloudflare</a> — no account needed</p>
+
+        @if ($quickTunnelError)
+            <div class="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-4">
+                <p class="text-red-400 text-sm">{{ $quickTunnelError }}</p>
+            </div>
+        @endif
+
+        <div class="space-y-2">
+            @foreach ($quickTunnelApps as $app)
+                <div class="bg-white/[0.03] rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-white font-medium">{{ $app['name'] }}</span>
+                                <span class="text-xs text-gray-600 font-mono">localhost:{{ $app['port'] }}</span>
+                            </div>
+
+                            @if ($app['tunnel'])
+                                <div class="mt-1.5 space-y-1">
+                                    {{-- Status --}}
+                                    <div class="flex items-center gap-1.5">
+                                        @if ($app['tunnel']['status'] === 'running' && $app['tunnel']['url'])
+                                            <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span>
+                                            <span class="text-xs text-green-400">Running</span>
+                                        @elseif ($app['tunnel']['status'] === 'starting' || ($app['tunnel']['status'] === 'running' && !$app['tunnel']['url']))
+                                            <svg class="animate-spin h-3 w-3 text-amber-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            <span class="text-xs text-amber-400">Starting...</span>
+                                        @endif
+                                    </div>
+
+                                    {{-- URL --}}
+                                    @if ($app['tunnel']['url'])
+                                        <div class="flex items-center gap-1.5 group">
+                                            <a href="{{ $app['tunnel']['url'] }}" target="_blank"
+                                                class="text-xs font-mono text-cyan-400 hover:underline truncate block max-w-xs">{{ $app['tunnel']['url'] }}</a>
+                                            <button
+                                                x-data="{ copied: false }"
+                                                x-on:click="navigator.clipboard.writeText('{{ $app['tunnel']['url'] }}'); copied = true; setTimeout(() => copied = false, 2000)"
+                                                class="p-0.5 text-gray-600 hover:text-white transition-colors shrink-0" title="Copy URL">
+                                                <svg x-show="!copied" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9.75a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" />
+                                                </svg>
+                                                <svg x-show="copied" x-cloak class="w-3.5 h-3.5 text-green-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
+                        </div>
+
+                        {{-- Actions --}}
+                        <div class="flex items-center gap-2 shrink-0 ml-3">
+                            @if ($app['tunnel'] && in_array($app['tunnel']['status'], ['running', 'starting']))
+                                {{-- Stop button --}}
+                                <button wire:click="stopQuickTunnel({{ $app['tunnel']['id'] }})"
+                                    wire:loading.attr="disabled"
+                                    wire:target="stopQuickTunnel({{ $app['tunnel']['id'] }})"
+                                    class="px-2.5 py-1.5 bg-red-500/15 hover:bg-red-500/25 disabled:opacity-50 text-red-400 text-xs rounded-lg transition-colors">
+                                    <span wire:loading.remove wire:target="stopQuickTunnel({{ $app['tunnel']['id'] }})">Stop</span>
+                                    <span wire:loading wire:target="stopQuickTunnel({{ $app['tunnel']['id'] }})">Stopping...</span>
+                                </button>
+
+                                {{-- New tunnel button --}}
+                                <button wire:click="reprovisionQuickTunnel({{ $app['tunnel']['id'] }})"
+                                    wire:loading.attr="disabled"
+                                    wire:target="reprovisionQuickTunnel({{ $app['tunnel']['id'] }}), startQuickTunnel"
+                                    class="px-2.5 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 disabled:opacity-50 text-amber-400 text-xs rounded-lg transition-colors">
+                                    <span wire:loading.remove wire:target="reprovisionQuickTunnel({{ $app['tunnel']['id'] }})">New Tunnel</span>
+                                    <span wire:loading wire:target="reprovisionQuickTunnel({{ $app['tunnel']['id'] }})">Starting...</span>
+                                </button>
+                            @else
+                                {{-- Start button --}}
+                                <button wire:click="startQuickTunnel({{ $app['project_id'] ? $app['project_id'] : 'null' }})"
+                                    wire:loading.attr="disabled"
+                                    wire:target="startQuickTunnel, reprovisionQuickTunnel"
+                                    @disabled($app['port'] === 0)
+                                    class="px-3 py-1.5 bg-cyan-500/15 hover:bg-cyan-500/25 disabled:opacity-50 text-cyan-400 text-xs rounded-lg transition-colors whitespace-nowrap flex items-center gap-1.5">
+                                    @if ($startingQuickTunnelKey === $app['key'])
+                                        <svg class="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Starting...
+                                    @else
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 1 1 9 0v3.75M3.75 21.75h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H3.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                                        </svg>
+                                        Quick Tunnel
+                                    @endif
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </div>
 </div>

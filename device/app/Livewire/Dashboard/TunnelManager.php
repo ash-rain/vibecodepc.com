@@ -7,9 +7,11 @@ namespace App\Livewire\Dashboard;
 use App\Models\CloudCredential;
 use App\Models\DeviceState;
 use App\Models\Project;
+use App\Models\QuickTunnel;
 use App\Models\TunnelConfig;
 use App\Services\CloudApiClient;
 use App\Services\DeviceRegistry\DeviceIdentityService;
+use App\Services\Tunnel\QuickTunnelService;
 use App\Services\Tunnel\TunnelService;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
@@ -54,6 +56,13 @@ class TunnelManager extends Component
 
     public string $ingressConfig = '';
 
+    /** @var array<int, array{key: string, name: string, port: int, project_id: int|null, tunnel: array{id: int, url: string|null, status: string}|null}> */
+    public array $quickTunnelApps = [];
+
+    public string $quickTunnelError = '';
+
+    public ?string $startingQuickTunnelKey = null;
+
     public function mount(TunnelService $tunnelService): void
     {
         $status = $tunnelService->getStatus();
@@ -74,6 +83,7 @@ class TunnelManager extends Component
         }
 
         $this->loadProjects();
+        $this->loadQuickTunnelApps();
         $this->loadTrafficStats();
     }
 
@@ -312,6 +322,85 @@ class TunnelManager extends Component
         }
     }
 
+    public function startQuickTunnel(?int $projectId, QuickTunnelService $service): void
+    {
+        $this->quickTunnelError = '';
+        $key = $projectId ? "project_{$projectId}" : 'dashboard';
+        $this->startingQuickTunnelKey = $key;
+
+        $port = $projectId
+            ? Project::find($projectId)?->port
+            : (int) config('vibecodepc.tunnel.device_app_port');
+
+        if (! $port) {
+            $this->quickTunnelError = 'No port configured for this app.';
+            $this->startingQuickTunnelKey = null;
+
+            return;
+        }
+
+        try {
+            $service->start($port, $projectId);
+        } catch (\Throwable $e) {
+            $this->quickTunnelError = 'Failed to start quick tunnel: ' . $e->getMessage();
+            Log::warning('Quick tunnel start failed', ['error' => $e->getMessage(), 'project_id' => $projectId]);
+        }
+
+        $this->startingQuickTunnelKey = null;
+        $this->loadQuickTunnelApps();
+    }
+
+    public function stopQuickTunnel(int $quickTunnelId, QuickTunnelService $service): void
+    {
+        $this->quickTunnelError = '';
+
+        $tunnel = QuickTunnel::find($quickTunnelId);
+
+        if (! $tunnel) {
+            return;
+        }
+
+        try {
+            $service->stop($tunnel);
+        } catch (\Throwable $e) {
+            $this->quickTunnelError = 'Failed to stop quick tunnel: ' . $e->getMessage();
+        }
+
+        $this->loadQuickTunnelApps();
+    }
+
+    public function reprovisionQuickTunnel(int $quickTunnelId, QuickTunnelService $service): void
+    {
+        $tunnel = QuickTunnel::find($quickTunnelId);
+
+        if (! $tunnel) {
+            return;
+        }
+
+        $projectId = $tunnel->project_id;
+        $this->stopQuickTunnel($quickTunnelId, $service);
+        $this->startQuickTunnel($projectId, $service);
+    }
+
+    public function refreshQuickTunnels(QuickTunnelService $service): void
+    {
+        $activeTunnels = QuickTunnel::whereIn('status', ['starting', 'running'])->get();
+
+        foreach ($activeTunnels as $tunnel) {
+            if (! $service->isHealthy($tunnel)) {
+                $service->cleanup($tunnel);
+
+                continue;
+            }
+
+            if (! $tunnel->tunnel_url) {
+                $service->refreshUrl($tunnel);
+            }
+        }
+
+        $this->loadQuickTunnelApps();
+    }
+
     public function render()
     {
         return view('livewire.dashboard.tunnel-manager');
@@ -365,6 +454,44 @@ class TunnelManager extends Component
             3,
             2,
         );
+    }
+
+    private function loadQuickTunnelApps(): void
+    {
+        $dashboardPort = (int) config('vibecodepc.tunnel.device_app_port');
+        $dashboardTunnel = QuickTunnel::forDashboard();
+
+        $apps = [];
+
+        $apps[] = [
+            'key' => 'dashboard',
+            'name' => 'Dashboard',
+            'port' => $dashboardPort,
+            'project_id' => null,
+            'tunnel' => $dashboardTunnel ? [
+                'id' => $dashboardTunnel->id,
+                'url' => $dashboardTunnel->tunnel_url,
+                'status' => $dashboardTunnel->status,
+            ] : null,
+        ];
+
+        foreach (Project::all() as $project) {
+            $tunnel = $project->port ? QuickTunnel::forProject($project->id) : null;
+
+            $apps[] = [
+                'key' => "project_{$project->id}",
+                'name' => $project->name,
+                'port' => $project->port ?? 0,
+                'project_id' => $project->id,
+                'tunnel' => $tunnel ? [
+                    'id' => $tunnel->id,
+                    'url' => $tunnel->tunnel_url,
+                    'status' => $tunnel->status,
+                ] : null,
+            ];
+        }
+
+        $this->quickTunnelApps = $apps;
     }
 
     private function loadTrafficStats(): void
