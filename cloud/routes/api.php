@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\DeviceHeartbeatController;
 use App\Http\Controllers\Api\DeviceStatsController;
 use App\Http\Controllers\Api\DeviceTunnelController;
 use App\Http\Controllers\Api\SubdomainController;
+use App\Http\Controllers\Api\TunnelErrorController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -21,6 +22,11 @@ Route::post('/devices/register', [DeviceController::class, 'register'])
 // Subdomain availability check (public, called by device during tunnel setup)
 Route::get('/subdomains/{subdomain}/availability', [SubdomainController::class, 'availability'])
     ->name('api.subdomains.availability');
+
+// Tunnel error reporting (public, called by CF Worker or browser on tunnel errors)
+Route::post('/tunnel-error', TunnelErrorController::class)
+    ->middleware('throttle:10,1')
+    ->name('api.tunnel-error');
 
 // Device pairing API (public status, authenticated claim)
 Route::get('/devices/{uuid}/status', [DeviceController::class, 'status'])

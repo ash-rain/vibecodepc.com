@@ -118,7 +118,7 @@ class CloudApiClient
     }
 
     /**
-     * @return array{config_version: int, subdomain: string|null}|null
+     * @return array{config_version: int, subdomain: string|null, tunnel_token?: string}|null
      */
     public function getDeviceConfig(string $deviceId): ?array
     {
@@ -127,7 +127,7 @@ class CloudApiClient
                 ->get("/api/devices/{$deviceId}/config");
 
             if ($response->successful()) {
-                return $response->json();
+                return $response->json('config');
             }
         } catch (\Throwable $e) {
             Log::warning('Failed to fetch device config: '.$e->getMessage());

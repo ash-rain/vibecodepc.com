@@ -26,8 +26,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Force HTTPS when APP_URL uses https — this covers both
+        // production and local dev behind Herd/Valet's Nginx proxy,
+        // where PHP-FPM sees HTTP but the browser is on HTTPS.
         URL::forceHttps(
-            app()->environment(['production', 'staging'])
+            str_starts_with(config('app.url', ''), 'https')
         );
 
         RateLimiter::for('device-heartbeat', function (Request $request) {

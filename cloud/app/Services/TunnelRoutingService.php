@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Jobs\ReprovisionTunnelJob;
 use App\Models\Device;
 use App\Models\TunnelRoute;
 use Illuminate\Support\Facades\Cache;
@@ -73,9 +74,10 @@ class TunnelRoutingService
 
     /**
      * Record a proxy failure for a device. After consecutive failures exceed the
-     * threshold, mark the tunnel as broken: clear the tunnel URL and deactivate routes.
+     * threshold, attempt automatic re-provisioning. Falls back to marking the
+     * tunnel as broken if a re-provisioning job is already in progress.
      *
-     * Returns true if cleanup was triggered.
+     * Returns true if the threshold was reached and recovery was initiated.
      */
     public function recordProxyFailure(Device $device): bool
     {
@@ -87,8 +89,22 @@ class TunnelRoutingService
             return false;
         }
 
-        $this->markTunnelBroken($device);
         Cache::forget($cacheKey);
+
+        $reprovisionFlag = "tunnel-reprovisioning:{$device->id}";
+
+        if (Cache::has($reprovisionFlag)) {
+            // A re-provisioning job is already running; don't stack another
+            // or mark broken while recovery is in progress.
+            return true;
+        }
+
+        Cache::put($reprovisionFlag, true, 300);
+        ReprovisionTunnelJob::dispatch($device->id);
+
+        Log::info('Tunnel failure threshold reached, re-provisioning dispatched', [
+            'device_uuid' => $device->uuid,
+        ]);
 
         return true;
     }

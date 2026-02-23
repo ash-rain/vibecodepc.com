@@ -6,12 +6,14 @@ namespace App\Services;
 
 use App\Models\DeviceState;
 use App\Models\TunnelConfig;
+use App\Services\Tunnel\TunnelService;
 use Illuminate\Support\Facades\Log;
 
 class ConfigSyncService
 {
     public function __construct(
         private readonly CloudApiClient $cloudApi,
+        private readonly TunnelService $tunnelService,
     ) {}
 
     public function syncIfNeeded(string $deviceId): void
@@ -31,12 +33,30 @@ class ConfigSyncService
 
         Log::info("Config sync: remote version {$remoteVersion} > local {$localVersion}, applying changes");
 
-        if (isset($remoteConfig['subdomain'])) {
-            $tunnelConfig = TunnelConfig::current();
+        $tunnelConfig = TunnelConfig::current();
 
-            if ($tunnelConfig && $tunnelConfig->subdomain !== $remoteConfig['subdomain']) {
+        if (isset($remoteConfig['subdomain']) && $tunnelConfig) {
+            if ($tunnelConfig->subdomain !== $remoteConfig['subdomain']) {
                 $tunnelConfig->update(['subdomain' => $remoteConfig['subdomain']]);
                 Log::info("Config sync: subdomain updated to {$remoteConfig['subdomain']}");
+            }
+        }
+
+        // The cloud may deliver a fresh tunnel token after re-provisioning
+        // a broken tunnel. Apply it and restart cloudflared to reconnect.
+        if (isset($remoteConfig['tunnel_token']) && $tunnelConfig) {
+            $tunnelConfig->update([
+                'tunnel_token_encrypted' => $remoteConfig['tunnel_token'],
+                'status' => 'active',
+            ]);
+
+            Log::info('Config sync: new tunnel token received, restarting cloudflared');
+
+            $this->tunnelService->stop();
+            $error = $this->tunnelService->start();
+
+            if ($error) {
+                Log::error("Config sync: failed to restart tunnel after token update: {$error}");
             }
         }
 

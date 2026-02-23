@@ -95,7 +95,7 @@ class DevicePairingController extends Controller
         SubdomainService $subdomainService,
         CloudflareTunnelService $cfService,
         TunnelRoutingService $routingService,
-    ): View|RedirectResponse {
+    ): RedirectResponse {
         if (! $request->user()) {
             return redirect()->guest(route('login'));
         }
@@ -150,12 +150,9 @@ class DevicePairingController extends Controller
                 ->withInput();
         }
 
-        return view('pairing.setup', [
-            'device' => $device,
-            'user' => $user,
-            'subdomain' => $subdomain,
-            'tunnelUrl' => "https://{$subdomain}.vibecodepc.com",
-        ]);
+        // Redirect after POST to prevent form resubmission on refresh/back.
+        // The GET handler reads tunnel_url from the device model.
+        return redirect()->route('pairing.setup', $uuid);
     }
 
     public function checkTunnelStatus(Request $request, string $uuid): JsonResponse

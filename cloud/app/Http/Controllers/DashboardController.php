@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Jobs\ReprovisionTunnelJob;
 use App\Models\Device;
 use App\Models\TunnelRequestLog;
+use App\Models\TunnelRoute;
 use App\Services\CloudflareTunnelService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use VibecodePC\Common\Enums\DeviceStatus;
@@ -230,5 +234,140 @@ class DashboardController extends Controller
                 ? round(($hb->disk_used_gb / $hb->disk_total_gb) * 100, 1)
                 : null),
         ]);
+    }
+
+    /**
+     * Probe a tunnel route's URL and return health status as JSON.
+     */
+    public function checkRouteHealth(Request $request, Device $device, TunnelRoute $route): JsonResponse
+    {
+        if ($device->user_id !== $request->user()->id || $route->device_id !== $device->id) {
+            abort(403);
+        }
+
+        if (! $device->tunnel_url) {
+            return response()->json(['status' => 'no_tunnel', 'message' => 'No tunnel URL configured.']);
+        }
+
+        $reprovisioning = Cache::has("tunnel-reprovisioning:{$device->id}");
+        if ($reprovisioning) {
+            return response()->json(['status' => 'reprovisioning', 'message' => 'Tunnel is being re-provisioned.']);
+        }
+
+        try {
+            $probeUrl = $route->full_url;
+            $response = Http::timeout(10)
+                ->withOptions(['allow_redirects' => ['max' => 3]])
+                ->get($probeUrl);
+
+            $status = $response->status();
+            $body = $response->body();
+
+            // Check for CF tunnel errors
+            if ($status === 530 || preg_match('/cf-error-code["\'>\s]*(\d{4})/i', $body, $matches)) {
+                $cfCode = isset($matches[1]) ? (int) $matches[1] : null;
+
+                return response()->json([
+                    'status' => 'tunnel_error',
+                    'message' => $cfCode ? "Cloudflare error {$cfCode}" : "Tunnel error (HTTP {$status})",
+                    'cf_error_code' => $cfCode,
+                    'http_status' => $status,
+                ]);
+            }
+
+            if ($status >= 502 && $status <= 504) {
+                return response()->json([
+                    'status' => 'unreachable',
+                    'message' => "Tunnel returned HTTP {$status}.",
+                    'http_status' => $status,
+                ]);
+            }
+
+            return response()->json([
+                'status' => 'healthy',
+                'message' => 'Tunnel is responding.',
+                'http_status' => $status,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => 'unreachable',
+                'message' => 'Could not reach the tunnel endpoint.',
+            ]);
+        }
+    }
+
+    /**
+     * Dispatch a re-provisioning job for a device's tunnel.
+     */
+    public function reprovisionRoute(Request $request, Device $device, TunnelRoute $route): RedirectResponse
+    {
+        if ($device->user_id !== $request->user()->id || $route->device_id !== $device->id) {
+            abort(403);
+        }
+
+        $flag = "tunnel-reprovisioning:{$device->id}";
+
+        if (Cache::has($flag)) {
+            return back()->with('status', 'Tunnel re-provisioning is already in progress.');
+        }
+
+        Cache::put($flag, true, 300);
+        ReprovisionTunnelJob::dispatch($device->id);
+
+        Log::info('Manual tunnel re-provisioning dispatched from dashboard', [
+            'device_uuid' => $device->uuid,
+            'user_id' => $request->user()->id,
+        ]);
+
+        return back()->with('status', 'Tunnel re-provisioning has been started. This may take a moment.');
+    }
+
+    /**
+     * Delete a single tunnel route (and clean up DNS if it was the last route for that subdomain).
+     */
+    public function destroyRoute(Request $request, Device $device, TunnelRoute $route, CloudflareTunnelService $cfService): RedirectResponse
+    {
+        if ($device->user_id !== $request->user()->id || $route->device_id !== $device->id) {
+            abort(403);
+        }
+
+        $subdomain = $route->subdomain;
+
+        // Delete traffic logs for this route
+        TunnelRequestLog::where('tunnel_route_id', $route->id)->delete();
+        $route->delete();
+
+        // If no more active routes for this subdomain, clean up DNS
+        $remainingRoutes = $device->tunnelRoutes()
+            ->where('subdomain', $subdomain)
+            ->where('is_active', true)
+            ->count();
+
+        if ($remainingRoutes === 0) {
+            try {
+                $fqdn = "{$subdomain}." . config('app.tunnel_domain', 'vibecodepc.com');
+                $dnsId = $cfService->findDnsRecord($fqdn);
+
+                if ($dnsId) {
+                    $cfService->deleteDnsRecord($dnsId);
+                }
+            } catch (\Throwable $e) {
+                Log::warning("Failed to delete DNS for {$subdomain}", ['error' => $e->getMessage()]);
+            }
+
+            // If no active routes remain at all, clear the tunnel URL
+            if ($device->tunnelRoutes()->where('is_active', true)->count() === 0) {
+                $device->update(['tunnel_url' => null]);
+            }
+        }
+
+        Log::info("Tunnel route deleted from dashboard", [
+            'device_uuid' => $device->uuid,
+            'subdomain' => $subdomain,
+            'route_path' => $route->path,
+            'user_id' => $request->user()->id,
+        ]);
+
+        return back()->with('status', "Tunnel route {$subdomain}{$route->path} has been deleted.");
     }
 }

@@ -43,6 +43,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/devices/{device}/heartbeats', [DashboardController::class, 'deviceHeartbeats'])->name('dashboard.devices.heartbeats');
     Route::delete('/dashboard/devices/{device}', [DashboardController::class, 'destroyDevice'])->name('dashboard.devices.destroy');
 
+    Route::get('/dashboard/devices/{device}/routes/{route}/health', [DashboardController::class, 'checkRouteHealth'])->name('dashboard.devices.routes.health');
+    Route::post('/dashboard/devices/{device}/routes/{route}/reprovision', [DashboardController::class, 'reprovisionRoute'])->name('dashboard.devices.routes.reprovision');
+    Route::delete('/dashboard/devices/{device}/routes/{route}', [DashboardController::class, 'destroyRoute'])->name('dashboard.devices.routes.destroy');
+
     Route::get('/dashboard/subdomain', [SubdomainController::class, 'edit'])->name('dashboard.subdomain.edit');
     Route::put('/dashboard/subdomain', [SubdomainController::class, 'update'])->name('dashboard.subdomain.update');
     Route::post('/dashboard/subdomain/verify-domain', [SubdomainController::class, 'verifyDomain'])->name('dashboard.subdomain.verify-domain');

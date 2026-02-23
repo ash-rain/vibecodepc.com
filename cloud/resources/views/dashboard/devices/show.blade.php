@@ -155,18 +155,195 @@
                     @else
                         <div class="space-y-3">
                             @foreach ($device->tunnelRoutes as $route)
-                                <a href="{{ $route->full_url }}" target="_blank" class="flex items-center justify-between gap-4 rounded-xl bg-white/[0.03] p-4 transition hover:bg-white/[0.05] group">
-                                    <div class="min-w-0">
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-sm font-medium text-gray-200 truncate">{{ $route->project_name ?? $route->subdomain }}</span>
-                                            <span class="rounded bg-white/5 px-1.5 py-0.5 text-[10px] font-mono text-gray-500">:{{ $route->target_port }}</span>
-                                        </div>
-                                        <div class="mt-1 text-xs font-mono text-emerald-500/70 truncate">{{ $route->full_url }}</div>
+                                <div class="rounded-xl bg-white/[0.03] p-4"
+                                     x-data="{
+                                        health: null,
+                                        checking: false,
+                                        confirmDelete: false,
+                                        confirmReprovision: false,
+                                        async check() {
+                                            this.checking = true
+                                            try {
+                                                const res = await fetch(@js(route('dashboard.devices.routes.health', [$device, $route])), {
+                                                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                                                })
+                                                this.health = await res.json()
+                                            } catch {
+                                                this.health = { status: 'unreachable', message: 'Check failed.' }
+                                            }
+                                            this.checking = false
+                                        }
+                                     }">
+                                    {{-- Route info row --}}
+                                    <div class="flex items-center justify-between gap-3">
+                                        <a href="{{ $route->full_url }}" target="_blank" class="min-w-0 group">
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-sm font-medium text-gray-200 truncate group-hover:text-white transition">{{ $route->project_name ?? $route->subdomain }}</span>
+                                                <span class="rounded bg-white/5 px-1.5 py-0.5 text-[10px] font-mono text-gray-500">:{{ $route->target_port }}</span>
+                                            </div>
+                                            <div class="mt-1 text-xs font-mono text-emerald-500/70 truncate group-hover:text-emerald-400 transition">{{ $route->full_url }}</div>
+                                        </a>
+                                        <a href="{{ $route->full_url }}" target="_blank" class="shrink-0 text-gray-700 hover:text-emerald-400 transition">
+                                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                                            </svg>
+                                        </a>
                                     </div>
-                                    <svg class="h-4 w-4 shrink-0 text-gray-700 transition group-hover:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                                    </svg>
-                                </a>
+
+                                    {{-- Actions row --}}
+                                    <div class="mt-3 flex items-center gap-2 border-t border-white/[0.04] pt-3">
+                                        {{-- Health check button --}}
+                                        <button @click="check()" :disabled="checking"
+                                            class="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-1.5 text-[11px] font-medium text-gray-400 transition hover:bg-white/[0.06] hover:text-gray-200 disabled:opacity-40 disabled:cursor-wait">
+                                            <template x-if="checking">
+                                                <svg class="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                                </svg>
+                                            </template>
+                                            <template x-if="!checking">
+                                                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4" />
+                                                </svg>
+                                            </template>
+                                            Health Check
+                                        </button>
+
+                                        {{-- Re-provision button --}}
+                                        <button @click="confirmReprovision = true"
+                                            class="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/15 bg-amber-500/5 px-2.5 py-1.5 text-[11px] font-medium text-amber-400/80 transition hover:bg-amber-500/10 hover:text-amber-300">
+                                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" />
+                                            </svg>
+                                            Re-provision
+                                        </button>
+
+                                        {{-- Delete button --}}
+                                        <button @click="confirmDelete = true"
+                                            class="inline-flex items-center gap-1.5 rounded-lg border border-red-500/15 bg-red-500/5 px-2.5 py-1.5 text-[11px] font-medium text-red-400/80 transition hover:bg-red-500/10 hover:text-red-300 ml-auto">
+                                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                            </svg>
+                                            Delete
+                                        </button>
+                                    </div>
+
+                                    {{-- Health check result --}}
+                                    <div x-show="health" x-transition.opacity class="mt-3" x-cloak>
+                                        <div x-show="health?.status === 'healthy'"
+                                             class="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-[11px] text-emerald-400">
+                                            <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4" />
+                                            </svg>
+                                            <span x-text="health?.message"></span>
+                                            <span class="ml-auto font-mono text-emerald-500/60" x-text="'HTTP ' + health?.http_status"></span>
+                                        </div>
+                                        <div x-show="health?.status === 'tunnel_error'"
+                                             class="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-[11px] text-red-400">
+                                            <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 15.75h.007v.008H12v-.008z" />
+                                            </svg>
+                                            <span x-text="health?.message"></span>
+                                        </div>
+                                        <div x-show="health?.status === 'unreachable'"
+                                             class="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-[11px] text-amber-400">
+                                            <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 15.75h.007v.008H12v-.008z" />
+                                            </svg>
+                                            <span x-text="health?.message"></span>
+                                        </div>
+                                        <div x-show="health?.status === 'reprovisioning'"
+                                             class="flex items-center gap-2 rounded-lg border border-blue-500/20 bg-blue-500/5 px-3 py-2 text-[11px] text-blue-400">
+                                            <svg class="h-3.5 w-3.5 shrink-0 animate-spin" viewBox="0 0 24 24" fill="none">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                            </svg>
+                                            <span x-text="health?.message"></span>
+                                        </div>
+                                        <div x-show="health?.status === 'no_tunnel'"
+                                             class="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-[11px] text-gray-500">
+                                            <span x-text="health?.message"></span>
+                                        </div>
+                                    </div>
+
+                                    {{-- Re-provision confirmation modal --}}
+                                    <template x-teleport="body">
+                                        <div x-show="confirmReprovision" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center p-4" x-cloak>
+                                            <div class="absolute inset-0 bg-gray-950/80 backdrop-blur-sm" @click="confirmReprovision = false"></div>
+                                            <div x-show="confirmReprovision"
+                                                 x-transition:enter="transition ease-out duration-200"
+                                                 x-transition:enter-start="opacity-0 scale-95"
+                                                 x-transition:enter-end="opacity-100 scale-100"
+                                                 x-transition:leave="transition ease-in duration-150"
+                                                 x-transition:leave-start="opacity-100 scale-100"
+                                                 x-transition:leave-end="opacity-0 scale-95"
+                                                 class="relative w-full max-w-sm rounded-2xl border border-white/[0.06] bg-gray-950 p-6 shadow-2xl"
+                                                 @click.stop>
+                                                <h4 class="text-sm font-semibold text-gray-100">Re-provision Tunnel</h4>
+                                                <p class="mt-2 text-xs text-gray-400">
+                                                    This will recreate the Cloudflare tunnel configuration for this device. The tunnel may be briefly unavailable during re-provisioning.
+                                                </p>
+                                                <p class="mt-2 text-xs text-gray-500">
+                                                    Use this if the tunnel is returning Cloudflare errors or is otherwise unreachable.
+                                                </p>
+                                                <div class="mt-5 flex items-center justify-end gap-3 pt-4 border-t border-white/[0.06]">
+                                                    <button type="button" @click="confirmReprovision = false"
+                                                        class="rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2 text-sm font-medium text-gray-400 transition hover:bg-white/[0.08] hover:text-gray-200">
+                                                        Cancel
+                                                    </button>
+                                                    <form method="POST" action="{{ route('dashboard.devices.routes.reprovision', [$device, $route]) }}">
+                                                        @csrf
+                                                        <button type="submit"
+                                                            class="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-400 transition hover:bg-amber-500/20">
+                                                            Re-provision
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+
+                                    {{-- Delete confirmation modal --}}
+                                    <template x-teleport="body">
+                                        <div x-show="confirmDelete" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center p-4" x-cloak>
+                                            <div class="absolute inset-0 bg-gray-950/80 backdrop-blur-sm" @click="confirmDelete = false"></div>
+                                            <div x-show="confirmDelete"
+                                                 x-transition:enter="transition ease-out duration-200"
+                                                 x-transition:enter-start="opacity-0 scale-95"
+                                                 x-transition:enter-end="opacity-100 scale-100"
+                                                 x-transition:leave="transition ease-in duration-150"
+                                                 x-transition:leave-start="opacity-100 scale-100"
+                                                 x-transition:leave-end="opacity-0 scale-95"
+                                                 class="relative w-full max-w-sm rounded-2xl border border-white/[0.06] bg-gray-950 p-6 shadow-2xl"
+                                                 @click.stop>
+                                                <h4 class="text-sm font-semibold text-gray-100">Delete Tunnel Route</h4>
+                                                <p class="mt-2 text-xs text-gray-400">
+                                                    This will permanently delete the route <span class="font-mono text-gray-300">{{ $route->full_url }}</span> and all its traffic logs.
+                                                </p>
+                                                <p class="mt-2 text-xs text-gray-500">
+                                                    If this is the last route for its subdomain, the DNS record will also be removed.
+                                                </p>
+                                                <div class="mt-5 flex items-center justify-end gap-3 pt-4 border-t border-white/[0.06]">
+                                                    <button type="button" @click="confirmDelete = false"
+                                                        class="rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2 text-sm font-medium text-gray-400 transition hover:bg-white/[0.08] hover:text-gray-200">
+                                                        Cancel
+                                                    </button>
+                                                    <form method="POST" action="{{ route('dashboard.devices.routes.destroy', [$device, $route]) }}">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit"
+                                                            class="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/20">
+                                                            Delete Route
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
                             @endforeach
                         </div>
                     @endif
