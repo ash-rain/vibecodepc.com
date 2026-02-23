@@ -136,6 +136,7 @@ it('shows error when tunnel start fails after provisioning', function () {
     $tunnelMock->shouldReceive('start')
         ->once()
         ->andReturn('Failed to start cloudflared.');
+    $tunnelMock->shouldReceive('cleanup')->once();
     app()->instance(TunnelService::class, $tunnelMock);
 
     Livewire::test(Tunnel::class)

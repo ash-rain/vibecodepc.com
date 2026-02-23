@@ -36,5 +36,35 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('device-heartbeat', function (Request $request) {
             return Limit::perMinute(2)->by($request->route('uuid'));
         });
+
+        $this->ensureTunnelTokenFile();
+    }
+
+    /**
+     * Write the cloud tunnel token to the shared volume so the
+     * cloudflared container can connect immediately on boot.
+     */
+    private function ensureTunnelTokenFile(): void
+    {
+        $token = config('cloudflare.tunnel_token');
+        $tokenFilePath = config('cloudflare.tunnel_token_file_path');
+
+        if (empty($token) || empty($tokenFilePath)) {
+            return;
+        }
+
+        if (file_exists($tokenFilePath) && filesize($tokenFilePath) > 0) {
+            return;
+        }
+
+        $dir = dirname($tokenFilePath);
+
+        if (! is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+
+        if (is_writable($dir)) {
+            file_put_contents($tokenFilePath, $token);
+        }
     }
 }

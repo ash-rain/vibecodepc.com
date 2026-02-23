@@ -32,12 +32,6 @@ class FactoryReset extends Command
         $this->info('Stopping tunnel...');
         $tunnelService->stop();
 
-        $this->info('Removing tunnel credentials...');
-        $envFile = '/etc/cloudflared/tunnel.env';
-        if (file_exists($envFile)) {
-            @unlink($envFile);
-        }
-
         $this->info('Clearing database...');
         TunnelConfig::truncate();
         AiProviderConfig::truncate();

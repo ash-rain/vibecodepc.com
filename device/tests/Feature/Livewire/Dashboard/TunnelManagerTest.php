@@ -65,6 +65,7 @@ it('can restart the tunnel', function () {
     $this->tunnelMock->shouldReceive('stop')->once()->andReturn(null);
     $this->tunnelMock->shouldReceive('start')->once()->andReturn(null);
     $this->tunnelMock->shouldReceive('isRunning')->andReturn(true);
+    $this->tunnelMock->shouldReceive('hasCredentials')->andReturn(true);
 
     Livewire::test(TunnelManager::class)
         ->call('restartTunnel')
@@ -76,6 +77,7 @@ it('shows error when restart fails', function () {
     $this->tunnelMock->shouldReceive('stop')->once()->andReturn(null);
     $this->tunnelMock->shouldReceive('start')->once()->andReturn('Failed to start cloudflared.');
     $this->tunnelMock->shouldReceive('isRunning')->andReturn(false);
+    $this->tunnelMock->shouldReceive('hasCredentials')->andReturn(true);
 
     Livewire::test(TunnelManager::class)
         ->call('restartTunnel')

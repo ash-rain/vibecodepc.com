@@ -102,27 +102,29 @@ class AppServiceProvider extends ServiceProvider
     {
         URL::forceHttps(
             app()->environment(['production', 'staging'])
-            || (! app()->environment('local')
-                && config('vibecodepc.tunnel.token_file_path') !== null)
+            || ! app()->environment('local')
         );
 
         $this->ensureTunnelTokenFile();
     }
 
     /**
-     * Write the tunnel token to the shared volume file on boot so cloudflared
-     * can connect immediately after a container restart without waiting for
-     * the wizard or dashboard to trigger TunnelService::start().
+     * Write the tunnel token to the shared volume file on boot so the
+     * cloudflared container can connect immediately after a restart
+     * without waiting for the wizard or dashboard to trigger start().
      */
     private function ensureTunnelTokenFile(): void
     {
         $tokenFilePath = config('vibecodepc.tunnel.token_file_path');
 
-        if ($tokenFilePath === null) {
+        if (file_exists($tokenFilePath) && filesize($tokenFilePath) > 0) {
             return;
         }
 
-        if (file_exists($tokenFilePath) && filesize($tokenFilePath) > 0) {
+        // Only attempt when the shared volume is actually mounted
+        $dir = dirname($tokenFilePath);
+
+        if (! is_dir($dir) || ! is_writable($dir)) {
             return;
         }
 
@@ -132,14 +134,6 @@ class AppServiceProvider extends ServiceProvider
             return;
         }
 
-        $dir = dirname($tokenFilePath);
-
-        if (! is_dir($dir)) {
-            @mkdir($dir, 0755, true);
-        }
-
-        if (is_writable($dir)) {
-            file_put_contents($tokenFilePath, $config->tunnel_token_encrypted);
-        }
+        file_put_contents($tokenFilePath, $config->tunnel_token_encrypted);
     }
 }

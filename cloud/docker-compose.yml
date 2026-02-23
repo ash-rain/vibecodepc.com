@@ -27,6 +27,7 @@ services:
       REDIS_HOST: redis-cloud
       DEVICE_APP_PORT: 8080
       TUNNEL_TOKEN_PATH: /tunnel/token
+      CLOUD_TUNNEL_TOKEN: "${CLOUD_TUNNEL_TOKEN:-}"
       SESSION_COOKIE: vibecodepc_cloud_session
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/up"]
