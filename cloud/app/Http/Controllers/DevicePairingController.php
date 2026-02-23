@@ -7,14 +7,10 @@ namespace App\Http\Controllers;
 use App\Exceptions\DeviceAlreadyClaimedException;
 use App\Exceptions\DeviceNotFoundException;
 use App\Models\Device;
-use App\Services\CloudflareTunnelService;
 use App\Services\DeviceRegistryService;
-use App\Services\SubdomainService;
-use App\Services\TunnelRoutingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class DevicePairingController extends Controller
@@ -84,75 +80,7 @@ class DevicePairingController extends Controller
         return view('pairing.setup', [
             'device' => $device,
             'user' => $request->user(),
-            'subdomain' => $request->user()->username,
-            'tunnelUrl' => $device->tunnel_url,
         ]);
-    }
-
-    public function provisionAndSetup(
-        Request $request,
-        string $uuid,
-        SubdomainService $subdomainService,
-        CloudflareTunnelService $cfService,
-        TunnelRoutingService $routingService,
-    ): RedirectResponse {
-        if (! $request->user()) {
-            return redirect()->guest(route('login'));
-        }
-
-        $device = $this->findOwnedDevice($request, $uuid);
-        $user = $request->user();
-
-        $request->merge(['subdomain' => strtolower(trim($request->input('subdomain', '')))]);
-
-        $request->validate([
-            'subdomain' => ['required', 'string', 'min:3', 'max:30', 'regex:/^[a-z0-9][a-z0-9-]*[a-z0-9]$/'],
-        ], [
-            'subdomain.regex' => 'Only lowercase letters, numbers, and hyphens allowed. Must start and end with a letter or number.',
-        ]);
-
-        $subdomain = $request->input('subdomain');
-
-        if (! $subdomainService->isAvailable($subdomain, $user->id)) {
-            return redirect()->route('pairing.setup', $uuid)
-                ->with('error', 'That subdomain is not available. Please choose a different one.')
-                ->withInput();
-        }
-
-        try {
-            $subdomainService->updateSubdomain($user, $subdomain);
-
-            $deviceAppPort = (int) config('cloudflare.device_app_port', 8001);
-            $tunnel = $cfService->createTunnel("device-{$device->uuid}");
-            $cfService->configureTunnelIngress($tunnel['id'], "{$subdomain}.vibecodepc.com", $deviceAppPort);
-            $cfService->createDnsRecord($subdomain, $tunnel['id']);
-
-            $device->update(['tunnel_url' => "https://{$subdomain}.vibecodepc.com"]);
-
-            $routingService->updateRoutes($device, $subdomain, [
-                ['path' => '/', 'target_port' => $deviceAppPort],
-            ]);
-
-            Log::info("Tunnel provisioned during pairing setup", [
-                'device_uuid' => $uuid,
-                'subdomain' => $subdomain,
-                'tunnel_id' => $tunnel['id'],
-            ]);
-        } catch (\Throwable $e) {
-            Log::error('Tunnel provisioning failed during setup', [
-                'device_uuid' => $uuid,
-                'subdomain' => $subdomain,
-                'error' => $e->getMessage(),
-            ]);
-
-            return redirect()->route('pairing.setup', $uuid)
-                ->with('error', 'Failed to provision tunnel. Please try again.')
-                ->withInput();
-        }
-
-        // Redirect after POST to prevent form resubmission on refresh/back.
-        // The GET handler reads tunnel_url from the device model.
-        return redirect()->route('pairing.setup', $uuid);
     }
 
     public function checkTunnelStatus(Request $request, string $uuid): JsonResponse
@@ -163,16 +91,12 @@ class DevicePairingController extends Controller
 
         $device = $this->findOwnedDevice($request, $uuid);
 
-        if (! $device->tunnel_url) {
-            return response()->json(['ready' => false]);
-        }
-
-        // Use database heartbeat status instead of HTTP fetch to avoid
-        // looping through the cloud proxy and triggering failure tracking.
+        // The device registers its quick tunnel URL via the API once it's ready.
+        // We check for that URL rather than is_online (heartbeats haven't started yet).
         $device->refresh();
 
         return response()->json([
-            'ready' => $device->is_online,
+            'ready' => (bool) $device->tunnel_url,
             'tunnel_url' => $device->tunnel_url,
         ]);
     }

@@ -6,7 +6,6 @@ use App\Livewire\Wizard\AiServices;
 use App\Livewire\Wizard\CodeServer;
 use App\Livewire\Wizard\Complete;
 use App\Livewire\Wizard\GitHub;
-use App\Livewire\Wizard\Tunnel;
 use App\Livewire\Wizard\Welcome;
 use App\Livewire\Wizard\WizardController;
 use App\Models\CloudCredential;
@@ -59,7 +58,7 @@ it('renders wizard starting at welcome step', function () {
         ->assertSee('VibeCodePC Setup');
 });
 
-it('completes welcome and advances to tunnel', function () {
+it('completes welcome and advances to ai services', function () {
     Livewire::test(Welcome::class)
         ->set('adminPassword', 'securepassword')
         ->set('adminPasswordConfirmation', 'securepassword')
@@ -71,7 +70,7 @@ it('completes welcome and advances to tunnel', function () {
     $service = app(WizardProgressService::class);
 
     expect($service->isStepCompleted(WizardStep::Welcome))->toBeTrue()
-        ->and($service->getCurrentStep())->toBe(WizardStep::Tunnel);
+        ->and($service->getCurrentStep())->toBe(WizardStep::AiServices);
 });
 
 it('completes full wizard flow with skips and transitions to dashboard', function () {
@@ -86,7 +85,6 @@ it('completes full wizard flow with skips and transitions to dashboard', functio
         ->call('complete');
 
     // Skip remaining steps
-    Livewire::test(Tunnel::class)->call('skip');
     Livewire::test(AiServices::class)->call('skip');
     Livewire::test(GitHub::class)->call('skip');
     Livewire::test(CodeServer::class)->call('skip');

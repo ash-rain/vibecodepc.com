@@ -68,9 +68,8 @@ Route::get('/pair/{uuid}', [DevicePairingController::class, 'show'])->name('pair
 Route::post('/pair/{uuid}/claim', [DevicePairingController::class, 'claim'])->name('pairing.claim');
 Route::get('/pair/{uuid}/success', [DevicePairingController::class, 'success'])->name('pairing.success');
 
-// Post-pairing tunnel setup (requires auth)
+// Post-pairing setup: wait for device to register its quick tunnel URL
 Route::get('/pair/{uuid}/setup', [DevicePairingController::class, 'setup'])->middleware('auth')->name('pairing.setup');
-Route::post('/pair/{uuid}/setup', [DevicePairingController::class, 'provisionAndSetup'])->middleware('auth')->name('pairing.provision');
 Route::get('/pair/{uuid}/tunnel-status', [DevicePairingController::class, 'checkTunnelStatus'])->middleware('auth')->name('pairing.tunnel-status');
 
 // Stripe webhook (Cashier handles this route automatically via service provider)

@@ -56,6 +56,7 @@ it('polls cloud API and exits when device is unclaimed with --once flag', functi
     setupFakeDeviceIdentity($uuid);
 
     Http::fake([
+        "{$cloudUrl}/api/devices/register" => Http::response(null, 200),
         "{$cloudUrl}/api/devices/{$uuid}/status" => Http::response([
             'device_id' => $uuid,
             'status' => 'unclaimed',
@@ -64,11 +65,11 @@ it('polls cloud API and exits when device is unclaimed with --once flag', functi
     ]);
 
     $this->artisan('device:poll-pairing', ['--once' => true])
+        ->expectsOutputToContain('Device registered with cloud')
         ->expectsOutputToContain("Polling pairing status for device: {$uuid}")
         ->expectsOutputToContain('Status: unclaimed')
         ->assertExitCode(0);
 
-    Http::assertSentCount(1);
     expect(CloudCredential::count())->toBe(0);
 });
 
@@ -79,6 +80,7 @@ it('creates a CloudCredential when pairing is received', function () {
     setupFakeDeviceIdentity($uuid);
 
     Http::fake([
+        "{$cloudUrl}/api/devices/register" => Http::response(null, 200),
         "{$cloudUrl}/api/devices/{$uuid}/status" => Http::response([
             'device_id' => $uuid,
             'status' => 'claimed',
@@ -113,6 +115,7 @@ it('transitions device mode to wizard after pairing', function () {
     setupFakeDeviceIdentity($uuid);
 
     Http::fake([
+        "{$cloudUrl}/api/devices/register" => Http::response(null, 200),
         "{$cloudUrl}/api/devices/{$uuid}/status" => Http::response([
             'device_id' => $uuid,
             'status' => 'claimed',
@@ -131,4 +134,47 @@ it('transitions device mode to wizard after pairing', function () {
 
     $mode = DeviceState::getValue(DeviceStateService::MODE_KEY);
     expect($mode)->toBe(DeviceStateService::MODE_WIZARD);
+});
+
+it('registers device with cloud before polling', function () {
+    $uuid = (string) Str::uuid();
+    $cloudUrl = config('vibecodepc.cloud_url');
+
+    setupFakeDeviceIdentity($uuid);
+
+    Http::fake([
+        "{$cloudUrl}/api/devices/register" => Http::response(null, 200),
+        "{$cloudUrl}/api/devices/{$uuid}/status" => Http::response([
+            'device_id' => $uuid,
+            'status' => 'unclaimed',
+            'pairing' => null,
+        ]),
+    ]);
+
+    $this->artisan('device:poll-pairing', ['--once' => true])
+        ->expectsOutputToContain('Device registered with cloud')
+        ->assertExitCode(0);
+
+    Http::assertSent(fn ($request) => str_contains($request->url(), '/api/devices/register'));
+});
+
+it('continues polling even if device registration fails', function () {
+    $uuid = (string) Str::uuid();
+    $cloudUrl = config('vibecodepc.cloud_url');
+
+    setupFakeDeviceIdentity($uuid);
+
+    Http::fake([
+        "{$cloudUrl}/api/devices/register" => Http::response(null, 500),
+        "{$cloudUrl}/api/devices/{$uuid}/status" => Http::response([
+            'device_id' => $uuid,
+            'status' => 'unclaimed',
+            'pairing' => null,
+        ]),
+    ]);
+
+    $this->artisan('device:poll-pairing', ['--once' => true])
+        ->expectsOutputToContain('Failed to register device with cloud')
+        ->expectsOutputToContain('Status: unclaimed')
+        ->assertExitCode(0);
 });

@@ -40,15 +40,15 @@ it('advances to next step after completing current', function () {
     $this->service->seedProgress();
     $this->service->completeStep(WizardStep::Welcome, ['timezone' => 'UTC']);
 
-    expect($this->service->getCurrentStep())->toBe(WizardStep::Tunnel);
+    expect($this->service->getCurrentStep())->toBe(WizardStep::AiServices);
 });
 
 it('advances to next step after skipping current', function () {
     $this->service->seedProgress();
     $this->service->completeStep(WizardStep::Welcome);
-    $this->service->skipStep(WizardStep::Tunnel);
+    $this->service->skipStep(WizardStep::AiServices);
 
-    expect($this->service->getCurrentStep())->toBe(WizardStep::AiServices);
+    expect($this->service->getCurrentStep())->toBe(WizardStep::GitHub);
 });
 
 it('marks step as completed with data', function () {
@@ -77,13 +77,13 @@ it('checks step accessibility for completed and current steps', function () {
     $this->service->seedProgress();
 
     expect($this->service->isStepAccessible(WizardStep::Welcome))->toBeTrue()
-        ->and($this->service->isStepAccessible(WizardStep::Tunnel))->toBeFalse();
+        ->and($this->service->isStepAccessible(WizardStep::AiServices))->toBeFalse();
 
     $this->service->completeStep(WizardStep::Welcome);
 
     expect($this->service->isStepAccessible(WizardStep::Welcome))->toBeTrue()
-        ->and($this->service->isStepAccessible(WizardStep::Tunnel))->toBeTrue()
-        ->and($this->service->isStepAccessible(WizardStep::AiServices))->toBeFalse();
+        ->and($this->service->isStepAccessible(WizardStep::AiServices))->toBeTrue()
+        ->and($this->service->isStepAccessible(WizardStep::GitHub))->toBeFalse();
 });
 
 it('detects wizard completion', function () {
@@ -105,7 +105,6 @@ it('detects wizard completion with skipped steps', function () {
     $this->service->skipStep(WizardStep::AiServices);
     $this->service->skipStep(WizardStep::GitHub);
     $this->service->skipStep(WizardStep::CodeServer);
-    $this->service->skipStep(WizardStep::Tunnel);
     $this->service->completeStep(WizardStep::Complete);
 
     expect($this->service->isWizardComplete())->toBeTrue();

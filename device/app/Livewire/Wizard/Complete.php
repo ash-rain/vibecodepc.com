@@ -26,7 +26,6 @@ class Complete extends Component
             'ai_services' => 'AI Services',
             'github' => 'GitHub',
             'code_server' => 'VS Code',
-            'tunnel' => 'Tunnel',
         ];
 
         foreach ($progressService->getProgress() as $progress) {

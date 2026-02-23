@@ -27,40 +27,28 @@
                     <dt class="text-gray-500">Account</dt>
                     <dd class="text-gray-300">{{ $user->username ?? $user->email }}</dd>
                 </div>
-                <div class="flex justify-between">
-                    <dt class="text-gray-500">Subdomain</dt>
-                    <dd class="font-mono text-emerald-400">{{ $user->username }}.vibecodepc.com</dd>
-                </div>
             </dl>
-        </div>
-
-        <div class="rounded-xl bg-white/[0.03] border border-white/[0.06] p-5 mb-6">
-            <p class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Access Your Device</p>
-            <a href="https://{{ $user->username }}.vibecodepc.com" target="_blank"
-                class="inline-flex items-center gap-2 text-emerald-400 hover:text-emerald-300 font-mono text-sm transition">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                </svg>
-                {{ $user->username }}.vibecodepc.com
-            </a>
-            <p class="text-xs text-gray-600 mt-2">
-                Your device will be accessible at this address once the tunnel is configured during setup.
-            </p>
         </div>
 
         <div class="space-y-3">
             <div class="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
                 <p class="text-sm text-emerald-200">
-                    <span class="font-semibold">Next step:</span> Open the link above to reach your device — the setup
-                    wizard will guide you through configuring the tunnel and AI services.
+                    <span class="font-semibold">Next step:</span> Your device will start a setup tunnel automatically.
+                    Once connected, you'll be redirected to the setup wizard.
                 </p>
             </div>
 
-            <a href="{{ route('dashboard') }}"
-                class="inline-block rounded-xl bg-white/[0.04] border border-white/[0.06] px-6 py-3 text-sm font-semibold text-gray-300 hover:bg-white/[0.08] hover:text-white transition-all">
-                Go to Dashboard
+            <a href="{{ route('pairing.setup', $device->uuid) }}"
+                class="inline-block rounded-xl bg-gradient-to-r from-emerald-400 to-teal-400 text-gray-950 px-6 py-3 text-sm font-bold hover:from-emerald-300 hover:to-teal-300 shadow-lg shadow-emerald-500/20 transition-all">
+                Continue to Setup
             </a>
+
+            <div>
+                <a href="{{ route('dashboard') }}"
+                    class="inline-block text-sm text-gray-500 hover:text-emerald-400 transition">
+                    Go to Dashboard
+                </a>
+            </div>
         </div>
     </div>
 @endsection

@@ -65,6 +65,18 @@ class CloudApiClient
         return $response->json();
     }
 
+    /**
+     * Register a tunnel URL (quick or permanent) with the cloud.
+     */
+    public function registerTunnelUrl(string $deviceId, string $tunnelUrl): void
+    {
+        $this->authenticatedHttp()
+            ->post("/api/devices/{$deviceId}/tunnel/register", [
+                'tunnel_url' => $tunnelUrl,
+            ])
+            ->throw();
+    }
+
     public function reconfigureTunnel(string $deviceId, int $port): void
     {
         $this->authenticatedHttp()

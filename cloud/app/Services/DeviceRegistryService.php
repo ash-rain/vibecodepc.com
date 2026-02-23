@@ -37,15 +37,17 @@ class DeviceRegistryService
         if ($device->pairing_token_encrypted) {
             $user = $device->user;
 
-            $pairing = new PairingResult(
-                deviceId: $device->uuid,
-                token: $device->pairing_token_encrypted,
-                username: $user->username ?? '',
-                email: $user->email,
-                ipHint: $device->ip_hint,
-            );
+            if ($user) {
+                $pairing = new PairingResult(
+                    deviceId: $device->uuid,
+                    token: $device->pairing_token_encrypted,
+                    username: $user->username ?? '',
+                    email: $user->email,
+                    ipHint: $device->ip_hint,
+                );
+            }
 
-            // Clear the token after delivery
+            // Clear the token after delivery (or if user is missing)
             $device->update(['pairing_token_encrypted' => null]);
         }
 
@@ -81,6 +83,7 @@ class DeviceRegistryService
                 'paired_at' => now(),
                 'ip_hint' => $ipHint,
                 'pairing_token_encrypted' => $token->plainTextToken,
+                'tunnel_url' => null, // Clear so setup page waits for fresh quick tunnel
             ]);
 
             return new PairingResult(
@@ -95,13 +98,16 @@ class DeviceRegistryService
 
     public function registerDevice(DeviceInfo $deviceInfo): Device
     {
-        return Device::updateOrCreate(
+        $device = Device::firstOrCreate(
             ['uuid' => $deviceInfo->id],
-            [
-                'hardware_serial' => $deviceInfo->hardwareSerial,
-                'firmware_version' => $deviceInfo->firmwareVersion,
-                'status' => DeviceStatus::Unclaimed,
-            ],
+            ['status' => DeviceStatus::Unclaimed],
         );
+
+        $device->update([
+            'hardware_serial' => $deviceInfo->hardwareSerial,
+            'firmware_version' => $deviceInfo->firmwareVersion,
+        ]);
+
+        return $device;
     }
 }
