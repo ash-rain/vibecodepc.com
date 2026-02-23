@@ -8,6 +8,7 @@ use App\Models\GitHubCredential;
 use App\Models\Project;
 use App\Services\GitHub\GitHubRepoService;
 use App\Services\Projects\ProjectCloneService;
+use App\Services\Projects\ProjectLinkService;
 use App\Services\Projects\ProjectScaffoldService;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -29,6 +30,10 @@ class ProjectCreate extends Component
     public string $mode = '';
 
     public string $gitUrl = '';
+
+    public string $folderPath = '';
+
+    public string $detectedFramework = '';
 
     public string $selectedRepo = '';
 
@@ -156,6 +161,30 @@ class ProjectCreate extends Component
                 'name' => ['required', 'string', 'min:2', 'max:50'],
                 'gitUrl' => ['required', 'string', 'regex:#^https?://.+\.git$|^git@.+:.+\.git$#'],
             ]);
+        } elseif ($this->mode === 'existing') {
+            $this->validate([
+                'name' => ['required', 'string', 'min:2', 'max:50'],
+                'folderPath' => ['required', 'string'],
+            ]);
+
+            $path = trim($this->folderPath);
+
+            if (str_starts_with($path, '~/')) {
+                $path = ($_SERVER['HOME'] ?? '/home/vibecodepc').substr($path, 1);
+            }
+
+            $realPath = realpath($path);
+
+            if ($realPath === false || ! is_dir($realPath)) {
+                $this->addError('folderPath', 'This folder does not exist or is not a directory.');
+
+                return;
+            }
+
+            $this->folderPath = $realPath;
+            $this->detectedFramework = app(ProjectCloneService::class)
+                ->detectFramework($realPath)
+                ->label();
         }
 
         if (Project::where('name', $this->name)->exists()) {
@@ -213,6 +242,19 @@ class ProjectCreate extends Component
         }
     }
 
+    public function linkExisting(ProjectLinkService $linkService): void
+    {
+        $this->error = '';
+
+        try {
+            $project = $linkService->link($this->name, $this->folderPath);
+
+            $this->redirect(route('dashboard.projects.show', $project), navigate: false);
+        } catch (\Throwable $e) {
+            $this->error = 'Failed to link project: '.$e->getMessage();
+        }
+    }
+
     public function back(): void
     {
         if ($this->step === 1) {
@@ -233,6 +275,8 @@ class ProjectCreate extends Component
     private function resetCloneState(): void
     {
         $this->gitUrl = '';
+        $this->folderPath = '';
+        $this->detectedFramework = '';
         $this->selectedRepo = '';
         $this->repoSearch = '';
         $this->repos = [];

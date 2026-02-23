@@ -75,7 +75,7 @@
             {{-- Extensions --}}
             <div class="mb-6">
                 <h3 class="text-sm font-semibold text-gray-300 mb-3">Extensions</h3>
-                <p class="text-gray-400 text-sm mb-3">Install recommended extensions: Tailwind CSS IntelliSense, ESLint, Prettier, Continue (AI assistant).</p>
+                <p class="text-gray-400 text-sm mb-3">Install recommended extensions: Tailwind CSS IntelliSense, ESLint, Prettier, Continue, and Cline (AI coding assistants).</p>
                 <button
                     wire:click="installExtensions"
                     wire:loading.attr="disabled"
@@ -98,6 +98,11 @@
                         Installing...
                     </span>
                 </button>
+                @if ($clineConfigured)
+                    <p class="text-green-400/80 text-xs mt-2">Cline configured with your saved AI provider key.</p>
+                @elseif ($extensionsInstalled)
+                    <p class="text-gray-500 text-xs mt-2">Cline installed — open it in VS Code to enter your API key.</p>
+                @endif
             </div>
 
             {{-- Theme --}}

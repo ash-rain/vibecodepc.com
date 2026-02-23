@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Livewire\Wizard;
 
+use App\Models\AiProviderConfig;
 use App\Services\CodeServer\CodeServerService;
 use App\Services\WizardProgressService;
 use Livewire\Component;
+use VibecodePC\Common\Enums\AiProvider;
 use VibecodePC\Common\Enums\WizardStep;
 
 class CodeServer extends Component
@@ -22,6 +24,8 @@ class CodeServer extends Component
     public bool $extensionsInstalled = false;
 
     public bool $installingExtensions = false;
+
+    public bool $clineConfigured = false;
 
     public string $codeServerUrl = '';
 
@@ -88,6 +92,7 @@ class CodeServer extends Component
             'dbaeumer.vscode-eslint',
             'esbenp.prettier-vscode',
             'continue.continue',
+            'saoudrizwan.claude-dev',
         ];
 
         $failed = $codeServer->installExtensions($extensions);
@@ -99,6 +104,7 @@ class CodeServer extends Component
             : 'Failed to install: '.implode(', ', $failed);
 
         if ($this->extensionsInstalled) {
+            $this->configureCline($codeServer);
             $this->previewKey++;
         }
     }
@@ -127,9 +133,37 @@ class CodeServer extends Component
         $progressService->completeStep(WizardStep::CodeServer, [
             'theme' => $this->selectedTheme,
             'extensions_installed' => $this->extensionsInstalled,
+            'cline_configured' => $this->clineConfigured,
         ]);
 
         $this->dispatch('step-completed');
+    }
+
+    private function configureCline(CodeServerService $codeServer): void
+    {
+        $priority = [
+            AiProvider::Anthropic,
+            AiProvider::OpenRouter,
+            AiProvider::OpenAI,
+            AiProvider::Custom,
+        ];
+
+        $provider = AiProviderConfig::query()
+            ->where('status', 'validated')
+            ->whereIn('provider', array_map(fn (AiProvider $p) => $p->value, $priority))
+            ->get()
+            ->sortBy(fn (AiProviderConfig $c) => array_search($c->provider, $priority))
+            ->first();
+
+        if (! $provider) {
+            return;
+        }
+
+        $this->clineConfigured = $codeServer->configureCline(
+            provider: $provider->provider,
+            apiKey: $provider->getDecryptedKey(),
+            baseUrl: $provider->base_url,
+        );
     }
 
     public function skip(WizardProgressService $progressService): void

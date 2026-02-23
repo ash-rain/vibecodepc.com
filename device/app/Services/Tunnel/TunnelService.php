@@ -66,14 +66,12 @@ class TunnelService
     /**
      * Start cloudflared by writing the tunnel token to the shared volume.
      * The cloudflared container picks it up automatically via its entrypoint.
+     * If already running with a different token (e.g. after re-provisioning),
+     * the entrypoint detects the change and restarts cloudflared.
      * Returns null on success, or an error message on failure.
      */
     public function start(): ?string
     {
-        if ($this->isRunning()) {
-            return null;
-        }
-
         if (! $this->hasCredentials()) {
             return 'Tunnel is not configured. Complete the setup wizard to provision tunnel credentials.';
         }

@@ -13,7 +13,7 @@
 
     {{-- Step 0: Choose Mode --}}
     @if ($step === 0)
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <button
                 wire:click="selectMode('template')"
                 class="bg-white/[0.02] rounded-2xl border border-white/[0.06] hover:border-emerald-500/50 p-6 text-left transition-colors group"
@@ -62,6 +62,19 @@
                 </div>
                 <div class="text-sm font-medium text-white">Clone from URL</div>
                 <p class="text-xs text-gray-500 mt-1">Clone any public git repository</p>
+            </button>
+
+            <button
+                wire:click="selectMode('existing')"
+                class="bg-white/[0.02] rounded-2xl border border-white/[0.06] hover:border-emerald-500/50 p-6 text-left transition-colors group"
+            >
+                <div class="w-10 h-10 rounded-lg bg-white/[0.06] flex items-center justify-center mb-4 group-hover:bg-white/10 transition-colors">
+                    <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776" />
+                    </svg>
+                </div>
+                <div class="text-sm font-medium text-white">Add Existing Folder</div>
+                <p class="text-xs text-gray-500 mt-1">Link a folder already on this device</p>
             </button>
         </div>
     @endif
@@ -242,6 +255,49 @@
         </div>
     @endif
 
+    {{-- Step 1: Existing folder mode --}}
+    @if ($step === 1 && $mode === 'existing')
+        <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6 space-y-5">
+            <div>
+                <label for="name" class="block text-sm font-medium text-gray-300 mb-1.5">Project Name</label>
+                <input
+                    wire:model="name"
+                    id="name"
+                    type="text"
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white placeholder-gray-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none"
+                    placeholder="my-awesome-project"
+                >
+                @error('name') <p class="text-red-400 text-sm mt-1">{{ $message }}</p> @enderror
+            </div>
+
+            <div>
+                <label for="folderPath" class="block text-sm font-medium text-gray-300 mb-1.5">Folder Path</label>
+                <input
+                    wire:model="folderPath"
+                    id="folderPath"
+                    type="text"
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white placeholder-gray-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none font-mono text-sm"
+                    placeholder="/home/vibecodepc/my-project"
+                >
+                <p class="text-xs text-gray-500 mt-1.5">Absolute path to the project folder on this device.</p>
+                @error('folderPath') <p class="text-red-400 text-sm mt-1">{{ $message }}</p> @enderror
+            </div>
+
+            <div class="flex justify-between">
+                <button
+                    wire:click="back"
+                    class="px-6 py-2.5 text-gray-400 hover:text-white transition-colors"
+                >Back</button>
+                <button
+                    wire:click="nextStep"
+                    class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold rounded-xl transition-colors"
+                >
+                    Next
+                </button>
+            </div>
+        </div>
+    @endif
+
     {{-- Step 2: Confirm (template mode) --}}
     @if ($step === 2 && $mode === 'template')
         <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6 space-y-5">
@@ -320,6 +376,52 @@
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                         Cloning...
+                    </span>
+                </button>
+            </div>
+        </div>
+    @endif
+
+    {{-- Step 2: Confirm (existing folder mode) --}}
+    @if ($step === 2 && $mode === 'existing')
+        <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6 space-y-5">
+            <h3 class="text-white font-medium">Confirm Link</h3>
+
+            <div class="bg-white/[0.03] rounded-lg p-4 space-y-2">
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">Name</span>
+                    <span class="text-white">{{ $name }}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">Path</span>
+                    <span class="text-white truncate ml-4 font-mono text-xs">{{ $folderPath }}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">Framework</span>
+                    <span class="text-white">{{ $detectedFramework ?? 'Auto-detect' }}</span>
+                </div>
+            </div>
+
+            <p class="text-xs text-gray-500">A symlink will be created in the projects directory pointing to this folder.</p>
+
+            <div class="flex justify-between">
+                <button
+                    wire:click="back"
+                    class="px-6 py-2.5 text-gray-400 hover:text-white transition-colors"
+                >Back</button>
+                <button
+                    wire:click="linkExisting"
+                    wire:loading.attr="disabled"
+                    wire:target="linkExisting"
+                    class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-wait"
+                >
+                    <span wire:loading.remove wire:target="linkExisting">Link Project</span>
+                    <span wire:loading.flex wire:target="linkExisting" class="items-center gap-2">
+                        <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Linking...
                     </span>
                 </button>
             </div>

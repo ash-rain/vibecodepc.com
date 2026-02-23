@@ -16,6 +16,7 @@ use App\Services\GitHub\GitHubRepoService;
 use App\Services\NetworkService;
 use App\Services\Projects\PortAllocatorService;
 use App\Services\Projects\ProjectCloneService;
+use App\Services\Projects\ProjectLinkService;
 use App\Services\Projects\ProjectScaffoldService;
 use App\Services\SystemService;
 use App\Services\Tunnel\TunnelService;
@@ -96,6 +97,14 @@ class AppServiceProvider extends ServiceProvider
                 scaffoldService: app(ProjectScaffoldService::class),
             );
         });
+
+        $this->app->singleton(ProjectLinkService::class, function () {
+            return new ProjectLinkService(
+                basePath: config('vibecodepc.projects.base_path'),
+                portAllocator: app(PortAllocatorService::class),
+                cloneService: app(ProjectCloneService::class),
+            );
+        });
     }
 
     public function boot(): void
@@ -109,7 +118,7 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Write the tunnel token to the shared volume file on boot so the
+     * Write the tunnel token to the shared file on boot so the
      * cloudflared container can connect immediately after a restart
      * without waiting for the wizard or dashboard to trigger start().
      */
@@ -121,16 +130,19 @@ class AppServiceProvider extends ServiceProvider
             return;
         }
 
-        // Only attempt when the shared volume is actually mounted
-        $dir = dirname($tokenFilePath);
-
-        if (! is_dir($dir) || ! is_writable($dir)) {
-            return;
-        }
-
         $config = \App\Models\TunnelConfig::current();
 
         if ($config === null || empty($config->tunnel_token_encrypted)) {
+            return;
+        }
+
+        $dir = dirname($tokenFilePath);
+
+        if (! is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+
+        if (! is_writable($dir)) {
             return;
         }
 

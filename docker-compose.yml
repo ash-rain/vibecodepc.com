@@ -11,7 +11,6 @@ services:
     volumes:
       - ./device:/var/www/html
       - ./packages:/var/www/packages
-      - tunnel-data:/tunnel
       - /var/run/docker.sock:/var/run/docker.sock
     group_add:
       - "${DOCKER_GID:-0}"
@@ -33,7 +32,7 @@ services:
       VIBECODEPC_CLOUD_URL: http://host.docker.internal:8082
       VIBECODEPC_CLOUD_BROWSER_URL: http://localhost:8082
       DEVICE_APP_PORT: 8080
-      TUNNEL_TOKEN_PATH: /tunnel/token
+      TUNNEL_TOKEN_PATH: /var/www/html/storage/tunnel/token
       DOCKER_HOST_PROJECTS_PATH: "${PWD}/device/storage/app/projects"
       SESSION_COOKIE: vibecodepc_device_session
 
@@ -43,7 +42,7 @@ services:
       dockerfile: cloudflared.Dockerfile
     volumes:
       - ./device/docker/cloudflared-entrypoint.sh:/entrypoint.sh:ro
-      - tunnel-data:/tunnel:ro
+      - ./device/storage/tunnel:/tunnel:ro
     network_mode: "service:device"
     depends_on:
       device:
@@ -95,6 +94,3 @@ services:
       DOCKER_HOST_PROJECTS_PATH: "${PWD}/device/storage/app/projects"
     depends_on:
       - device
-
-volumes:
-  tunnel-data:

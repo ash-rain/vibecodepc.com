@@ -44,7 +44,9 @@ class DeviceTunnelController extends Controller
         $subdomain = $request->validated('subdomain');
         $deviceAppPort = (int) config('cloudflare.device_app_port');
 
-        if (! $subdomainService->isAvailable($subdomain, $user->id)) {
+        $isOwnSubdomain = $user->username === $subdomain;
+
+        if (! $isOwnSubdomain && ! $subdomainService->isAvailable($subdomain, $user->id)) {
             return response()->json(['error' => 'Subdomain is not available.'], 409);
         }
 

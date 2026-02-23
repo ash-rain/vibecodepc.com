@@ -3,7 +3,7 @@ FROM serversideup/php:8.4-fpm-nginx
 USER root
 
 # Install PHP extensions not included in base image
-RUN install-php-extensions bcmath gd intl
+RUN install-php-extensions bcmath gd intl pdo_pgsql
 
 WORKDIR /var/www/html
 

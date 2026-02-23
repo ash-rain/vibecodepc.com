@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\CodeServer;
 
 use Illuminate\Support\Facades\Process;
+use VibecodePC\Common\Enums\AiProvider;
 
 class CodeServerService
 {
@@ -343,6 +344,143 @@ class CodeServerService
         }
 
         return $this->start();
+    }
+
+    /**
+     * Configure the Cline AI coding extension with a provider and API key.
+     *
+     * Writes the provider selection and model to code-server's globalState
+     * database, and attempts to store the API key via the system keyring.
+     */
+    public function configureCline(AiProvider $provider, string $apiKey, ?string $baseUrl = null): bool
+    {
+        $extensionId = 'saoudrizwan.claude-dev';
+
+        $clineProvider = match ($provider) {
+            AiProvider::Anthropic => 'anthropic',
+            AiProvider::OpenAI => 'openai',
+            AiProvider::OpenRouter => 'openrouter',
+            AiProvider::Custom => 'openai-compatible',
+            default => null,
+        };
+
+        if ($clineProvider === null) {
+            return false;
+        }
+
+        $state = [
+            'apiProvider' => $clineProvider,
+            'apiModelId' => match ($clineProvider) {
+                'anthropic' => 'claude-sonnet-4-20250514',
+                'openai' => 'gpt-4o',
+                'openrouter' => 'anthropic/claude-sonnet-4',
+                default => '',
+            },
+        ];
+
+        if ($baseUrl && $clineProvider === 'openai-compatible') {
+            $state['openAiCompatibleBaseUrl'] = $baseUrl;
+        }
+
+        $globalStateOk = $this->setExtensionGlobalState($extensionId, $state);
+        $secretOk = $this->setExtensionSecret($extensionId, 'apiKey', $apiKey);
+
+        return $globalStateOk || $secretOk;
+    }
+
+    /**
+     * Merge key-value pairs into an extension's globalState in code-server's state database.
+     */
+    public function setExtensionGlobalState(string $extensionId, array $state): bool
+    {
+        $stateDbPath = $this->getStateDbPath();
+
+        if ($stateDbPath === null) {
+            return false;
+        }
+
+        try {
+            $pdo = new \PDO("sqlite:{$stateDbPath}");
+            $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+
+            $pdo->exec('CREATE TABLE IF NOT EXISTS ItemTable (key TEXT UNIQUE ON CONFLICT REPLACE, value BLOB)');
+
+            $key = 'memento/'.strtolower($extensionId);
+
+            $stmt = $pdo->prepare('SELECT value FROM ItemTable WHERE key = :key');
+            $stmt->execute([':key' => $key]);
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            $existing = $row ? (json_decode($row['value'], true) ?? []) : [];
+            $merged = array_merge($existing, $state);
+
+            $stmt = $pdo->prepare('INSERT OR REPLACE INTO ItemTable (key, value) VALUES (:key, :value)');
+            $stmt->execute([
+                ':key' => $key,
+                ':value' => json_encode($merged, JSON_UNESCAPED_SLASHES),
+            ]);
+
+            return true;
+        } catch (\Exception) {
+            return false;
+        }
+    }
+
+    /**
+     * Attempt to store a secret for an extension via the system keyring (secret-tool).
+     *
+     * Requires gnome-keyring + dbus on the device. Fails gracefully if unavailable.
+     */
+    public function setExtensionSecret(string $extensionId, string $secretKey, string $value): bool
+    {
+        $service = 'code-server/'.strtolower($extensionId);
+
+        $result = Process::input($value)->run(sprintf(
+            'secret-tool store --label=%s service %s account %s 2>/dev/null',
+            escapeshellarg("VS Code Secret: {$extensionId}/{$secretKey}"),
+            escapeshellarg($service),
+            escapeshellarg($secretKey),
+        ));
+
+        return $result->successful();
+    }
+
+    /**
+     * Read code-server settings (User/settings.json) as an array.
+     */
+    public function readSettings(): array
+    {
+        $result = Process::run(sprintf('cat %s 2>/dev/null', escapeshellarg($this->settingsPath)));
+
+        return $result->successful() ? (json_decode($result->output(), true) ?? []) : [];
+    }
+
+    /**
+     * Merge key-value pairs into code-server's User/settings.json.
+     */
+    public function mergeSettings(array $settings): bool
+    {
+        $current = $this->readSettings();
+        $merged = array_merge($current, $settings);
+
+        $result = Process::run(sprintf(
+            'mkdir -p %s && echo %s > %s',
+            escapeshellarg(dirname($this->settingsPath)),
+            escapeshellarg(json_encode($merged, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)),
+            escapeshellarg($this->settingsPath),
+        ));
+
+        return $result->successful();
+    }
+
+    /**
+     * Get the path to code-server's globalState database.
+     */
+    private function getStateDbPath(): ?string
+    {
+        $path = dirname($this->settingsPath).'/globalStorage/state.vscdb';
+
+        return file_exists($path) ? $path : null;
     }
 
     /**
