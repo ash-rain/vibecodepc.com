@@ -20,6 +20,18 @@ class QuickTunnelService
     private const URL_POLL_INTERVAL = 2;
 
     /**
+     * Start a quick tunnel for the dashboard on the device app port.
+     * Returns the tunnel URL, or null if the URL wasn't captured in time.
+     */
+    public function startForDashboard(): ?string
+    {
+        $port = (int) config('vibecodepc.tunnel.device_app_port');
+        $tunnel = $this->start($port);
+
+        return $tunnel->tunnel_url;
+    }
+
+    /**
      * Start a quick tunnel for a given local port.
      * Pass null for $projectId to create a dashboard tunnel.
      */

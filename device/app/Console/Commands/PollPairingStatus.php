@@ -5,15 +5,13 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Models\CloudCredential;
-use App\Models\TunnelConfig;
 use App\Services\CloudApiClient;
 use App\Services\DeviceRegistry\DeviceIdentityService;
 use App\Services\DeviceStateService;
-use App\Services\Tunnel\TunnelService;
+use App\Services\Tunnel\QuickTunnelService;
 use App\Services\WizardProgressService;
 use Illuminate\Console\Command;
 use Throwable;
-use VibecodePC\Common\Enums\WizardStep;
 
 class PollPairingStatus extends Command
 {
@@ -29,7 +27,7 @@ class PollPairingStatus extends Command
         CloudApiClient $client,
         DeviceIdentityService $identity,
         DeviceStateService $stateService,
-        TunnelService $tunnelService,
+        QuickTunnelService $quickTunnelService,
         WizardProgressService $progressService,
     ): int {
         if (! $identity->hasIdentity()) {
@@ -74,14 +72,8 @@ class PollPairingStatus extends Command
                     $this->info("Paired to: {$status->pairing->username} ({$status->pairing->email})");
                     $this->info('Device mode set to: wizard');
 
-                    // Auto-provision tunnel using the cloud username
-                    $this->provisionTunnel(
-                        $client,
-                        $deviceInfo->id,
-                        $status->pairing->username,
-                        $tunnelService,
-                        $progressService,
-                    );
+                    // Auto-provision quick tunnel for immediate access
+                    $this->provisionQuickTunnel($quickTunnelService, $progressService);
 
                     return self::SUCCESS;
                 }
@@ -101,54 +93,28 @@ class PollPairingStatus extends Command
         return self::SUCCESS;
     }
 
-    private function provisionTunnel(
-        CloudApiClient $client,
-        string $deviceId,
-        string $subdomain,
-        TunnelService $tunnelService,
+    private function provisionQuickTunnel(
+        QuickTunnelService $quickTunnelService,
         WizardProgressService $progressService,
     ): void {
-        if (! $subdomain) {
-            $this->warn('No username available for tunnel provisioning.');
-
-            return;
-        }
-
-        $this->info("Auto-provisioning tunnel: {$subdomain}." . config('vibecodepc.cloud_domain'));
+        $this->info('Starting quick tunnel...');
 
         try {
-            $result = $client->provisionTunnel($deviceId, $subdomain);
+            $url = $quickTunnelService->startForDashboard();
         } catch (Throwable $e) {
-            $this->warn("Tunnel provisioning failed: {$e->getMessage()}");
+            $this->warn("Quick tunnel failed: {$e->getMessage()}");
             $this->info('Tunnel can be configured later via the wizard.');
 
             return;
         }
 
-        TunnelConfig::updateOrCreate(
-            ['subdomain' => $subdomain],
-            [
-                'tunnel_id' => $result['tunnel_id'],
-                'tunnel_token_encrypted' => $result['tunnel_token'],
-                'status' => 'active',
-            ],
-        );
-
-        $startError = $tunnelService->start();
-
-        if ($startError !== null) {
-            $this->warn("Tunnel provisioned but failed to start: {$startError}");
-
-            return;
-        }
-
         $progressService->seedProgress();
-        $progressService->completeStep(WizardStep::Tunnel, [
-            'subdomain' => $subdomain,
-            'tunnel_active' => true,
-            'auto_provisioned' => true,
-        ]);
 
-        $this->info('Tunnel active at https://' . $subdomain . '.' . config('vibecodepc.cloud_domain'));
+        if ($url) {
+            $this->info("Quick tunnel active at {$url}");
+            $this->info("Wizard available at {$url}/wizard");
+        } else {
+            $this->warn('Quick tunnel started but URL not yet captured. It will appear shortly.');
+        }
     }
 }

@@ -5,19 +5,17 @@ declare(strict_types=1);
 namespace App\Livewire\Pairing;
 
 use App\Models\CloudCredential;
-use App\Models\TunnelConfig;
 use App\Services\CloudApiClient;
 use App\Services\DeviceRegistry\DeviceIdentityService;
 use App\Services\DeviceStateService;
 use App\Services\NetworkService;
-use App\Services\Tunnel\TunnelService;
+use App\Services\Tunnel\QuickTunnelService;
 use App\Services\WizardProgressService;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
 use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 use VibecodePC\Common\DTOs\DeviceInfo;
-use VibecodePC\Common\Enums\WizardStep;
 
 class PairingScreen extends Component
 {
@@ -88,9 +86,7 @@ class PairingScreen extends Component
     }
 
     public function setupTunnel(
-        CloudApiClient $cloudApi,
-        DeviceIdentityService $identity,
-        TunnelService $tunnelService,
+        QuickTunnelService $quickTunnelService,
         WizardProgressService $progressService,
     ): void {
         $credential = CloudCredential::current();
@@ -99,69 +95,35 @@ class PairingScreen extends Component
             return;
         }
 
-        $subdomain = $credential->cloud_username;
-
-        if (! $subdomain) {
-            $this->tunnelStatus = 'failed';
-            $this->tunnelMessage = 'No username found. Redirecting to setup...';
-            $this->redirect('/');
-
-            return;
-        }
-
-        $this->tunnelStatus = 'provisioning';
-        $this->tunnelMessage = 'Provisioning tunnel with cloud...';
+        $this->tunnelStatus = 'starting';
+        $this->tunnelMessage = 'Starting quick tunnel...';
 
         try {
-            $deviceId = $identity->getDeviceInfo()->id;
-            $result = $cloudApi->provisionTunnel($deviceId, $subdomain);
+            $url = $quickTunnelService->startForDashboard();
         } catch (\Throwable $e) {
-            Log::warning('Auto tunnel provisioning failed', ['error' => $e->getMessage()]);
+            Log::warning('Quick tunnel auto-provisioning failed', ['error' => $e->getMessage()]);
             $this->tunnelStatus = 'failed';
-            $this->tunnelMessage = 'Tunnel setup failed. You can configure it later.';
-
-            // Fall back to local wizard after a moment
+            $this->tunnelMessage = 'Quick tunnel failed. You can configure it later.';
             $this->redirect('/');
 
             return;
         }
 
-        $this->tunnelStatus = 'starting';
-        $this->tunnelMessage = 'Starting tunnel connection...';
-
-        TunnelConfig::updateOrCreate(
-            ['subdomain' => $subdomain],
-            [
-                'tunnel_id' => $result['tunnel_id'],
-                'tunnel_token_encrypted' => $result['tunnel_token'],
-                'status' => 'active',
-            ],
-        );
-
-        $startError = $tunnelService->start();
-
-        if ($startError !== null) {
-            Log::warning('Tunnel start failed after provisioning', ['error' => $startError]);
+        if (! $url) {
             $this->tunnelStatus = 'failed';
-            $this->tunnelMessage = 'Tunnel provisioned but failed to start. You can configure it later.';
+            $this->tunnelMessage = 'Tunnel started but URL not available. Redirecting to local wizard...';
             $this->redirect('/');
 
             return;
         }
 
-        // Mark the tunnel wizard step as completed since it's auto-provisioned
         $progressService->seedProgress();
-        $progressService->completeStep(WizardStep::Tunnel, [
-            'subdomain' => $subdomain,
-            'tunnel_active' => true,
-            'auto_provisioned' => true,
-        ]);
 
-        $this->tunnelUrl = 'https://' . $subdomain . '.' . config('vibecodepc.cloud_domain');
+        $this->tunnelUrl = $url;
         $this->tunnelStatus = 'ready';
-        $this->tunnelMessage = 'Tunnel active! Redirecting...';
+        $this->tunnelMessage = 'Quick tunnel active! Redirecting...';
 
-        $this->redirect($this->tunnelUrl . '/wizard');
+        $this->redirect($url . '/wizard');
     }
 
     private function registerWithCloud(CloudApiClient $cloud, DeviceInfo $info): void
