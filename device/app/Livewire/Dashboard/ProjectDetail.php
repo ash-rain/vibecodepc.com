@@ -161,18 +161,12 @@ class ProjectDetail extends Component
 
     private function updateTunnelIngress(TunnelService $tunnelService): void
     {
-        $tunnelConfig = \App\Models\TunnelConfig::current();
-
-        if (! $tunnelConfig) {
-            return;
-        }
-
         $routes = Project::where('tunnel_enabled', true)
             ->whereNotNull('tunnel_subdomain_path')
             ->whereNotNull('port')
             ->pluck('port', 'tunnel_subdomain_path')
             ->all();
 
-        $tunnelService->updateIngress($tunnelConfig->subdomain, $routes);
+        $tunnelService->updateIngress($routes);
     }
 }

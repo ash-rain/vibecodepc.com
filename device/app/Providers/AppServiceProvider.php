@@ -63,7 +63,6 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(TunnelService::class, function () {
             return new TunnelService(
-                configPath: config('vibecodepc.tunnel.config_path'),
                 deviceAppPort: (int) config('vibecodepc.tunnel.device_app_port'),
                 tokenFilePath: config('vibecodepc.tunnel.token_file_path'),
             );
@@ -130,7 +129,12 @@ class AppServiceProvider extends ServiceProvider
             return;
         }
 
-        $config = \App\Models\TunnelConfig::current();
+        try {
+            $config = \App\Models\TunnelConfig::current();
+        } catch (\Throwable) {
+            // Table may not exist yet (fresh install or tests)
+            return;
+        }
 
         if ($config === null || empty($config->tunnel_token_encrypted)) {
             return;

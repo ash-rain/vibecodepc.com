@@ -57,14 +57,20 @@ class CloudflareTunnelService
     /**
      * Create a new Cloudflare tunnel, or return an existing one with the same name.
      *
-     * @return array{id: string, name: string}
+     * Per the API docs, the create response includes a token field that can be
+     * used to run the connector without a separate token fetch.
+     *
+     * @return array{id: string, name: string, token: string|null}
      */
     public function createTunnel(string $name): array
     {
         $existing = $this->findTunnelByName($name);
 
         if ($existing !== null) {
-            return $existing;
+            return [
+                ...$existing,
+                'token' => null,
+            ];
         }
 
         $response = $this->http()
@@ -82,6 +88,7 @@ class CloudflareTunnelService
         return [
             'id' => $result['id'],
             'name' => $result['name'],
+            'token' => $result['token'] ?? null,
         ];
     }
 
@@ -101,28 +108,70 @@ class CloudflareTunnelService
     }
 
     /**
-     * Configure tunnel ingress rules remotely.
+     * Configure tunnel ingress rules remotely via PUT to /configurations.
+     *
+     * @see https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/get-started/create-remote-tunnel-api/
      */
     public function configureTunnelIngress(string $tunnelId, string $hostname, int $port = 8001): void
     {
+        $this->updateTunnelIngress($tunnelId, [
+            [
+                'hostname' => $hostname,
+                'service' => "http://localhost:{$port}",
+                'originRequest' => new \stdClass,
+            ],
+        ]);
+    }
+
+    /**
+     * Push a full set of ingress rules to the Cloudflare tunnel configuration.
+     * A catch-all 404 rule is appended automatically.
+     *
+     * @param  array<int, array{hostname?: string, path?: string, service: string, originRequest?: object}>  $rules
+     */
+    public function updateTunnelIngress(string $tunnelId, array $rules): void
+    {
+        $ingress = $rules;
+        $ingress[] = ['service' => 'http_status:404'];
+
         $response = $this->http()
             ->put("accounts/{$this->accountId}/cfd_tunnel/{$tunnelId}/configurations", [
                 'config' => [
-                    'ingress' => [
-                        [
-                            'hostname' => $hostname,
-                            'service' => "http://localhost:{$port}",
-                        ],
-                        [
-                            'service' => 'http_status:404',
-                        ],
-                    ],
+                    'ingress' => $ingress,
                 ],
             ]);
 
         if (! $response->successful()) {
             throw new RuntimeException('Failed to configure tunnel ingress: ' . $response->body());
         }
+    }
+
+    /**
+     * Get a tunnel's current status and connections (Step 5 from the API docs).
+     *
+     * A healthy tunnel will have status "healthy" with four connections.
+     *
+     * @return array{id: string, name: string, status: string, connections: array}
+     *
+     * @see https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/get-started/create-remote-tunnel-api/
+     */
+    public function getTunnelStatus(string $tunnelId): array
+    {
+        $response = $this->http()
+            ->get("accounts/{$this->accountId}/cfd_tunnel/{$tunnelId}");
+
+        if (! $response->successful()) {
+            throw new RuntimeException('Failed to get tunnel status: ' . $response->body());
+        }
+
+        $result = $response->json('result');
+
+        return [
+            'id' => $result['id'],
+            'name' => $result['name'],
+            'status' => $result['status'],
+            'connections' => $result['connections'] ?? [],
+        ];
     }
 
     /**

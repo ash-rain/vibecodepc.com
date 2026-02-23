@@ -58,7 +58,9 @@ class DeviceTunnelController extends Controller
         $cfService->configureTunnelIngress($tunnelId, "{$subdomain}.vibecodepc.com", $deviceAppPort);
         $cfService->createDnsRecord($subdomain, $tunnelId);
 
-        $token = $cfService->getTunnelToken($tunnelId);
+        // Use token from create response when available (new tunnels),
+        // fall back to separate token fetch (existing/re-used tunnels).
+        $token = $tunnel['token'] ?? $cfService->getTunnelToken($tunnelId);
 
         $device->update(['tunnel_url' => "https://{$subdomain}.vibecodepc.com"]);
 
@@ -95,7 +97,6 @@ class DeviceTunnelController extends Controller
         CloudflareTunnelService $cfService,
     ): JsonResponse {
         $device = $request->attributes->get('device');
-        $port = (int) ($request->input('port') ?? config('cloudflare.device_app_port'));
 
         $route = $device->tunnelRoutes()->active()->first();
 
@@ -111,14 +112,31 @@ class DeviceTunnelController extends Controller
         }
 
         $hostname = "{$route->subdomain}.vibecodepc.com";
-        $cfService->configureTunnelIngress($tunnel['id'], $hostname, $port);
 
-        $route->update(['target_port' => $port]);
+        // Accept a full ingress array from the device, or fall back to a single port.
+        $ingress = $request->input('ingress');
+
+        if (is_array($ingress) && $ingress !== []) {
+            $rules = array_map(fn (array $rule) => [
+                'hostname' => $hostname,
+                ...array_filter([
+                    'path' => $rule['path'] ?? null,
+                    'service' => $rule['service'],
+                    'originRequest' => new \stdClass,
+                ]),
+            ], $ingress);
+
+            $cfService->updateTunnelIngress($tunnel['id'], $rules);
+        } else {
+            $port = (int) ($request->input('port') ?? config('cloudflare.device_app_port'));
+            $cfService->configureTunnelIngress($tunnel['id'], $hostname, $port);
+
+            $route->update(['target_port' => $port]);
+        }
 
         return response()->json([
             'message' => 'Tunnel ingress reconfigured',
             'hostname' => $hostname,
-            'port' => $port,
         ]);
     }
 

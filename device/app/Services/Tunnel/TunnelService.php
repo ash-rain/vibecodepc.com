@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace App\Services\Tunnel;
 
 use App\Models\TunnelConfig;
+use App\Services\CloudApiClient;
+use App\Services\DeviceRegistry\DeviceIdentityService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
-use Symfony\Component\Yaml\Yaml;
 
 class TunnelService
 {
     public function __construct(
-        private readonly string $configPath = '/etc/cloudflared/config.yml',
         private readonly int $deviceAppPort = 8001,
         private readonly string $tokenFilePath = '/tunnel/token',
     ) {}
@@ -40,9 +40,11 @@ class TunnelService
 
     public function testConnectivity(string $subdomain): bool
     {
-        $result = Process::timeout(15)->run(
-            sprintf('curl -s -o /dev/null -w "%%{http_code}" https://%s.%s', escapeshellarg($subdomain), config('vibecodepc.cloud_domain')),
-        );
+        $url = sprintf('https://%s.%s', $subdomain, config('vibecodepc.cloud_domain'));
+
+        $result = Process::timeout(15)->run([
+            'curl', '-s', '-o', '/dev/null', '-w', '%{http_code}', $url,
+        ]);
 
         if (! $result->successful()) {
             return false;
@@ -110,18 +112,19 @@ class TunnelService
     }
 
     /**
-     * Update the cloudflared ingress rules in the config file.
+     * Push updated ingress rules to the remote tunnel configuration via the Cloud API.
+     *
+     * Since the tunnel uses config_src "cloudflare" (remote-managed), ingress rules
+     * must be updated via the Cloudflare API, not a local config file.
      *
      * @param  array<string, int>  $routes  Map of subdomain paths to local ports
      */
-    public function updateIngress(string $subdomain, array $routes): void
+    public function updateIngress(array $routes): void
     {
-        $hostname = "{$subdomain}." . config('vibecodepc.cloud_domain');
         $ingress = [];
 
         foreach ($routes as $path => $port) {
             $ingress[] = [
-                'hostname' => $hostname,
                 'path' => "/{$path}(/.*)?$",
                 'service' => "http://localhost:{$port}",
             ];
@@ -129,23 +132,19 @@ class TunnelService
 
         // Default route: device app on main URL
         $ingress[] = [
-            'hostname' => $hostname,
             'service' => "http://localhost:{$this->deviceAppPort}",
         ];
 
-        // Catch-all rule (required by cloudflared)
-        $ingress[] = ['service' => 'http_status:404'];
+        $cloudApi = app(CloudApiClient::class);
+        $identity = app(DeviceIdentityService::class);
 
-        $dir = dirname($this->configPath);
+        if (! $identity->hasIdentity()) {
+            Log::warning('Cannot update remote ingress: device identity not configured');
 
-        if (! is_dir($dir)) {
-            @mkdir($dir, 0755, true);
+            return;
         }
 
-        file_put_contents(
-            $this->configPath,
-            Yaml::dump(['ingress' => $ingress], 3, 2),
-        );
+        $cloudApi->reconfigureTunnelIngress($identity->getDeviceInfo()->id, $ingress);
     }
 
     /**

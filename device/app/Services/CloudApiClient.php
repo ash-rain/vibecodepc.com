@@ -75,6 +75,20 @@ class CloudApiClient
     }
 
     /**
+     * Push a full set of ingress rules to the remote tunnel configuration.
+     *
+     * @param  array<int, array{service: string, path?: string}>  $ingress
+     */
+    public function reconfigureTunnelIngress(string $deviceId, array $ingress): void
+    {
+        $this->authenticatedHttp()
+            ->post("/api/devices/{$deviceId}/tunnel/reconfigure", [
+                'ingress' => $ingress,
+            ])
+            ->throw();
+    }
+
+    /**
      * @param  array{cpu_percent: float, ram_used_mb: int, ram_total_mb: int, disk_used_gb: float, disk_total_gb: float, temperature_c: float|null, running_projects: int, tunnel_active: bool, firmware_version: string}  $metrics
      */
     public function sendHeartbeat(string $deviceId, array $metrics): void

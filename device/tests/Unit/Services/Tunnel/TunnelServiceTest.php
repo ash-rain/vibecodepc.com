@@ -3,10 +3,12 @@
 declare(strict_types=1);
 
 use App\Models\TunnelConfig;
+use App\Services\CloudApiClient;
+use App\Services\DeviceRegistry\DeviceIdentityService;
 use App\Services\Tunnel\TunnelService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
-use Symfony\Component\Yaml\Yaml;
+use VibecodePC\Common\DTOs\DeviceInfo;
 
 uses(RefreshDatabase::class);
 
@@ -158,49 +160,77 @@ it('returns null on stop when already stopped', function () {
     File::deleteDirectory(dirname($tokenFile));
 });
 
-it('writes ingress rules to the config file with default device app route', function () {
-    $configPath = storage_path('app/test-cloudflared-ingress/config.yml');
-    $service = new TunnelService(configPath: $configPath, deviceAppPort: 8001);
+it('pushes ingress rules to the cloud API with project routes and default device app route', function () {
+    $mockCloudApi = Mockery::mock(CloudApiClient::class);
+    $mockIdentity = Mockery::mock(DeviceIdentityService::class);
 
-    $service->updateIngress('myuser', [
+    $mockIdentity->shouldReceive('hasIdentity')->andReturn(true);
+    $mockIdentity->shouldReceive('getDeviceInfo')->andReturn(DeviceInfo::fromArray([
+        'id' => 'device-123',
+        'hardware_serial' => 'test-serial',
+        'manufactured_at' => '2026-01-01',
+        'firmware_version' => '1.0.0',
+    ]));
+
+    $capturedIngress = null;
+    $mockCloudApi->shouldReceive('reconfigureTunnelIngress')
+        ->once()
+        ->withArgs(function ($deviceId, $ingress) use (&$capturedIngress) {
+            $capturedIngress = $ingress;
+
+            return $deviceId === 'device-123';
+        });
+
+    app()->instance(CloudApiClient::class, $mockCloudApi);
+    app()->instance(DeviceIdentityService::class, $mockIdentity);
+
+    $service = new TunnelService(deviceAppPort: 8001);
+
+    $service->updateIngress([
         'my-project' => 3000,
         'blog' => 3001,
     ]);
 
-    expect(file_exists($configPath))->toBeTrue();
-
-    $config = Yaml::parseFile($configPath);
-
-    expect($config['ingress'])->toHaveCount(4)
-        ->and($config['ingress'][0]['hostname'])->toBe('myuser.vibecodepc.com')
-        ->and($config['ingress'][0]['path'])->toBe('/my-project(/.*)?$')
-        ->and($config['ingress'][0]['service'])->toBe('http://localhost:3000')
-        ->and($config['ingress'][1]['hostname'])->toBe('myuser.vibecodepc.com')
-        ->and($config['ingress'][1]['path'])->toBe('/blog(/.*)?$')
-        ->and($config['ingress'][1]['service'])->toBe('http://localhost:3001')
-        ->and($config['ingress'][2]['hostname'])->toBe('myuser.vibecodepc.com')
-        ->and($config['ingress'][2]['service'])->toBe('http://localhost:8001')
-        ->and($config['ingress'][2])->not->toHaveKey('path')
-        ->and($config['ingress'][3]['service'])->toBe('http_status:404');
-
-    File::deleteDirectory(dirname($configPath));
+    expect($capturedIngress)->toHaveCount(3)
+        ->and($capturedIngress[0]['path'])->toBe('/my-project(/.*)?$')
+        ->and($capturedIngress[0]['service'])->toBe('http://localhost:3000')
+        ->and($capturedIngress[1]['path'])->toBe('/blog(/.*)?$')
+        ->and($capturedIngress[1]['service'])->toBe('http://localhost:3001')
+        ->and($capturedIngress[2]['service'])->toBe('http://localhost:8001')
+        ->and($capturedIngress[2])->not->toHaveKey('path');
 });
 
-it('writes default device app route when no project routes are provided', function () {
-    $configPath = storage_path('app/test-cloudflared-empty/config.yml');
-    $service = new TunnelService(configPath: $configPath, deviceAppPort: 8001);
+it('pushes default device app route when no project routes are provided', function () {
+    $mockCloudApi = Mockery::mock(CloudApiClient::class);
+    $mockIdentity = Mockery::mock(DeviceIdentityService::class);
 
-    $service->updateIngress('myuser', []);
+    $mockIdentity->shouldReceive('hasIdentity')->andReturn(true);
+    $mockIdentity->shouldReceive('getDeviceInfo')->andReturn(DeviceInfo::fromArray([
+        'id' => 'device-123',
+        'hardware_serial' => 'test-serial',
+        'manufactured_at' => '2026-01-01',
+        'firmware_version' => '1.0.0',
+    ]));
 
-    $config = Yaml::parseFile($configPath);
+    $capturedIngress = null;
+    $mockCloudApi->shouldReceive('reconfigureTunnelIngress')
+        ->once()
+        ->withArgs(function ($deviceId, $ingress) use (&$capturedIngress) {
+            $capturedIngress = $ingress;
 
-    expect($config['ingress'])->toHaveCount(2)
-        ->and($config['ingress'][0]['hostname'])->toBe('myuser.vibecodepc.com')
-        ->and($config['ingress'][0]['service'])->toBe('http://localhost:8001')
-        ->and($config['ingress'][0])->not->toHaveKey('path')
-        ->and($config['ingress'][1]['service'])->toBe('http_status:404');
+            return $deviceId === 'device-123';
+        });
 
-    File::deleteDirectory(dirname($configPath));
+    app()->instance(CloudApiClient::class, $mockCloudApi);
+    app()->instance(DeviceIdentityService::class, $mockIdentity);
+
+    $service = new TunnelService(deviceAppPort: 8001);
+
+    $service->updateIngress([]);
+
+    expect($capturedIngress)->toHaveCount(1)
+        ->and($capturedIngress[0]['service'])->toBe('http://localhost:8001')
+        ->and($capturedIngress[0])->not->toHaveKey('path');
 });
 
 it('truncates token file and marks config as error on cleanup', function () {
