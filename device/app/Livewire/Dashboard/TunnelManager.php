@@ -38,11 +38,21 @@ class TunnelManager extends Component
 
     public bool $isProvisioning = false;
 
-    /** @var array<int, array{id: int, name: string, slug: string, port: int|null, tunnel_enabled: bool}> */
+    /** @var array<int, array{id: int, name: string, slug: string, port: int|null, tunnel_enabled: bool, tunnel_subdomain_path: string|null}> */
     public array $projects = [];
 
     /** @var array<int, array{project: string, requests: int, avg_response_time_ms: int}> */
     public array $trafficStats = [];
+
+    public ?int $editingProjectId = null;
+
+    public string $editPath = '';
+
+    public ?int $editPort = null;
+
+    public bool $showConfig = false;
+
+    public string $ingressConfig = '';
 
     public function mount(TunnelService $tunnelService): void
     {
@@ -76,6 +86,56 @@ class TunnelManager extends Component
         ]);
 
         $this->loadProjects();
+        $this->refreshIngressConfig();
+    }
+
+    public function editProject(int $projectId): void
+    {
+        $project = Project::findOrFail($projectId);
+        $this->editingProjectId = $projectId;
+        $this->editPath = $project->tunnel_subdomain_path ?? $project->slug;
+        $this->editPort = $project->port;
+    }
+
+    public function cancelEdit(): void
+    {
+        $this->editingProjectId = null;
+        $this->editPath = '';
+        $this->editPort = null;
+        $this->resetValidation(['editPath', 'editPort']);
+    }
+
+    public function saveProject(): void
+    {
+        $this->validate([
+            'editPath' => ['required', 'string', 'min:1', 'max:60', 'regex:/^[a-z0-9][a-z0-9-]*[a-z0-9]$/'],
+            'editPort' => ['required', 'integer', 'min:1', 'max:65535'],
+        ], [
+            'editPath.regex' => 'Path must be lowercase alphanumeric and hyphens only.',
+        ]);
+
+        $project = Project::findOrFail($this->editingProjectId);
+        $project->update([
+            'tunnel_subdomain_path' => $this->editPath,
+            'port' => $this->editPort,
+        ]);
+
+        $this->editingProjectId = null;
+        $this->editPath = '';
+        $this->editPort = null;
+        $this->loadProjects();
+        $this->refreshIngressConfig();
+    }
+
+    public function openConfig(): void
+    {
+        $this->refreshIngressConfig();
+        $this->showConfig = true;
+    }
+
+    public function closeConfig(): void
+    {
+        $this->showConfig = false;
     }
 
     public function restartTunnel(
@@ -265,7 +325,46 @@ class TunnelManager extends Component
             'slug' => $p->slug,
             'port' => $p->port,
             'tunnel_enabled' => $p->tunnel_enabled,
+            'tunnel_subdomain_path' => $p->tunnel_subdomain_path,
         ])->all();
+    }
+
+    private function refreshIngressConfig(): void
+    {
+        if (! $this->subdomain) {
+            $this->ingressConfig = '';
+
+            return;
+        }
+
+        $hostname = "{$this->subdomain}." . config('vibecodepc.cloud_domain');
+        $ingress = [];
+
+        foreach ($this->projects as $project) {
+            if (! $project['tunnel_enabled'] || ! $project['port']) {
+                continue;
+            }
+
+            $path = $project['tunnel_subdomain_path'] ?? $project['slug'];
+            $ingress[] = [
+                'hostname' => $hostname,
+                'path' => "/{$path}(/.*)?$",
+                'service' => "http://localhost:{$project['port']}",
+            ];
+        }
+
+        $ingress[] = [
+            'hostname' => $hostname,
+            'service' => 'http://localhost:' . config('vibecodepc.tunnel.device_app_port'),
+        ];
+
+        $ingress[] = ['service' => 'http_status:404'];
+
+        $this->ingressConfig = \Symfony\Component\Yaml\Yaml::dump(
+            ['ingress' => $ingress],
+            3,
+            2,
+        );
     }
 
     private function loadTrafficStats(): void
