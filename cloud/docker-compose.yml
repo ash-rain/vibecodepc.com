@@ -52,7 +52,6 @@ services:
     depends_on:
       cloud:
         condition: service_healthy
-        restart: true
     restart: always
 
   postgres:

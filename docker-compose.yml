@@ -48,7 +48,6 @@ services:
     depends_on:
       device:
         condition: service_healthy
-        restart: true
     restart: always
 
   device-scheduler:
