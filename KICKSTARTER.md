@@ -54,7 +54,7 @@ VibeCodePC is a **Raspberry Pi 5 (16 GB)** in a custom enclosure, pre-loaded wit
 ### What's in the Box
 
 - **Raspberry Pi 5** (16 GB RAM) in a custom-designed enclosure
-- **256 GB NVMe SSD** — fast storage for your projects and tools
+- **128 GB NVMe SSD** — fast, reliable storage for your projects and tools
 - **USB-C power supply** (27W)
 - **Ethernet cable** (1m)
 - **QR code card** with your unique Device ID
@@ -113,7 +113,7 @@ The base hardware works completely offline. The platform subscription ($5/month 
 | Component | Specification |
 |-----------|--------------|
 | **SBC** | Raspberry Pi 5 — 16 GB LPDDR4X RAM |
-| **Storage** | 256 GB NVMe SSD (M.2 2242, via M.2 HAT+) |
+| **Storage** | 128 GB NVMe SSD (M.2 2242, via M.2 HAT+) |
 | **CPU** | Broadcom BCM2712, Quad-core Arm Cortex-A76 @ 2.4 GHz |
 | **GPU** | VideoCore VII |
 | **Connectivity** | Gigabit Ethernet, Wi-Fi 5 (802.11ac), Bluetooth 5.0 |
@@ -142,7 +142,7 @@ The base hardware works completely offline. The platform subscription ($5/month 
 ### Early Bird — $299 (Limited: 200 units)
 *Save $50 off retail*
 
-- 1x VibeCodePC (Raspberry Pi 5 16 GB, 256 GB NVMe)
+- 1x VibeCodePC (Raspberry Pi 5 16 GB, 128 GB NVMe)
 - Custom enclosure + PSU + Ethernet cable
 - QR code card + quick start guide
 - 3 months free Starter plan ($5/mo value)
@@ -150,7 +150,7 @@ The base hardware works completely offline. The platform subscription ($5/month 
 - Estimated delivery: October 2026
 
 ### Standard — $349
-- 1x VibeCodePC (Raspberry Pi 5 16 GB, 256 GB NVMe)
+- 1x VibeCodePC (Raspberry Pi 5 16 GB, 128 GB NVMe)
 - Custom enclosure + PSU + Ethernet cable
 - QR code card + quick start guide
 - 1 month free Starter plan
@@ -317,7 +317,7 @@ At an average pledge of ~$320 (mix of Early Bird at $299 and Standard at $349), 
 |----------|--------|---|
 | Raspberry Pi 5 (16 GB) × ~156 units | $18,700 | 37% |
 | M.2 HAT+ × ~156 units | $1,900 | 4% |
-| NVMe SSDs (256 GB) × ~156 units | $3,900 | 8% |
+| NVMe SSDs (128 GB) × ~156 units | $3,100 | 6% |
 | Custom enclosures (injection molding tooling + units) | $7,000 | 14% |
 | PSUs, cables, accessories | $2,000 | 4% |
 | Assembly and quality testing | $2,500 | 5% |
@@ -325,7 +325,7 @@ At an average pledge of ~$320 (mix of Early Bird at $299 and Standard at $349), 
 | International shipping buffer | $1,000 | 2% |
 | Kickstarter fees (5%) + payment processing (5%) | $5,000 | 10% |
 | Software development and infrastructure | $2,000 | 4% |
-| Contingency / buffer | $3,000 | 6% |
+| Contingency / buffer | $3,800 | 8% |
 | **Total** | **$50,000** | **100%** |
 
 ---

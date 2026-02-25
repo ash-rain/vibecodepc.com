@@ -255,13 +255,13 @@ Storage:
 | -------------------------- | ----------------------------- | --------- |
 | Raspberry Pi 5             | 16 GB LPDDR4X RAM             | $120      |
 | M.2 HAT+                   | Official Raspberry Pi         | $12       |
-| NVMe SSD                   | 256 GB M.2 2242               | $25       |
+| NVMe SSD                   | 128 GB M.2 2242               | $20       |
 | Power Supply               | 27W USB-C (official)          | $12       |
 | Case                       | Custom branded                | $15       |
 | Ethernet cable             | Cat6, 1m                      | $2        |
 | QR Code label              | Printed sticker               | $0.50     |
 | Quick Start card           | Printed                       | $1        |
-| **Total hardware cost**    |                               | **~$188** |
+| **Total hardware cost**    |                               | **~$183** |
 | **Target retail price**    |                               | **$349**  |
 
 ### 5.3 Manufacturing & Assembly

@@ -45,8 +45,8 @@ whats_included:
   items:
     - title: "Raspberry Pi 5"
       description: "16 GB LPDDR4X RAM — най-мощният Pi правен досега"
-    - title: "128 GB Kingston SD карта"
-      description: "Предварително записана високоиздръжлива microSD за проектите, инструментите и контейнерите ти"
+    - title: "128 GB NVMe SSD"
+      description: "Предварително записан NVMe SSD — бърз, надежден диск за проектите, инструментите и контейнерите ти"
     - title: "Специален корпус"
       description: "Леярски корпус с пасивно охлаждане — изглежда страхотно на бюрото ти"
     - title: "USB-C захранване"
@@ -140,11 +140,11 @@ pricing:
   subtitle: "Едно устройство. Незадължителен абонамент за уеб публикуване."
   device:
     label: "Устройството"
-    price: "$299"
+    price: "$349"
     period: "еднократно"
     features:
       - "Raspberry Pi 5 — 16 GB RAM"
-      - "128 GB Kingston SD карта"
+      - "128 GB NVMe SSD"
       - "Специален корпус, захранване, Ethernet кабел"
       - "Предварително инсталирани: VS Code, Docker, Node, PHP, Python"
       - "Работи напълно офлайн — не е нужен абонамент"
@@ -168,7 +168,7 @@ specs:
     - label: "SBC"
       value: "Raspberry Pi 5 — 16 GB LPDDR4X RAM"
     - label: "Съхранение"
-      value: "128 GB Kingston microSD (високоиздръжлива)"
+      value: "128 GB NVMe SSD (M.2, чрез M.2 HAT+)"
     - label: "Процесор"
       value: "Broadcom BCM2712, четириядрен Arm Cortex-A76 @ 2.4 GHz"
     - label: "Графичен процесор"

@@ -45,8 +45,8 @@ whats_included:
   items:
     - title: "Raspberry Pi 5"
       description: "16 GB LPDDR4X RAM — de krachtigste Pi ooit gemaakt"
-    - title: "128 GB Kingston SD-kaart"
-      description: "Vooraf geflashte high-endurance microSD voor je projecten, tools en containers"
+    - title: "128 GB NVMe SSD"
+      description: "Vooraf geflashte NVMe SSD — snelle, betrouwbare opslag voor je projecten, tools en containers"
     - title: "Custom behuizing"
       description: "Spuitgegoten behuizing met passieve koeling — ziet er geweldig uit op je bureau"
     - title: "USB-C voeding"
@@ -140,11 +140,11 @@ pricing:
   subtitle: "Een apparaat. Optioneel abonnement voor webpublicatie."
   device:
     label: "Het apparaat"
-    price: "$299"
+    price: "$349"
     period: "eenmalig"
     features:
       - "Raspberry Pi 5 — 16 GB RAM"
-      - "128 GB Kingston SD-kaart"
+      - "128 GB NVMe SSD"
       - "Custom behuizing, voeding, ethernetkabel"
       - "Vooraf geinstalleerd: VS Code, Docker, Node, PHP, Python"
       - "Werkt volledig offline — geen abonnement vereist"
@@ -168,7 +168,7 @@ specs:
     - label: "SBC"
       value: "Raspberry Pi 5 — 16 GB LPDDR4X RAM"
     - label: "Opslag"
-      value: "128 GB Kingston microSD (high-endurance)"
+      value: "128 GB NVMe SSD (M.2, via M.2 HAT+)"
     - label: "CPU"
       value: "Broadcom BCM2712, Quad-core Arm Cortex-A76 @ 2.4 GHz"
     - label: "GPU"

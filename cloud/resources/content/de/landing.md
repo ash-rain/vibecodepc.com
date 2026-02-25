@@ -45,8 +45,8 @@ whats_included:
   items:
     - title: "Raspberry Pi 5"
       description: "16 GB LPDDR4X RAM — der leistungsstarkste Pi aller Zeiten"
-    - title: "128 GB Kingston SD-Karte"
-      description: "Vorinstallierte High-Endurance microSD fur deine Projekte, Tools und Container"
+    - title: "128 GB NVMe SSD"
+      description: "Vorinstallierte NVMe SSD — schneller, zuverlässiger Speicher für deine Projekte, Tools und Container"
     - title: "Individuelles Gehause"
       description: "Spritzgegossenes Gehause mit passiver Kuhlung — sieht super aus auf deinem Schreibtisch"
     - title: "USB-C Netzteil"
@@ -140,11 +140,11 @@ pricing:
   subtitle: "Ein Gerat. Optionales Abo fur Web-Veroffentlichung."
   device:
     label: "Das Gerat"
-    price: "$299"
+    price: "$349"
     period: "einmalig"
     features:
       - "Raspberry Pi 5 — 16 GB RAM"
-      - "128 GB Kingston SD-Karte"
+      - "128 GB NVMe SSD"
       - "Individuelles Gehause, Netzteil, Ethernet-Kabel"
       - "Vorinstalliert: VS Code, Docker, Node, PHP, Python"
       - "Funktioniert komplett offline — kein Abo erforderlich"
@@ -168,7 +168,7 @@ specs:
     - label: "SBC"
       value: "Raspberry Pi 5 — 16 GB LPDDR4X RAM"
     - label: "Speicher"
-      value: "128 GB Kingston microSD (High-Endurance)"
+      value: "128 GB NVMe SSD (M.2, über M.2 HAT+)"
     - label: "CPU"
       value: "Broadcom BCM2712, Quad-Core Arm Cortex-A76 @ 2,4 GHz"
     - label: "GPU"

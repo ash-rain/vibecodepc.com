@@ -45,8 +45,8 @@ whats_included:
   items:
     - title: "Raspberry Pi 5"
       description: "16 GB de RAM LPDDR4X — el Pi más potente jamás fabricado"
-    - title: "Tarjeta SD Kingston de 128 GB"
-      description: "microSD de alta resistencia preconfigurada para tus proyectos, herramientas y contenedores"
+    - title: "SSD NVMe de 128 GB"
+      description: "SSD NVMe preconfigurado — almacenamiento rápido y fiable para tus proyectos, herramientas y contenedores"
     - title: "Carcasa personalizada"
       description: "Carcasa moldeada por inyección con refrigeración pasiva — queda genial en tu escritorio"
     - title: "Fuente de alimentación USB-C"
@@ -140,11 +140,11 @@ pricing:
   subtitle: "Un dispositivo. Suscripción opcional para publicar en la web."
   device:
     label: "El dispositivo"
-    price: "$299"
+    price: "$349"
     period: "pago único"
     features:
       - "Raspberry Pi 5 — 16 GB de RAM"
-      - "Tarjeta SD Kingston de 128 GB"
+      - "SSD NVMe de 128 GB"
       - "Carcasa personalizada, fuente de alimentación, cable Ethernet"
       - "Preinstalado: VS Code, Docker, Node, PHP, Python"
       - "Funciona completamente sin conexión — sin suscripción obligatoria"
@@ -168,7 +168,7 @@ specs:
     - label: "SBC"
       value: "Raspberry Pi 5 — 16 GB de RAM LPDDR4X"
     - label: "Almacenamiento"
-      value: "microSD Kingston de 128 GB (alta resistencia)"
+      value: "SSD NVMe de 128 GB (M.2, mediante M.2 HAT+)"
     - label: "CPU"
       value: "Broadcom BCM2712, Quad-core Arm Cortex-A76 @ 2.4 GHz"
     - label: "GPU"
