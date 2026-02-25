@@ -251,19 +251,21 @@ Storage:
 - [ ] Auto-update mechanism (pull from GitHub releases / apt repo)
 
 ### 5.2 Hardware BOM (Bill of Materials)
-| Component                  | Spec                          | Est. Cost |
-| -------------------------- | ----------------------------- | --------- |
-| Raspberry Pi 5             | 8 GB RAM                      | $80       |
-| NVMe SSD                   | 256 GB (via M.2 HAT)         | $25       |
-| M.2 HAT for Pi 5           | Official or Pimoroni          | $15       |
-| Power Supply               | 27W USB-C (official)          | $12       |
-| Case                       | Custom branded (3D print/mold)| $8        |
-| MicroSD                    | 32 GB (boot only)             | $6        |
-| Ethernet cable             | Cat6, 1m                      | $2        |
-| QR Code label              | Printed sticker               | $0.50     |
-| Quick Start card           | Printed                       | $1        |
-| **Total hardware cost**    |                               | **~$150** |
-| **Target retail price**    |                               | **$299**  |
+| Component                  | Spec                                         | Est. Cost |
+| -------------------------- | -------------------------------------------- | --------- |
+| Raspberry Pi 5             | 16 GB LPDDR4X RAM                            | $120      |
+| Raspberry Pi AI HAT+ 2     | Hailo-10H, 40 TOPS, 8 GB dedicated LPDDR4X  | $130      |
+| Dual M.2 carrier board     | PCIe switch — AI accelerator + NVMe slots    | $30       |
+| NVMe SSD                   | 256 GB M.2 2242                              | $25       |
+| Power Supply               | 27W USB-C (official)                         | $12       |
+| Case                       | Custom (accommodates HAT stack)              | $20       |
+| Ethernet cable             | Cat6, 1m                                     | $2        |
+| QR Code label              | Printed sticker                              | $0.50     |
+| Quick Start card           | Printed                                      | $1        |
+| **Total hardware cost**    |                                              | **~$341** |
+| **Target retail price**    |                                              | **$549**  |
+
+> **Note:** The AI HAT+ 2 and NVMe SSD both use the PCIe M.2 interface — a third-party dual M.2 carrier board with a PCIe switch (e.g. Geekworm X1004 or 52Pi N20) is required to run both simultaneously. Boot is from NVMe; no microSD needed.
 
 ### 5.3 Manufacturing & Assembly
 - [ ] Source components (RPi distributor, SSD bulk)

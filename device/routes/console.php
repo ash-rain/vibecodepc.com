@@ -15,6 +15,12 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
+// Poll cloud for pairing claim every 5 seconds (no-op once paired)
+Schedule::command('device:poll-pairing')
+    ->everyFiveSeconds()
+    ->withoutOverlapping()
+    ->name('device-pairing-poll');
+
 Schedule::call(function () {
     $credential = CloudCredential::current();
 

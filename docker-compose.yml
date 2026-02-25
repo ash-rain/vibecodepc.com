@@ -68,32 +68,6 @@ services:
     depends_on:
       - device
 
-  device-pairing:
-    build:
-      context: .
-      dockerfile: device/Dockerfile
-    working_dir: /var/www/html
-    command: ["php", "artisan", "device:poll-pairing"]
-    volumes:
-      - ./device:/var/www/html
-      - ./packages:/var/www/packages
-      - /var/run/docker.sock:/var/run/docker.sock
-    group_add:
-      - "${DOCKER_GID:-0}"
-    environment:
-      APP_NAME: VibeCodePC
-      APP_ENV: local
-      APP_DEBUG: "true"
-      APP_URL: http://localhost:8081
-      DB_CONNECTION: sqlite
-      QUEUE_CONNECTION: database
-      VIBECODEPC_CLOUD_URL: http://host.docker.internal:8082
-      VIBECODEPC_CLOUD_BROWSER_URL: http://localhost:8082
-      DEVICE_APP_PORT: 8080
-    depends_on:
-      device:
-        condition: service_healthy
-
   device-queue:
     build:
       context: .

@@ -49,11 +49,14 @@ class QuickTunnelService
         $label = $projectId ? "p{$projectId}" : 'dash';
         $containerName = self::CONTAINER_PREFIX . "-{$label}-{$suffix}";
 
+        [$networkArgs, $originUrl] = $this->resolveOrigin($port);
+
         $result = Process::timeout(30)->run(sprintf(
-            'docker run -d --name %s --network host %s tunnel --url http://localhost:%d',
+            'docker run -d --name %s %s %s tunnel --url %s',
             escapeshellarg($containerName),
+            $networkArgs,
             escapeshellarg(self::CLOUDFLARED_IMAGE),
-            $port,
+            escapeshellarg($originUrl),
         ));
 
         if (! $result->successful()) {
@@ -148,6 +151,48 @@ class QuickTunnelService
     {
         $this->removeContainer($tunnel->container_name);
         $tunnel->delete();
+    }
+
+    /**
+     * Resolve the Docker network args and origin URL for the tunnel.
+     *
+     * In Docker (dev): join the compose bridge network and connect to our container IP.
+     * On bare metal (prod): use host network and connect to localhost.
+     *
+     * @return array{0: string, 1: string} [networkArgs, originUrl]
+     */
+    private function resolveOrigin(int $port): array
+    {
+        if (! file_exists('/.dockerenv')) {
+            return ['--network host', "http://localhost:{$port}"];
+        }
+
+        $containerId = gethostname();
+
+        $result = Process::timeout(5)->run(sprintf(
+            'docker inspect --format %s %s',
+            escapeshellarg('{{json .NetworkSettings.Networks}}'),
+            escapeshellarg($containerId),
+        ));
+
+        if ($result->successful()) {
+            $networks = json_decode(trim($result->output()), true);
+
+            if (is_array($networks)) {
+                $networkName = array_key_first($networks);
+                $ip = $networks[$networkName]['IPAddress'] ?? null;
+
+                if ($networkName && $ip) {
+                    return [
+                        '--network ' . escapeshellarg($networkName),
+                        "http://{$ip}:{$port}",
+                    ];
+                }
+            }
+        }
+
+        // Fallback: host network (works on Linux, limited on Mac)
+        return ['--network host', "http://localhost:{$port}"];
     }
 
     private function removeContainer(string $containerName): void
