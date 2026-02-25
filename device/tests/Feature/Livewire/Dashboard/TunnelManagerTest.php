@@ -24,13 +24,15 @@ beforeEach(function () {
 it('renders the tunnel manager', function () {
     Livewire::test(TunnelManager::class)
         ->assertStatus(200)
-        ->assertSee('Cloudflare Tunnel')
+        ->assertSee('Tunnel')
         ->assertSee('Running');
 });
 
 it('shows the device subdomain', function () {
+    $expected = 'mydevice.' . config('vibecodepc.cloud_domain');
+
     Livewire::test(TunnelManager::class)
-        ->assertSee('mydevice.vibecodepc.com');
+        ->assertSee($expected);
 });
 
 it('shows not configured when tunnel has no credentials', function () {

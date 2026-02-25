@@ -68,8 +68,8 @@ jobs:
                     php artisan up
                     
                     # Restart services
-                    sudo systemctl reload php8.4-fpm
-                    sudo systemctl restart nginx
+                    sudo systemctl reload php8.5-fpm
+                    sudo systemctl reload nginx
                   ENDSSH
 
             - name: Health check
