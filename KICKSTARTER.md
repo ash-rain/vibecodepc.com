@@ -39,7 +39,7 @@ The Raspberry Pi is incredible hardware — but out of the box, it's a blank sla
 
 ### Introducing VibeCodePC
 
-VibeCodePC is a **Raspberry Pi 5 (16 GB)** with a **Raspberry Pi AI HAT+ 2** (Hailo-10H, 40 TOPS) in a custom enclosure, pre-loaded with everything you need to build and deploy software with AI assistance — including running AI models locally, right on your desk.
+VibeCodePC is a **Raspberry Pi 5 (16 GB)** in a custom enclosure, pre-loaded with everything you need to build and deploy software with AI assistance.
 
 **Here's how it works:**
 
@@ -53,7 +53,7 @@ VibeCodePC is a **Raspberry Pi 5 (16 GB)** with a **Raspberry Pi AI HAT+ 2** (Ha
 
 ### What's in the Box
 
-- **Raspberry Pi 5** (16 GB RAM) with **Raspberry Pi AI HAT+ 2** (Hailo-10H, 40 TOPS) — in a custom-designed enclosure
+- **Raspberry Pi 5** (16 GB RAM) in a custom-designed enclosure
 - **256 GB NVMe SSD** — fast storage for your projects and tools
 - **USB-C power supply** (27W)
 - **Ethernet cable** (1m)
@@ -113,8 +113,7 @@ The base hardware works completely offline. The platform subscription ($5/month 
 | Component | Specification |
 |-----------|--------------|
 | **SBC** | Raspberry Pi 5 — 16 GB LPDDR4X RAM |
-| **AI Accelerator** | Raspberry Pi AI HAT+ 2 — Hailo-10H, 40 TOPS, 8 GB LPDDR4X |
-| **Storage** | 256 GB NVMe SSD (M.2 2242, via dual M.2 carrier) |
+| **Storage** | 256 GB NVMe SSD (M.2 2242, via M.2 HAT+) |
 | **CPU** | Broadcom BCM2712, Quad-core Arm Cortex-A76 @ 2.4 GHz |
 | **GPU** | VideoCore VII |
 | **Connectivity** | Gigabit Ethernet, Wi-Fi 5 (802.11ac), Bluetooth 5.0 |
@@ -122,8 +121,8 @@ The base hardware works completely offline. The platform subscription ($5/month 
 | **Power** | USB-C, 27W (5V/5A) — included PSU |
 | **OS** | Debian 12 (Bookworm), custom image |
 | **Enclosure** | Custom injection-molded case with passive cooling |
-| **Dimensions** | ~120 x 85 x 50 mm |
-| **Weight** | ~220g (with case, HAT stack, and SSD) |
+| **Dimensions** | ~120 x 85 x 40 mm |
+| **Weight** | ~190g (with case and SSD) |
 
 ### Stretch Goals
 
@@ -140,30 +139,30 @@ The base hardware works completely offline. The platform subscription ($5/month 
 
 ## Reward Tiers
 
-### Early Bird — $449 (Limited: 200 units)
-*Save $100 off retail*
+### Early Bird — $299 (Limited: 200 units)
+*Save $50 off retail*
 
-- 1x VibeCodePC (Raspberry Pi 5 16 GB + AI HAT+ 2, 256 GB NVMe)
+- 1x VibeCodePC (Raspberry Pi 5 16 GB, 256 GB NVMe)
 - Custom enclosure + PSU + Ethernet cable
 - QR code card + quick start guide
 - 3 months free Starter plan ($5/mo value)
 - Early Bird badge on your vibecodepc.com profile
 - Estimated delivery: October 2026
 
-### Standard — $549
-- 1x VibeCodePC (Raspberry Pi 5 16 GB + AI HAT+ 2, 256 GB NVMe)
+### Standard — $349
+- 1x VibeCodePC (Raspberry Pi 5 16 GB, 256 GB NVMe)
 - Custom enclosure + PSU + Ethernet cable
 - QR code card + quick start guide
 - 1 month free Starter plan
 - Estimated delivery: October 2026
 
-### Double Pack — $999 (Save $99)
+### Double Pack — $649 (Save $49)
 - 2x VibeCodePC units
 - Everything included in Standard, times two
 - 3 months free Starter plan on both devices
 - Estimated delivery: October 2026
 
-### Classroom Starter — $2,499 (Save $246)
+### Classroom Starter — $1,599 (Save $146)
 *5-pack for educators*
 
 - 5x VibeCodePC units
@@ -172,7 +171,7 @@ The base hardware works completely offline. The platform subscription ($5/month 
 - Priority email support during setup
 - Estimated delivery: November 2026
 
-### Founding Backer — $699
+### Founding Backer — $499
 *For true believers*
 
 - 1x VibeCodePC (first production run, signed + numbered)
@@ -312,22 +311,21 @@ A: Your device keeps working. It's a Raspberry Pi running open-source software o
 
 ## Budget Breakdown (at $50,000 goal)
 
-At an average pledge of ~$500 (mix of Early Bird and Standard tiers), the $50,000 goal funds approximately 100 units.
+At an average pledge of ~$320 (mix of Early Bird at $299 and Standard at $349), the $50,000 goal funds approximately 156 units.
 
 | Category | Amount | % |
 |----------|--------|---|
-| Raspberry Pi 5 (16 GB) × ~100 units | $12,000 | 24% |
-| AI HAT+ 2 (Hailo-10H) × ~100 units | $13,000 | 26% |
-| Dual M.2 carrier boards × ~100 units | $3,000 | 6% |
-| NVMe SSDs (256 GB) × ~100 units | $2,500 | 5% |
-| Custom enclosures (injection molding tooling + units) | $6,000 | 12% |
-| PSUs, cables, accessories | $1,500 | 3% |
-| Assembly and quality testing | $2,000 | 4% |
-| Fulfillment and shipping (US) | $2,500 | 5% |
+| Raspberry Pi 5 (16 GB) × ~156 units | $18,700 | 37% |
+| M.2 HAT+ × ~156 units | $1,900 | 4% |
+| NVMe SSDs (256 GB) × ~156 units | $3,900 | 8% |
+| Custom enclosures (injection molding tooling + units) | $7,000 | 14% |
+| PSUs, cables, accessories | $2,000 | 4% |
+| Assembly and quality testing | $2,500 | 5% |
+| Fulfillment and shipping (US) | $3,000 | 6% |
 | International shipping buffer | $1,000 | 2% |
 | Kickstarter fees (5%) + payment processing (5%) | $5,000 | 10% |
-| Software development and infrastructure | $1,000 | 2% |
-| Contingency / buffer | $500 | 1% |
+| Software development and infrastructure | $2,000 | 4% |
+| Contingency / buffer | $3,000 | 6% |
 | **Total** | **$50,000** | **100%** |
 
 ---

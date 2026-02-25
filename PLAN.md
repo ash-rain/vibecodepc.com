@@ -251,21 +251,18 @@ Storage:
 - [ ] Auto-update mechanism (pull from GitHub releases / apt repo)
 
 ### 5.2 Hardware BOM (Bill of Materials)
-| Component                  | Spec                                         | Est. Cost |
-| -------------------------- | -------------------------------------------- | --------- |
-| Raspberry Pi 5             | 16 GB LPDDR4X RAM                            | $120      |
-| Raspberry Pi AI HAT+ 2     | Hailo-10H, 40 TOPS, 8 GB dedicated LPDDR4X  | $130      |
-| Dual M.2 carrier board     | PCIe switch — AI accelerator + NVMe slots    | $30       |
-| NVMe SSD                   | 256 GB M.2 2242                              | $25       |
-| Power Supply               | 27W USB-C (official)                         | $12       |
-| Case                       | Custom (accommodates HAT stack)              | $20       |
-| Ethernet cable             | Cat6, 1m                                     | $2        |
-| QR Code label              | Printed sticker                              | $0.50     |
-| Quick Start card           | Printed                                      | $1        |
-| **Total hardware cost**    |                                              | **~$341** |
-| **Target retail price**    |                                              | **$549**  |
-
-> **Note:** The AI HAT+ 2 and NVMe SSD both use the PCIe M.2 interface — a third-party dual M.2 carrier board with a PCIe switch (e.g. Geekworm X1004 or 52Pi N20) is required to run both simultaneously. Boot is from NVMe; no microSD needed.
+| Component                  | Spec                          | Est. Cost |
+| -------------------------- | ----------------------------- | --------- |
+| Raspberry Pi 5             | 16 GB LPDDR4X RAM             | $120      |
+| M.2 HAT+                   | Official Raspberry Pi         | $12       |
+| NVMe SSD                   | 256 GB M.2 2242               | $25       |
+| Power Supply               | 27W USB-C (official)          | $12       |
+| Case                       | Custom branded                | $15       |
+| Ethernet cable             | Cat6, 1m                      | $2        |
+| QR Code label              | Printed sticker               | $0.50     |
+| Quick Start card           | Printed                       | $1        |
+| **Total hardware cost**    |                               | **~$188** |
+| **Target retail price**    |                               | **$349**  |
 
 ### 5.3 Manufacturing & Assembly
 - [ ] Source components (RPi distributor, SSD bulk)
