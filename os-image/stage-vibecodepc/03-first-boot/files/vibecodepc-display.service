@@ -1,0 +1,22 @@
+[Unit]
+Description=VibeCodePC Pairing & Status Display (TTY1)
+Documentation=https://docs.vibecodepc.com
+After=vibecodepc.service
+# Replace the default getty on TTY1 with our display
+Conflicts=getty@tty1.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/vibecodepc-display.sh
+Restart=always
+RestartSec=5
+StandardInput=tty
+StandardOutput=tty
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+# Allow the script to call sudo -u vibecodepc
+User=root
+
+[Install]
+WantedBy=multi-user.target

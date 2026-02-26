@@ -232,9 +232,9 @@ Storage:
 ## Phase 5: OS Image & Hardware (Week 12–16)
 
 ### 5.1 Custom Raspberry Pi OS Image
-- [ ] Based on Debian 12 Bookworm (64-bit, lite)
-- [ ] Built with `pi-gen` (custom stage)
-- [ ] Pre-installed:
+- [x] Based on Debian 12 Bookworm (64-bit, lite)
+- [x] Built with `pi-gen` (custom stage) — see `os-image/`
+- [x] Pre-installed:
   - PHP 8.4, Composer, Node.js 22 LTS, npm/pnpm
   - Python 3.12, pip
   - Docker + Docker Compose
@@ -243,12 +243,12 @@ Storage:
   - Redis (Valkey)
   - SQLite, git, curl, jq, htop
   - The Laravel device app (production build)
-- [ ] First-boot script:
+- [x] First-boot script (`os-image/stage-vibecodepc/03-first-boot/`):
   - Generate device UUID (if not pre-burned)
-  - Start Laravel app
-  - Display QR code on HDMI (if connected) and serve pairing page
+  - Start Laravel app (Nginx + PHP-FPM + Horizon)
+  - Display QR code on HDMI (TTY1 display service)
   - Start mDNS advertising (`vibecodepc.local`)
-- [ ] Auto-update mechanism (pull from GitHub releases / apt repo)
+- [x] Auto-update mechanism (`os-image/stage-vibecodepc/04-autoupdate/`) — systemd timer, daily check against GitHub Releases
 
 ### 5.2 Hardware BOM (Bill of Materials)
 | Component                  | Spec                          | Est. Cost |
@@ -266,9 +266,9 @@ Storage:
 
 ### 5.3 Manufacturing & Assembly
 - [ ] Source components (RPi distributor, SSD bulk)
-- [ ] Flash custom OS image to SSD
-- [ ] Burn unique device ID during flashing
-- [ ] Print QR code label with device UUID
+- [x] Flash custom OS image to SSD — `os-image/scripts/flash.sh`
+- [x] Burn unique device ID during flashing — `flash.sh` writes `device.json` post-flash
+- [x] Print QR code label with device UUID — `flash.sh --qr-output labels.csv` for batch printing
 - [ ] Assembly: Pi + HAT + SSD + case
 - [ ] QA test: boot, verify wizard loads, test network
 - [ ] Package with quick start card, cable, PSU

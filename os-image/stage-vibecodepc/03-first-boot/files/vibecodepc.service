@@ -1,0 +1,33 @@
+[Unit]
+Description=VibeCodePC Laravel Application
+Documentation=https://docs.vibecodepc.com
+After=network.target redis.service
+Requires=redis.service
+
+[Service]
+Type=simple
+User=vibecodepc
+Group=vibecodepc
+WorkingDirectory=/opt/vibecodepc
+
+# Start PHP-FPM (the web server is Nginx or Caddy; this starts the queue worker)
+# The web server is started separately; this service manages the queue worker (Horizon)
+ExecStart=/usr/bin/php /opt/vibecodepc/artisan horizon
+ExecReload=/bin/kill -USR1 $MAINPID
+Restart=always
+RestartSec=5
+
+# Process management
+KillMode=mixed
+TimeoutStopSec=30
+
+# Resource limits appropriate for RPi 5
+LimitNOFILE=65536
+MemoryMax=512M
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=vibecodepc
+
+[Install]
+WantedBy=multi-user.target

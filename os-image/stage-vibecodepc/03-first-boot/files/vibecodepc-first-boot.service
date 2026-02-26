@@ -1,0 +1,19 @@
+[Unit]
+Description=VibeCodePC First-Boot Initialization
+Documentation=https://docs.vibecodepc.com
+# Run after network is up so cloud API calls can succeed
+After=network-online.target redis.service
+Wants=network-online.target
+# Only run if the state file does not exist
+ConditionPathExists=!/var/lib/vibecodepc/first-boot-done
+
+[Service]
+Type=oneshot
+RemainAfterExit=no
+ExecStart=/usr/local/bin/vibecodepc-first-boot.sh
+StandardOutput=journal+console
+StandardError=journal+console
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,47 @@
+# VibeCodePC — apt packages installed into the OS image
+# One package per line; comments (#) and blank lines are ignored by pi-gen.
+
+# --- Core utilities ---
+curl
+wget
+git
+jq
+htop
+unzip
+ca-certificates
+lsb-release
+gnupg
+apt-transport-https
+software-properties-common
+
+# --- mDNS / network discovery ---
+avahi-daemon
+avahi-utils
+libnss-mdns
+
+# --- SQLite ---
+sqlite3
+libsqlite3-dev
+
+# --- Redis (Valkey) ---
+# Valkey is installed via run script from upstream repo (not in apt yet)
+# redis-server is used as fallback
+redis-server
+
+# --- Python ---
+python3
+python3-pip
+python3-venv
+
+# --- Docker prerequisites (Docker itself installed via run script) ---
+libffi-dev
+libssl-dev
+
+# --- QR code display on HDMI console ---
+qrencode
+fbi
+
+# --- Misc device utilities ---
+i2c-tools
+libraspberrypi-bin
+raspi-config

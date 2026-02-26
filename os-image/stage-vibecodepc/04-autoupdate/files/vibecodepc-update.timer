@@ -1,0 +1,15 @@
+[Unit]
+Description=VibeCodePC Auto-Update Timer
+Documentation=https://docs.vibecodepc.com
+
+[Timer]
+# Check for updates daily at a randomized time between 2am and 4am
+# (RandomizedDelaySec prevents thundering-herd from many devices)
+OnCalendar=*-*-* 02:00:00
+RandomizedDelaySec=7200
+Persistent=true
+# Also run once 5 minutes after boot (in case the scheduled time was missed)
+OnBootSec=5min
+
+[Install]
+WantedBy=timers.target

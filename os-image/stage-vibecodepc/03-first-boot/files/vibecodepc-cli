@@ -1,0 +1,157 @@
+#!/usr/bin/env bash
+# vibecodepc — Device management CLI
+# Usage: sudo vibecodepc <command> [args]
+#
+# Commands:
+#   status          Show overall device health and service status
+#   tunnel start    Start the cloudflared tunnel
+#   tunnel stop     Stop the cloudflared tunnel
+#   tunnel status   Show tunnel status
+#   update          Check for and apply firmware updates
+#   reset           Factory reset (re-run the setup wizard)
+#   logs [service]  Tail logs (default: all vibecodepc services)
+#   restart         Restart all vibecodepc services
+#   version         Show firmware version
+
+set -euo pipefail
+
+APP_DIR="/opt/vibecodepc"
+APP_USER="vibecodepc"
+
+# ---------- helpers ----------
+
+usage() {
+    cat <<USAGE
+Usage: sudo vibecodepc <command>
+
+Commands:
+  status           Device health overview
+  tunnel start     Start Cloudflare tunnel
+  tunnel stop      Stop Cloudflare tunnel
+  tunnel status    Show tunnel status
+  update           Apply firmware update
+  reset            Factory reset (re-runs wizard on next boot)
+  logs [service]   Tail service logs
+  restart          Restart all services
+  version          Show firmware version
+
+USAGE
+    exit 1
+}
+
+need_root() {
+    [[ $EUID -eq 0 ]] || { echo "Run with sudo: sudo vibecodepc $*"; exit 1; }
+}
+
+artisan() { sudo -u "$APP_USER" php "${APP_DIR}/artisan" "$@"; }
+
+# ---------- commands ----------
+
+cmd_status() {
+    echo ""
+    echo "  VibeCodePC Status"
+    echo "  ─────────────────────────────────────"
+    printf "  %-16s %s\n" "Firmware:" "$(cat "${APP_DIR}/storage/app/firmware-version" 2>/dev/null || echo unknown)"
+    printf "  %-16s %s\n" "Device ID:" "$(jq -r '.id' "${APP_DIR}/storage/device.json" 2>/dev/null || echo unknown)"
+    printf "  %-16s %s\n" "Local IP:" "$(hostname -I 2>/dev/null | awk '{print $1}')"
+    printf "  %-16s %s\n" "Hostname:" "$(hostname)"
+    echo "  ─────────────────────────────────────"
+    echo "  Services:"
+    for svc in vibecodepc vibecodepc-update nginx php8.4-fpm redis; do
+        STATUS=$(systemctl is-active "$svc" 2>/dev/null || echo "not-found")
+        printf "  %-20s %s\n" "  ${svc}" "$STATUS"
+    done
+    echo ""
+    echo "  System:"
+    printf "  %-16s %s\n" "Uptime:" "$(uptime -p)"
+    printf "  %-16s %s\n" "Load:" "$(cut -d' ' -f1-3 /proc/loadavg)"
+    printf "  %-16s %s\n" "Memory:" "$(free -h | awk '/^Mem:/ {printf "%s used / %s total", $3, $2}')"
+    printf "  %-16s %s\n" "Disk:" "$(df -h / | awk 'NR==2 {printf "%s used / %s total (%s)", $3, $2, $5}')"
+    echo ""
+}
+
+cmd_tunnel() {
+    local action="${1:-status}"
+    case "$action" in
+        start)
+            artisan tunnel:start --no-interaction
+            echo "Tunnel started."
+            ;;
+        stop)
+            artisan tunnel:stop --no-interaction
+            echo "Tunnel stopped."
+            ;;
+        status)
+            artisan tunnel:status --no-interaction
+            ;;
+        *)
+            echo "Unknown tunnel action: $action"
+            echo "Use: start | stop | status"
+            exit 1
+            ;;
+    esac
+}
+
+cmd_update() {
+    echo "Checking for firmware updates..."
+    /usr/local/bin/vibecodepc-update.sh
+}
+
+cmd_reset() {
+    echo ""
+    echo "WARNING: This will factory reset your VibeCodePC."
+    echo "All wizard progress and AI keys will be cleared."
+    echo "Your projects and files will NOT be deleted."
+    echo ""
+    read -r -p "Type 'RESET' to confirm: " CONFIRM
+    if [[ "$CONFIRM" != "RESET" ]]; then
+        echo "Reset cancelled."
+        exit 0
+    fi
+    artisan vibecodepc:reset --no-interaction
+    # Remove first-boot state so first-boot runs again (re-migrates, re-optimizes)
+    rm -f /var/lib/vibecodepc/first-boot-done
+    systemctl restart vibecodepc.service
+    echo "Factory reset complete. Reload your browser to re-run the wizard."
+}
+
+cmd_logs() {
+    local service="${1:-}"
+    if [[ -n "$service" ]]; then
+        journalctl -fu "$service" --no-pager
+    else
+        journalctl -fu vibecodepc -fu vibecodepc-update -fu nginx -fu php8.4-fpm --no-pager
+    fi
+}
+
+cmd_restart() {
+    echo "Restarting vibecodepc services..."
+    systemctl restart php8.4-fpm
+    systemctl restart vibecodepc.service
+    systemctl restart nginx
+    echo "Done."
+}
+
+cmd_version() {
+    cat "${APP_DIR}/storage/app/firmware-version" 2>/dev/null || echo "unknown"
+}
+
+# ---------- dispatch ----------
+
+COMMAND="${1:-}"
+shift || true
+
+case "$COMMAND" in
+    status)   need_root; cmd_status ;;
+    tunnel)   need_root; cmd_tunnel "$@" ;;
+    update)   need_root; cmd_update ;;
+    reset)    need_root; cmd_reset ;;
+    logs)     cmd_logs "$@" ;;
+    restart)  need_root; cmd_restart ;;
+    version)  cmd_version ;;
+    ""|help|--help|-h) usage ;;
+    *)
+        echo "Unknown command: ${COMMAND}"
+        usage
+        ;;
+esac

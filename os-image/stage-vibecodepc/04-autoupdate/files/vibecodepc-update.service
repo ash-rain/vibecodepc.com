@@ -1,0 +1,19 @@
+[Unit]
+Description=VibeCodePC Auto-Update
+Documentation=https://docs.vibecodepc.com
+After=network-online.target
+Wants=network-online.target
+# Don't run during first-boot initialization
+After=vibecodepc-first-boot.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/vibecodepc-update.sh
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=vibecodepc-update
+# Allow enough time for download + apply on slow connections
+TimeoutStartSec=600
+
+[Install]
+WantedBy=multi-user.target
