@@ -26,7 +26,7 @@ class DeviceRegistryServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new DeviceRegistryService();
+        $this->service = new DeviceRegistryService;
     }
 
     public function test_find_by_uuid_returns_device(): void

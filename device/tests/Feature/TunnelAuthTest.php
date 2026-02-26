@@ -2,11 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Http\Middleware\RequireTunnelAuth;
 use App\Livewire\TunnelLogin;
 use App\Models\DeviceState;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Route;
 use Livewire\Livewire;
 
 beforeEach(function () {

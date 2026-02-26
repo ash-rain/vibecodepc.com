@@ -47,7 +47,7 @@ class GenerateDeviceId extends Command
         $this->info("Device ID generated: {$device->id}");
         $this->info("Written to: {$path}");
         $this->newLine();
-        $this->line('QR URL: ' . config('vibecodepc.cloud_browser_url') . "/pair/{$device->id}");
+        $this->line('QR URL: '.config('vibecodepc.cloud_browser_url')."/pair/{$device->id}");
 
         return self::SUCCESS;
     }
@@ -63,6 +63,6 @@ class GenerateDeviceId extends Command
         }
 
         // Fallback for dev/non-Pi environments
-        return 'dev-' . Str::random(16);
+        return 'dev-'.Str::random(16);
     }
 }

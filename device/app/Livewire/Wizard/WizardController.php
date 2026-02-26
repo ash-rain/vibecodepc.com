@@ -113,7 +113,7 @@ class WizardController extends Component
     private function loadSteps(WizardProgressService $progressService): void
     {
         $this->steps = [];
-        $progress = $progressService->getProgress()->keyBy(fn($p) => $p->step->value);
+        $progress = $progressService->getProgress()->keyBy(fn ($p) => $p->step->value);
 
         $labels = [
             'welcome' => 'Welcome',

@@ -192,7 +192,7 @@ class TunnelManager extends Component
         try {
             $this->subdomainAvailable = $cloudApi->checkSubdomainAvailability($this->newSubdomain);
             $this->provisionStatus = $this->subdomainAvailable
-                ? "{$this->newSubdomain}." . config('vibecodepc.cloud_domain') . ' is available!'
+                ? "{$this->newSubdomain}.".config('vibecodepc.cloud_domain').' is available!'
                 : 'This subdomain is taken. Try another.';
         } catch (\Throwable $e) {
             $this->provisionStatus = 'Could not check availability. Is the device online?';
@@ -218,7 +218,7 @@ class TunnelManager extends Component
             $result = $cloudApi->provisionTunnel($deviceId, $this->newSubdomain);
         } catch (\Throwable $e) {
             $this->isProvisioning = false;
-            $this->error = 'Failed to provision tunnel: ' . $e->getMessage();
+            $this->error = 'Failed to provision tunnel: '.$e->getMessage();
             $this->provisionStatus = '';
 
             return;
@@ -238,7 +238,7 @@ class TunnelManager extends Component
         if ($startError !== null) {
             $tunnelService->cleanup();
             $this->isProvisioning = false;
-            $this->error = 'Tunnel provisioned but failed to start: ' . $startError;
+            $this->error = 'Tunnel provisioned but failed to start: '.$startError;
 
             return;
         }
@@ -278,7 +278,7 @@ class TunnelManager extends Component
             $result = $cloudApi->provisionTunnel($deviceId, $tunnelConfig->subdomain);
         } catch (\Throwable $e) {
             $this->isProvisioning = false;
-            $this->error = 'Failed to re-provision tunnel: ' . $e->getMessage();
+            $this->error = 'Failed to re-provision tunnel: '.$e->getMessage();
             $this->provisionStatus = '';
 
             return;
@@ -296,7 +296,7 @@ class TunnelManager extends Component
         if ($startError !== null) {
             $tunnelService->cleanup();
             $this->isProvisioning = false;
-            $this->error = 'Tunnel re-provisioned but failed to start: ' . $startError;
+            $this->error = 'Tunnel re-provisioned but failed to start: '.$startError;
 
             return;
         }
@@ -342,7 +342,7 @@ class TunnelManager extends Component
         try {
             $service->start($port, $projectId);
         } catch (\Throwable $e) {
-            $this->quickTunnelError = 'Failed to start quick tunnel: ' . $e->getMessage();
+            $this->quickTunnelError = 'Failed to start quick tunnel: '.$e->getMessage();
             Log::warning('Quick tunnel start failed', ['error' => $e->getMessage(), 'project_id' => $projectId]);
         }
 
@@ -363,7 +363,7 @@ class TunnelManager extends Component
         try {
             $service->stop($tunnel);
         } catch (\Throwable $e) {
-            $this->quickTunnelError = 'Failed to stop quick tunnel: ' . $e->getMessage();
+            $this->quickTunnelError = 'Failed to stop quick tunnel: '.$e->getMessage();
         }
 
         $this->loadQuickTunnelApps();
@@ -426,7 +426,7 @@ class TunnelManager extends Component
             return;
         }
 
-        $hostname = "{$this->subdomain}." . config('vibecodepc.cloud_domain');
+        $hostname = "{$this->subdomain}.".config('vibecodepc.cloud_domain');
         $ingress = [];
 
         foreach ($this->projects as $project) {
@@ -444,7 +444,7 @@ class TunnelManager extends Component
 
         $ingress[] = [
             'hostname' => $hostname,
-            'service' => 'http://localhost:' . config('vibecodepc.tunnel.device_app_port'),
+            'service' => 'http://localhost:'.config('vibecodepc.tunnel.device_app_port'),
         ];
 
         $ingress[] = ['service' => 'http_status:404'];

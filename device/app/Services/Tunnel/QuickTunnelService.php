@@ -47,7 +47,7 @@ class QuickTunnelService
 
         $suffix = strtolower(Str::random(8));
         $label = $projectId ? "p{$projectId}" : 'dash';
-        $containerName = self::CONTAINER_PREFIX . "-{$label}-{$suffix}";
+        $containerName = self::CONTAINER_PREFIX."-{$label}-{$suffix}";
 
         [$networkArgs, $originUrl] = $this->resolveOrigin($port);
 
@@ -61,7 +61,7 @@ class QuickTunnelService
 
         if (! $result->successful()) {
             throw new \RuntimeException(
-                'Failed to start quick tunnel container: ' . trim($result->errorOutput()),
+                'Failed to start quick tunnel container: '.trim($result->errorOutput()),
             );
         }
 
@@ -184,7 +184,7 @@ class QuickTunnelService
 
                 if ($networkName && $ip) {
                     return [
-                        '--network ' . escapeshellarg($networkName),
+                        '--network '.escapeshellarg($networkName),
                         "http://{$ip}:{$port}",
                     ];
                 }

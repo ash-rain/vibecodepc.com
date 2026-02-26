@@ -9,7 +9,7 @@ class NetworkService
     public function getLocalIp(): ?string
     {
         // Try to get the primary network interface IP
-        $output = @shell_exec("hostname -I 2>/dev/null");
+        $output = @shell_exec('hostname -I 2>/dev/null');
 
         if ($output) {
             $ips = explode(' ', trim($output));
@@ -18,7 +18,7 @@ class NetworkService
         }
 
         // Fallback for macOS/dev environments
-        $output = @shell_exec("ipconfig getifaddr en0 2>/dev/null");
+        $output = @shell_exec('ipconfig getifaddr en0 2>/dev/null');
 
         if ($output) {
             return trim($output);
@@ -30,7 +30,7 @@ class NetworkService
     public function hasEthernet(): bool
     {
         // Check if eth0 interface exists and is up
-        $output = @shell_exec("ip link show eth0 2>/dev/null");
+        $output = @shell_exec('ip link show eth0 2>/dev/null');
 
         return $output !== null && str_contains($output, 'state UP');
     }
@@ -38,7 +38,7 @@ class NetworkService
     public function hasWifi(): bool
     {
         // Check if wlan0 interface exists
-        $output = @shell_exec("ip link show wlan0 2>/dev/null");
+        $output = @shell_exec('ip link show wlan0 2>/dev/null');
 
         return $output !== null && str_contains($output, 'wlan0');
     }

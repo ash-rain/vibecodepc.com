@@ -34,7 +34,7 @@ class CleanOrphanedTunnels extends Command
 
         // 1. Deactivated devices — always clean up tunnels
         $deactivated = Device::where('status', DeviceStatus::Deactivated)
-            ->whereHas('tunnelRoutes', fn($q) => $q->active())
+            ->whereHas('tunnelRoutes', fn ($q) => $q->active())
             ->get();
 
         foreach ($deactivated as $device) {
@@ -44,7 +44,7 @@ class CleanOrphanedTunnels extends Command
 
         // 2. Unclaimed devices that still have tunnel routes (e.g. after unpair)
         $unclaimed = Device::where('status', DeviceStatus::Unclaimed)
-            ->whereHas('tunnelRoutes', fn($q) => $q->active())
+            ->whereHas('tunnelRoutes', fn ($q) => $q->active())
             ->get();
 
         foreach ($unclaimed as $device) {
@@ -59,7 +59,7 @@ class CleanOrphanedTunnels extends Command
                 $query->where('last_heartbeat_at', '<', $cutoff)
                     ->orWhereNull('last_heartbeat_at');
             })
-            ->whereHas('tunnelRoutes', fn($q) => $q->active())
+            ->whereHas('tunnelRoutes', fn ($q) => $q->active())
             ->get();
 
         foreach ($staleOffline as $device) {
@@ -82,7 +82,7 @@ class CleanOrphanedTunnels extends Command
             }
         }
 
-        $this->info("Cleaned {$cleaned} orphaned tunnel(s)." . ($dryRun ? ' (dry run)' : ''));
+        $this->info("Cleaned {$cleaned} orphaned tunnel(s).".($dryRun ? ' (dry run)' : ''));
 
         return self::SUCCESS;
     }
@@ -96,7 +96,7 @@ class CleanOrphanedTunnels extends Command
         $routes = $device->tunnelRoutes()->active()->get();
         $subdomains = $routes->pluck('subdomain')->unique();
 
-        $this->line("Device {$device->uuid} ({$reason}): " . $subdomains->implode(', '));
+        $this->line("Device {$device->uuid} ({$reason}): ".$subdomains->implode(', '));
 
         if ($dryRun) {
             return;

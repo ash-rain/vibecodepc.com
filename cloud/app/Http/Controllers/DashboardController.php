@@ -160,7 +160,7 @@ class DashboardController extends Controller
 
         foreach ($subdomains as $subdomain) {
             try {
-                $fqdn = "{$subdomain}." . config('app.tunnel_domain', 'vibecodepc.com');
+                $fqdn = "{$subdomain}.".config('app.tunnel_domain', 'vibecodepc.com');
                 $dnsId = $cfService->findDnsRecord($fqdn);
 
                 if ($dnsId) {
@@ -189,7 +189,7 @@ class DashboardController extends Controller
         Log::info("Device {$uuid} unpaired and all data purged by user {$request->user()->id}");
 
         return redirect()->route('dashboard')
-            ->with('status', "Device has been unpaired and all associated data has been deleted.");
+            ->with('status', 'Device has been unpaired and all associated data has been deleted.');
     }
 
     public function deviceHeartbeats(Request $request, Device $device): JsonResponse
@@ -345,7 +345,7 @@ class DashboardController extends Controller
 
         if ($remainingRoutes === 0) {
             try {
-                $fqdn = "{$subdomain}." . config('app.tunnel_domain', 'vibecodepc.com');
+                $fqdn = "{$subdomain}.".config('app.tunnel_domain', 'vibecodepc.com');
                 $dnsId = $cfService->findDnsRecord($fqdn);
 
                 if ($dnsId) {
@@ -361,7 +361,7 @@ class DashboardController extends Controller
             }
         }
 
-        Log::info("Tunnel route deleted from dashboard", [
+        Log::info('Tunnel route deleted from dashboard', [
             'device_uuid' => $device->uuid,
             'subdomain' => $subdomain,
             'route_path' => $route->path,

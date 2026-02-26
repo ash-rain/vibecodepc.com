@@ -122,7 +122,7 @@ class CheckTunnelHealth extends Command
         $flag = "tunnel-reprovisioning:{$device->id}";
 
         if (Cache::has($flag)) {
-            $this->line("    Skipped — re-provisioning already in progress.");
+            $this->line('    Skipped — re-provisioning already in progress.');
 
             return;
         }
@@ -134,6 +134,6 @@ class CheckTunnelHealth extends Command
             'device_uuid' => $device->uuid,
         ]);
 
-        $this->line("    Re-provisioning job dispatched.");
+        $this->line('    Re-provisioning job dispatched.');
     }
 }

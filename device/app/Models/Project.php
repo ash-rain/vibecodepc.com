@@ -76,7 +76,7 @@ class Project extends Model
             return null;
         }
 
-        return 'https://' . $tunnelConfig->subdomain . '.' . config('vibecodepc.cloud_domain') . '/' . $this->tunnel_subdomain_path;
+        return 'https://'.$tunnelConfig->subdomain.'.'.config('vibecodepc.cloud_domain').'/'.$this->tunnel_subdomain_path;
     }
 
     public function getSubdomainUrl(): ?string
@@ -91,7 +91,7 @@ class Project extends Model
             return null;
         }
 
-        return 'https://' . $this->slug . '--' . $tunnelConfig->subdomain . '.' . config('vibecodepc.cloud_domain');
+        return 'https://'.$this->slug.'--'.$tunnelConfig->subdomain.'.'.config('vibecodepc.cloud_domain');
     }
 
     /** @param Builder<Project> $query */

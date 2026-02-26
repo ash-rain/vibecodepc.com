@@ -80,7 +80,7 @@ class CloudflareTunnelService
             ]);
 
         if (! $response->successful()) {
-            throw new RuntimeException('Failed to create Cloudflare tunnel: ' . $response->body());
+            throw new RuntimeException('Failed to create Cloudflare tunnel: '.$response->body());
         }
 
         $result = $response->json('result');
@@ -101,7 +101,7 @@ class CloudflareTunnelService
             ->get("accounts/{$this->accountId}/cfd_tunnel/{$tunnelId}/token");
 
         if (! $response->successful()) {
-            throw new RuntimeException('Failed to get tunnel token: ' . $response->body());
+            throw new RuntimeException('Failed to get tunnel token: '.$response->body());
         }
 
         return $response->json('result');
@@ -142,7 +142,7 @@ class CloudflareTunnelService
             ]);
 
         if (! $response->successful()) {
-            throw new RuntimeException('Failed to configure tunnel ingress: ' . $response->body());
+            throw new RuntimeException('Failed to configure tunnel ingress: '.$response->body());
         }
     }
 
@@ -161,7 +161,7 @@ class CloudflareTunnelService
             ->get("accounts/{$this->accountId}/cfd_tunnel/{$tunnelId}");
 
         if (! $response->successful()) {
-            throw new RuntimeException('Failed to get tunnel status: ' . $response->body());
+            throw new RuntimeException('Failed to get tunnel status: '.$response->body());
         }
 
         $result = $response->json('result');
@@ -203,7 +203,7 @@ class CloudflareTunnelService
         }
 
         if (! $response->successful()) {
-            throw new RuntimeException('Failed to create DNS record: ' . $response->body());
+            throw new RuntimeException('Failed to create DNS record: '.$response->body());
         }
     }
 
@@ -236,7 +236,7 @@ class CloudflareTunnelService
             ->delete("accounts/{$this->accountId}/cfd_tunnel/{$tunnelId}");
 
         if (! $response->successful()) {
-            throw new RuntimeException('Failed to delete tunnel: ' . $response->body());
+            throw new RuntimeException('Failed to delete tunnel: '.$response->body());
         }
     }
 
@@ -249,7 +249,7 @@ class CloudflareTunnelService
             ->delete("zones/{$this->zoneId}/dns_records/{$recordId}");
 
         if (! $response->successful()) {
-            throw new RuntimeException('Failed to delete DNS record: ' . $response->body());
+            throw new RuntimeException('Failed to delete DNS record: '.$response->body());
         }
     }
 

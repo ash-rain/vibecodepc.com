@@ -2,10 +2,8 @@
 
 use App\Jobs\ProvisionQuickTunnelJob;
 use App\Models\QuickTunnel;
-use App\Services\CloudApiClient;
 use App\Services\DeviceRegistry\DeviceIdentityService;
 use App\Services\Tunnel\QuickTunnelService;
-use App\Services\WizardProgressService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 

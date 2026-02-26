@@ -3,7 +3,7 @@
 use App\Services\NetworkService;
 
 it('getLocalIp returns a string', function () {
-    $service = new NetworkService();
+    $service = new NetworkService;
 
     $ip = $service->getLocalIp();
 
@@ -12,7 +12,7 @@ it('getLocalIp returns a string', function () {
 });
 
 it('hasInternetConnectivity returns a boolean', function () {
-    $service = new NetworkService();
+    $service = new NetworkService;
 
     $result = $service->hasInternetConnectivity();
 
@@ -20,7 +20,7 @@ it('hasInternetConnectivity returns a boolean', function () {
 });
 
 it('hasEthernet returns a boolean', function () {
-    $service = new NetworkService();
+    $service = new NetworkService;
 
     $result = $service->hasEthernet();
 
@@ -28,7 +28,7 @@ it('hasEthernet returns a boolean', function () {
 });
 
 it('hasWifi returns a boolean', function () {
-    $service = new NetworkService();
+    $service = new NetworkService;
 
     $result = $service->hasWifi();
 

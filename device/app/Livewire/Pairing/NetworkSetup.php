@@ -10,11 +10,17 @@ use Livewire\Component;
 class NetworkSetup extends Component
 {
     public string $ssid = '';
+
     public string $password = '';
+
     public bool $connecting = false;
+
     public ?string $error = null;
+
     public ?string $success = null;
+
     public bool $hasEthernet = false;
+
     public bool $hasWifi = false;
 
     public function mount(NetworkService $network): void
@@ -48,7 +54,7 @@ class NetworkSetup extends Component
             $this->success = 'Connected to WiFi successfully!';
             $this->password = '';
         } else {
-            $this->error = 'Failed to connect: ' . implode(' ', $output);
+            $this->error = 'Failed to connect: '.implode(' ', $output);
         }
     }
 

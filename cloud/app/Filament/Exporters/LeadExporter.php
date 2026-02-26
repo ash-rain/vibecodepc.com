@@ -26,6 +26,6 @@ class LeadExporter extends Exporter
 
     public static function getCompletedNotificationBody(Export $export): string
     {
-        return 'Your lead export has completed. ' . number_format($export->successful_rows) . ' rows exported.';
+        return 'Your lead export has completed. '.number_format($export->successful_rows).' rows exported.';
     }
 }

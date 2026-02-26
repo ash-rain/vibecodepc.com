@@ -29,7 +29,7 @@ it('renders the tunnel manager', function () {
 });
 
 it('shows the device subdomain', function () {
-    $expected = 'mydevice.' . config('vibecodepc.cloud_domain');
+    $expected = 'mydevice.'.config('vibecodepc.cloud_domain');
 
     Livewire::test(TunnelManager::class)
         ->assertSee($expected);

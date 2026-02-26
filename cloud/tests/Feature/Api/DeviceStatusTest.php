@@ -9,7 +9,6 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
-use VibecodePC\Common\Enums\DeviceStatus;
 
 class DeviceStatusTest extends TestCase
 {
@@ -17,7 +16,7 @@ class DeviceStatusTest extends TestCase
 
     public function test_returns_404_for_non_existent_device(): void
     {
-        $response = $this->getJson('/api/devices/' . Str::uuid() . '/status');
+        $response = $this->getJson('/api/devices/'.Str::uuid().'/status');
 
         $response->assertStatus(404)
             ->assertJson(['error' => 'Device not found']);
