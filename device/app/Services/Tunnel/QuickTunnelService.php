@@ -156,17 +156,37 @@ class QuickTunnelService
     /**
      * Resolve the Docker network args and origin URL for the tunnel.
      *
-     * In Docker (dev): join the compose bridge network and connect to our container IP.
-     * On bare metal (prod): use host network and connect to localhost.
+     * In Docker (dev): join the compose bridge network and use the configured
+     * origin host (Docker DNS name) so the tunnel reaches the web server
+     * container even when this code runs in the queue worker.
+     *
+     * On bare metal (prod): use host network on Linux, host.docker.internal
+     * on macOS (where --network host is a no-op in Docker Desktop).
      *
      * @return array{0: string, 1: string} [networkArgs, originUrl]
      */
     private function resolveOrigin(int $port): array
     {
-        if (! file_exists('/.dockerenv')) {
-            return ['--network host', "http://localhost:{$port}"];
+        if (file_exists('/.dockerenv')) {
+            return $this->resolveDockerOrigin($port);
         }
 
+        // macOS: --network host doesn't work in Docker Desktop;
+        // host.docker.internal resolves to the host machine.
+        if (PHP_OS_FAMILY === 'Darwin') {
+            return ['', "http://host.docker.internal:{$port}"];
+        }
+
+        return ['--network host', "http://localhost:{$port}"];
+    }
+
+    /**
+     * Resolve origin when running inside a Docker container (dev).
+     *
+     * @return array{0: string, 1: string} [networkArgs, originUrl]
+     */
+    private function resolveDockerOrigin(int $port): array
+    {
         $containerId = gethostname();
 
         $result = Process::timeout(5)->run(sprintf(
@@ -180,13 +200,21 @@ class QuickTunnelService
 
             if (is_array($networks)) {
                 $networkName = array_key_first($networks);
-                $ip = $networks[$networkName]['IPAddress'] ?? null;
 
-                if ($networkName && $ip) {
-                    return [
-                        '--network '.escapeshellarg($networkName),
-                        "http://{$ip}:{$port}",
-                    ];
+                if ($networkName) {
+                    // Prefer configured origin host (Docker DNS name) so the
+                    // tunnel always reaches the web server, not whichever
+                    // container happens to run this code (e.g. queue worker).
+                    $originHost = config('vibecodepc.tunnel.origin_host')
+                        ?? $networks[$networkName]['IPAddress']
+                        ?? null;
+
+                    if ($originHost) {
+                        return [
+                            '--network '.escapeshellarg($networkName),
+                            "http://{$originHost}:{$port}",
+                        ];
+                    }
                 }
             }
         }

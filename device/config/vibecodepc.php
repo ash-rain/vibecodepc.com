@@ -20,6 +20,7 @@ return [
         'config_path' => env('CLOUDFLARED_CONFIG', storage_path('app/cloudflared/config.yml')),
         'device_app_port' => (int) env('DEVICE_APP_PORT', 8081),
         'token_file_path' => env('TUNNEL_TOKEN_PATH', storage_path('tunnel/token')),
+        'origin_host' => env('TUNNEL_ORIGIN_HOST'),
     ],
 
     'projects' => [
