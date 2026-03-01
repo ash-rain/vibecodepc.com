@@ -197,6 +197,99 @@ class DeviceHeartbeatTest extends TestCase
         $this->assertEquals($older->id, $heartbeats[1]['id']);
     }
 
+    public function test_stores_heartbeat_with_quick_tunnels(): void
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+
+        $device = Device::factory()->claimed($user)->create();
+
+        $payload = [
+            'cpu_percent' => 50.0,
+            'ram_used_mb' => 2048,
+            'ram_total_mb' => 8192,
+            'quick_tunnels' => [
+                [
+                    'tunnel_url' => 'https://abc123.trycloudflare.com',
+                    'local_port' => 8081,
+                    'project_name' => null,
+                    'status' => 'running',
+                    'started_at' => '2026-03-01T10:00:00+00:00',
+                ],
+                [
+                    'tunnel_url' => 'https://def456.trycloudflare.com',
+                    'local_port' => 3000,
+                    'project_name' => 'my-app',
+                    'status' => 'running',
+                    'started_at' => '2026-03-01T10:05:00+00:00',
+                ],
+            ],
+        ];
+
+        $response = $this->postJson("/api/devices/{$device->uuid}/heartbeat", $payload);
+
+        $response->assertStatus(201);
+
+        $device->refresh();
+        $this->assertIsArray($device->quick_tunnels);
+        $this->assertCount(2, $device->quick_tunnels);
+        $this->assertEquals('https://abc123.trycloudflare.com', $device->quick_tunnels[0]['tunnel_url']);
+        $this->assertEquals('my-app', $device->quick_tunnels[1]['project_name']);
+    }
+
+    public function test_clears_quick_tunnels_when_not_sent(): void
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+
+        $device = Device::factory()->claimed($user)->create([
+            'quick_tunnels' => [
+                ['tunnel_url' => 'https://old.trycloudflare.com', 'local_port' => 8081, 'status' => 'running'],
+            ],
+        ]);
+
+        $payload = [
+            'cpu_percent' => 30.0,
+            'ram_used_mb' => 1024,
+            'ram_total_mb' => 8192,
+        ];
+
+        $response = $this->postJson("/api/devices/{$device->uuid}/heartbeat", $payload);
+
+        $response->assertStatus(201);
+
+        $device->refresh();
+        $this->assertNull($device->quick_tunnels);
+    }
+
+    public function test_validation_rejects_invalid_quick_tunnels(): void
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+
+        $device = Device::factory()->claimed($user)->create();
+
+        $payload = [
+            'cpu_percent' => 50.0,
+            'quick_tunnels' => [
+                [
+                    'tunnel_url' => 'not-a-url',
+                    'local_port' => 99999,
+                    'status' => 'invalid_status',
+                ],
+            ],
+        ];
+
+        $response = $this->postJson("/api/devices/{$device->uuid}/heartbeat", $payload);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors([
+                'quick_tunnels.0.tunnel_url',
+                'quick_tunnels.0.local_port',
+                'quick_tunnels.0.status',
+            ]);
+    }
+
     public function test_validation_rejects_invalid_data(): void
     {
         $user = User::factory()->create();

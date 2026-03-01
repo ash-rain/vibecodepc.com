@@ -29,6 +29,12 @@ class HeartbeatRequest extends FormRequest
             'tunnel_active' => ['nullable', 'boolean'],
             'firmware_version' => ['nullable', 'string', 'max:50'],
             'os_version' => ['nullable', 'string', 'max:100'],
+            'quick_tunnels' => ['nullable', 'array', 'max:20'],
+            'quick_tunnels.*.tunnel_url' => ['required', 'string', 'url', 'max:500'],
+            'quick_tunnels.*.local_port' => ['required', 'integer', 'min:1', 'max:65535'],
+            'quick_tunnels.*.project_name' => ['nullable', 'string', 'max:255'],
+            'quick_tunnels.*.status' => ['required', 'string', 'in:starting,running'],
+            'quick_tunnels.*.started_at' => ['nullable', 'string', 'max:30'],
         ];
     }
 }

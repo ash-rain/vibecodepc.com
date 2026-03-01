@@ -90,6 +90,58 @@ class DeviceTelemetryServiceTest extends TestCase
         $this->assertEquals('Debian 12.8', $device->os_version);
     }
 
+    public function test_process_heartbeat_stores_quick_tunnels(): void
+    {
+        $device = Device::factory()->claimed()->create();
+
+        $quickTunnels = [
+            [
+                'tunnel_url' => 'https://abc123.trycloudflare.com',
+                'local_port' => 8081,
+                'project_name' => null,
+                'status' => 'running',
+                'started_at' => '2026-03-01T10:00:00+00:00',
+            ],
+        ];
+
+        $metrics = [
+            'cpu_percent' => 42.5,
+            'cpu_temp' => 55.3,
+            'ram_used_mb' => 3072,
+            'ram_total_mb' => 8192,
+            'quick_tunnels' => $quickTunnels,
+        ];
+
+        $this->service->processHeartbeat($device, $metrics);
+
+        $device->refresh();
+        $this->assertIsArray($device->quick_tunnels);
+        $this->assertCount(1, $device->quick_tunnels);
+        $this->assertEquals('https://abc123.trycloudflare.com', $device->quick_tunnels[0]['tunnel_url']);
+        $this->assertEquals(8081, $device->quick_tunnels[0]['local_port']);
+    }
+
+    public function test_process_heartbeat_clears_quick_tunnels_when_absent(): void
+    {
+        $device = Device::factory()->claimed()->create([
+            'quick_tunnels' => [
+                ['tunnel_url' => 'https://old.trycloudflare.com', 'local_port' => 8081, 'status' => 'running'],
+            ],
+        ]);
+
+        $metrics = [
+            'cpu_percent' => 42.5,
+            'cpu_temp' => 55.3,
+            'ram_used_mb' => 3072,
+            'ram_total_mb' => 8192,
+        ];
+
+        $this->service->processHeartbeat($device, $metrics);
+
+        $device->refresh();
+        $this->assertNull($device->quick_tunnels);
+    }
+
     public function test_mark_stale_devices_offline(): void
     {
         $staleDevice = Device::factory()->online()->create([

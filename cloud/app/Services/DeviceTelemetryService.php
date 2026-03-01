@@ -23,6 +23,7 @@ class DeviceTelemetryService
      *     tunnel_active?: bool,
      *     firmware_version?: string,
      *     os_version?: string,
+     *     quick_tunnels?: array<int, array{tunnel_url: string, local_port: int, project_name?: string, status: string, started_at?: string}>,
      * } $metrics
      */
     public function processHeartbeat(Device $device, array $metrics): DeviceHeartbeat
@@ -40,6 +41,7 @@ class DeviceTelemetryService
             'disk_total_gb' => $metrics['disk_total_gb'] ?? null,
             'os_version' => $metrics['os_version'] ?? $device->os_version,
             'firmware_version' => $metrics['firmware_version'] ?? $device->firmware_version,
+            'quick_tunnels' => $metrics['quick_tunnels'] ?? null,
         ]);
 
         return $heartbeat;

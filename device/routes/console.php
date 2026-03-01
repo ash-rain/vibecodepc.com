@@ -2,6 +2,7 @@
 
 use App\Models\CloudCredential;
 use App\Models\Project;
+use App\Models\QuickTunnel;
 use App\Services\CloudApiClient;
 use App\Services\ConfigSyncService;
 use App\Services\DeviceHealthService;
@@ -46,6 +47,18 @@ Schedule::call(function () {
     $metrics['running_projects'] = Project::running()->count();
     $metrics['tunnel_active'] = app(TunnelService::class)->isRunning();
     $metrics['firmware_version'] = $deviceJson['firmware_version'] ?? 'unknown';
+
+    $activeQuickTunnels = QuickTunnel::whereIn('status', ['starting', 'running'])->get();
+
+    if ($activeQuickTunnels->isNotEmpty()) {
+        $metrics['quick_tunnels'] = $activeQuickTunnels->map(fn (QuickTunnel $qt) => [
+            'tunnel_url' => $qt->tunnel_url,
+            'local_port' => $qt->local_port,
+            'project_name' => $qt->project?->name,
+            'status' => $qt->status,
+            'started_at' => $qt->started_at?->toIso8601String(),
+        ])->all();
+    }
 
     app(CloudApiClient::class)->sendHeartbeat($deviceId, $metrics);
 

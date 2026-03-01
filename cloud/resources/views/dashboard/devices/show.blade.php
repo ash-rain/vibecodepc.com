@@ -348,6 +348,58 @@
                         </div>
                     @endif
                 </div>
+
+                {{-- Quick Tunnels --}}
+                @if (! empty($device->quick_tunnels))
+                    <div class="rounded-2xl border border-white/5 bg-white/[0.02] p-6">
+                        <div class="flex items-center gap-2 mb-5">
+                            <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500">Quick Tunnels</h3>
+                            <span class="rounded-full bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 text-[10px] font-medium text-violet-400">Ephemeral</span>
+                        </div>
+
+                        <div class="space-y-3">
+                            @foreach ($device->quick_tunnels as $qt)
+                                <div class="rounded-xl bg-white/[0.03] p-4">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <div class="min-w-0">
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-sm font-medium text-gray-200 truncate">{{ $qt['project_name'] ?? 'Dashboard' }}</span>
+                                                <span class="rounded bg-white/5 px-1.5 py-0.5 text-[10px] font-mono text-gray-500">:{{ $qt['local_port'] }}</span>
+                                                @if (($qt['status'] ?? '') === 'running')
+                                                    <span class="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
+                                                        <span class="relative flex h-1.5 w-1.5"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500"></span></span>
+                                                        Running
+                                                    </span>
+                                                @else
+                                                    <span class="inline-flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-400">
+                                                        Starting
+                                                    </span>
+                                                @endif
+                                            </div>
+                                            @if (! empty($qt['tunnel_url']))
+                                                <a href="{{ $qt['tunnel_url'] }}" target="_blank" class="mt-1 block text-xs font-mono text-violet-500/70 truncate hover:text-violet-400 transition">{{ $qt['tunnel_url'] }}</a>
+                                            @endif
+                                        </div>
+                                        @if (! empty($qt['tunnel_url']))
+                                            <a href="{{ $qt['tunnel_url'] }}" target="_blank" class="shrink-0 text-gray-700 hover:text-violet-400 transition">
+                                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                                                </svg>
+                                            </a>
+                                        @endif
+                                    </div>
+                                    @if (! empty($qt['started_at']))
+                                        <div class="mt-2 text-[10px] text-gray-600">
+                                            Started {{ \Carbon\Carbon::parse($qt['started_at'])->diffForHumans() }}
+                                        </div>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+
+                        <p class="mt-3 text-[10px] text-gray-600">Quick tunnels use <span class="font-mono">trycloudflare.com</span> and are temporary. They are not routed through your subdomain.</p>
+                    </div>
+                @endif
             </div>
 
             {{-- Traffic Overview: Hourly Chart + Status Codes + Error Rate --}}

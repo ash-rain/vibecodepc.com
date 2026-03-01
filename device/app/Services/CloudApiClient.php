@@ -101,23 +101,29 @@ class CloudApiClient
     }
 
     /**
-     * @param  array{cpu_percent: float, ram_used_mb: int, ram_total_mb: int, disk_used_gb: float, disk_total_gb: float, temperature_c: float|null, running_projects: int, tunnel_active: bool, firmware_version: string}  $metrics
+     * @param  array{cpu_percent: float, ram_used_mb: int, ram_total_mb: int, disk_used_gb: float, disk_total_gb: float, temperature_c: float|null, running_projects: int, tunnel_active: bool, firmware_version: string, quick_tunnels?: array}  $metrics
      */
     public function sendHeartbeat(string $deviceId, array $metrics): void
     {
         try {
+            $payload = [
+                'cpu_percent' => $metrics['cpu_percent'],
+                'cpu_temp' => $metrics['temperature_c'],
+                'ram_used_mb' => $metrics['ram_used_mb'],
+                'ram_total_mb' => $metrics['ram_total_mb'],
+                'disk_used_gb' => $metrics['disk_used_gb'],
+                'disk_total_gb' => $metrics['disk_total_gb'],
+                'running_projects' => $metrics['running_projects'],
+                'tunnel_active' => $metrics['tunnel_active'],
+                'firmware_version' => $metrics['firmware_version'],
+            ];
+
+            if (! empty($metrics['quick_tunnels'])) {
+                $payload['quick_tunnels'] = $metrics['quick_tunnels'];
+            }
+
             $this->authenticatedHttp()
-                ->post("/api/devices/{$deviceId}/heartbeat", [
-                    'cpu_percent' => $metrics['cpu_percent'],
-                    'cpu_temp' => $metrics['temperature_c'],
-                    'ram_used_mb' => $metrics['ram_used_mb'],
-                    'ram_total_mb' => $metrics['ram_total_mb'],
-                    'disk_used_gb' => $metrics['disk_used_gb'],
-                    'disk_total_gb' => $metrics['disk_total_gb'],
-                    'running_projects' => $metrics['running_projects'],
-                    'tunnel_active' => $metrics['tunnel_active'],
-                    'firmware_version' => $metrics['firmware_version'],
-                ])
+                ->post("/api/devices/{$deviceId}/heartbeat", $payload)
                 ->throw();
         } catch (\Throwable $e) {
             Log::warning('Heartbeat failed: '.$e->getMessage());

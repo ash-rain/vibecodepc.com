@@ -34,6 +34,7 @@ class Device extends Model
         'disk_used_gb',
         'disk_total_gb',
         'tunnel_url',
+        'quick_tunnels',
         'config_version',
     ];
 
@@ -51,6 +52,7 @@ class Device extends Model
             'ram_total_mb' => 'integer',
             'disk_used_gb' => 'float',
             'disk_total_gb' => 'float',
+            'quick_tunnels' => 'array',
             'config_version' => 'integer',
         ];
     }
