@@ -27,7 +27,35 @@
                     <dt class="text-gray-500">Account</dt>
                     <dd class="text-gray-300">{{ $user->username ?? $user->email }}</dd>
                 </div>
+                @if ($device->ip_hint)
+                    <div class="flex justify-between">
+                        <dt class="text-gray-500">Device IP</dt>
+                        <dd>
+                            <a href="http://{{ $device->ip_hint }}" target="_blank"
+                                class="font-mono text-emerald-400 hover:underline">{{ $device->ip_hint }}</a>
+                        </dd>
+                    </div>
+                @endif
             </dl>
+        </div>
+
+        <div class="rounded-xl bg-white/[0.04] border border-white/[0.06] p-4 mb-6 text-left">
+            <h3 class="text-xs font-medium text-gray-400 mb-2">Access your device on your local network</h3>
+            <div class="space-y-1.5 text-sm">
+                @if ($device->ip_hint)
+                    <div class="flex items-center gap-2">
+                        <span class="text-gray-500">IP:</span>
+                        <a href="http://{{ $device->ip_hint }}" target="_blank"
+                            class="font-mono text-emerald-400 hover:underline">http://{{ $device->ip_hint }}</a>
+                    </div>
+                @endif
+                <div class="flex items-center gap-2">
+                    <span class="text-gray-500">mDNS:</span>
+                    <a href="http://vibecodepc.local" target="_blank"
+                        class="font-mono text-emerald-400 hover:underline">http://vibecodepc.local</a>
+                </div>
+                <p class="text-xs text-gray-600 mt-1">Use the mDNS address if the IP changes. Works on most networks.</p>
+            </div>
         </div>
 
         <div class="space-y-3">

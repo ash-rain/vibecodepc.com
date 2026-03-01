@@ -40,6 +40,10 @@
                     <dd class="font-mono text-gray-200">{{ $localIp }}</dd>
                 </div>
                 <div class="flex justify-between">
+                    <dt class="text-gray-400">mDNS</dt>
+                    <dd class="font-mono text-emerald-400">vibecodepc.local</dd>
+                </div>
+                <div class="flex justify-between">
                     <dt class="text-gray-400">Internet</dt>
                     <dd>
                         @if ($hasInternet)

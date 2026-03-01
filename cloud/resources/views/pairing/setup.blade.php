@@ -78,6 +78,22 @@
                         <dt class="text-gray-500">Account</dt>
                         <dd class="text-gray-300">{{ $user->email }}</dd>
                     </div>
+                    @if ($device->ip_hint)
+                        <div class="flex justify-between">
+                            <dt class="text-gray-500">Local IP</dt>
+                            <dd>
+                                <a href="http://{{ $device->ip_hint }}" target="_blank"
+                                    class="font-mono text-emerald-400 hover:underline">{{ $device->ip_hint }}</a>
+                            </dd>
+                        </div>
+                    @endif
+                    <div class="flex justify-between">
+                        <dt class="text-gray-500">mDNS</dt>
+                        <dd>
+                            <a href="http://vibecodepc.local" target="_blank"
+                                class="font-mono text-emerald-400 hover:underline">vibecodepc.local</a>
+                        </dd>
+                    </div>
                 </dl>
             </div>
 
@@ -92,10 +108,27 @@
             </div>
 
             <template x-if="attempts >= maxAttempts && !ready">
-                <div class="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 mb-4">
-                    <p class="text-sm text-amber-200">
+                <div class="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 mb-4 text-left">
+                    <p class="text-sm text-amber-200 mb-3">
                         Make sure your device is plugged in and connected to your network.
-                        You can also access it directly at its local IP address, or visit the
+                        You can also access it directly on your local network:
+                    </p>
+                    <div class="space-y-1.5 text-sm">
+                        @if ($device->ip_hint)
+                            <div class="flex items-center gap-2">
+                                <span class="text-amber-300/60">IP:</span>
+                                <a href="http://{{ $device->ip_hint }}" target="_blank"
+                                    class="font-mono text-amber-200 hover:underline">http://{{ $device->ip_hint }}</a>
+                            </div>
+                        @endif
+                        <div class="flex items-center gap-2">
+                            <span class="text-amber-300/60">mDNS:</span>
+                            <a href="http://vibecodepc.local" target="_blank"
+                                class="font-mono text-amber-200 hover:underline">http://vibecodepc.local</a>
+                        </div>
+                    </div>
+                    <p class="text-xs text-amber-300/50 mt-2">
+                        Or visit the
                         <a href="{{ route('dashboard') }}"
                             class="underline hover:text-amber-100 transition">dashboard</a>
                         to manage your device.

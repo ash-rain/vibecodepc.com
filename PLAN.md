@@ -51,8 +51,8 @@ Two codebases:
 - [x] If device unclaimed → show "Claim this VibeCodePC" → register/login → claim
 - [x] If device already claimed by current user → redirect to device local IP
 - [x] If device claimed by another user → show "Already claimed" message
-- [ ] After claiming → display device local IP + link to open wizard (ip_hint stored but not shown on success page)
-- [ ] mDNS/network discovery hint: `vibecodepc.local` fallback
+- [x] After claiming → display device local IP + link to open wizard
+- [x] mDNS/network discovery hint: `vibecodepc.local` fallback
 
 ### 1.3 Device: Pairing Listener
 - [x] On first boot, device starts in **pairing mode**
@@ -169,22 +169,22 @@ Storage:
 ### 3.4 Deployments & Tunnels
 - [x] Each project can be exposed via tunnel
 - [x] Routing: `username.vibecodepc.com` → default project, `username.vibecodepc.com/projectname` → specific project
-- [ ] Or: `projectname-username.vibecodepc.com` (subdomain per project — path-based routing exists, subdomain-per-project not yet)
+- [x] Or: `projectname-username.vibecodepc.com` (subdomain per project via `project--username` prefix parsing)
 - [x] HTTPS automatic via Cloudflare
 - [x] Toggle tunnel on/off per project
-- [ ] Bandwidth/request stats from cloud edge (TunnelRequestLog model exists, needs dashboard UI)
+- [x] Bandwidth/request stats from cloud edge (DeviceStatsController + TunnelManager dashboard UI)
 
 ### 3.5 AI Services Hub
 - [x] View connected AI providers and their status
 - [x] Add/remove/update API keys (re-enter wizard step)
 - [x] Quick test: send a prompt to each provider and show response
-- [ ] Usage hints: which projects are using which API keys
+- [x] Usage hints: which projects are using which API keys (AiServicesHub scans project env vars)
 
 ### 3.6 VS Code Integration
 - [x] Embedded code-server iframe (full-screen option)
 - [x] Or: direct link to `vibecodepc.local:8443`
-- [ ] Extension management from dashboard
-- [ ] Copilot status indicator (GitHubCredential.has_copilot exists, needs dashboard UI)
+- [x] Extension management from dashboard (CodeEditor component: install/remove/list)
+- [x] Copilot status indicator (Overview badge + CodeEditor header badge)
 
 ### 3.7 System Settings
 - [x] Network settings (Wi-Fi, static IP)
@@ -192,7 +192,7 @@ Storage:
 - [x] System update (pull latest device firmware/app)
 - [x] Factory reset (re-run wizard)
 - [x] SSH access toggle
-- [ ] Backup / restore configuration
+- [x] Backup / restore configuration (BackupService: encrypted ZIP with all config tables + .env)
 - [x] Power: restart / shutdown device
 
 ---
