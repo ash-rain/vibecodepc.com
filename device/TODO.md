@@ -74,5 +74,5 @@ Polish & documentation
 Nice-to-have / later phase (after basic optional works)
 [x] 2026-03-02 Add "Pair Device" card/section on dashboard when unpaired
 [x] 2026-03-02 Auto-detect if tunnel became available later ? refresh status
-[ ] Add wizard re-entry path: "Continue setup" button that jumps to tunnel step
+[x] 2026-03-02 Add wizard re-entry path: "Continue setup" button that jumps to tunnel step
 [ ] Analytics / telemetry (if implemented) ? track % of users who skip vs complete pairing

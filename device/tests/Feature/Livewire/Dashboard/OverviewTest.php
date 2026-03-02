@@ -5,8 +5,10 @@ declare(strict_types=1);
 use App\Livewire\Dashboard\Overview;
 use App\Models\CloudCredential;
 use App\Models\TunnelConfig;
+use App\Services\WizardProgressService;
 use Illuminate\Support\Facades\Process;
 use Livewire\Livewire;
+use VibecodePC\Common\Enums\WizardStep;
 
 beforeEach(function () {
     Process::fake();
@@ -70,4 +72,64 @@ it('does not show pair device card when device is paired', function () {
     Livewire::test(Overview::class)
         ->assertDontSee('Pair your device')
         ->assertDontSee('Pair Device Now');
+});
+
+it('shows continue setup button when wizard was completed with skipped tunnel step', function () {
+    // Setup wizard progress with all steps completed except tunnel which is skipped
+    $service = app(WizardProgressService::class);
+    $service->seedProgress();
+
+    foreach (WizardStep::cases() as $step) {
+        if ($step === WizardStep::Complete) {
+            continue;
+        }
+        if ($step === WizardStep::Tunnel) {
+            $service->skipStep($step);
+        } else {
+            $service->completeStep($step);
+        }
+    }
+    $service->completeStep(WizardStep::Complete);
+
+    Livewire::test(Overview::class)
+        ->assertSee('Continue setup');
+});
+
+it('does not show continue setup button when tunnel step was not skipped', function () {
+    // Setup wizard progress with all steps completed
+    $service = app(WizardProgressService::class);
+    $service->seedProgress();
+
+    foreach (WizardStep::cases() as $step) {
+        if ($step === WizardStep::Complete) {
+            continue;
+        }
+        $service->completeStep($step);
+    }
+    $service->completeStep(WizardStep::Complete);
+
+    Livewire::test(Overview::class)
+        ->assertDontSee('Continue setup');
+});
+
+it('redirects to wizard tunnel step when continue setup is clicked', function () {
+    // Setup wizard progress with all steps completed except tunnel which is skipped
+    $service = app(WizardProgressService::class);
+    $service->seedProgress();
+
+    foreach (WizardStep::cases() as $step) {
+        if ($step === WizardStep::Complete) {
+            continue;
+        }
+        if ($step === WizardStep::Tunnel) {
+            $service->skipStep($step);
+        } else {
+            $service->completeStep($step);
+        }
+    }
+    $service->completeStep(WizardStep::Complete);
+
+    Livewire::test(Overview::class)
+        ->call('continueSetup')
+        ->assertRedirect(route('wizard', ['step' => 'tunnel']));
 });

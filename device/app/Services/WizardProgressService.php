@@ -100,6 +100,22 @@ class WizardProgressService
         $this->seedProgress();
     }
 
+    /**
+     * Reset a specific step to pending status.
+     * Used when user wants to re-enter the wizard at a specific step.
+     */
+    public function resetStep(WizardStep $step): void
+    {
+        WizardProgress::updateOrCreate(
+            ['step' => $step->value],
+            [
+                'status' => WizardStepStatus::Pending,
+                'data_json' => null,
+                'completed_at' => null,
+            ],
+        );
+    }
+
     public function seedProgress(): void
     {
         if (WizardProgress::count() > 0) {

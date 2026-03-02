@@ -10,10 +10,13 @@ use App\Models\GitHubCredential;
 use App\Models\Project;
 use App\Models\ProjectLog;
 use App\Models\TunnelConfig;
+use App\Models\WizardProgress;
 use App\Services\Tunnel\TunnelService;
+use App\Services\WizardProgressService;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use VibecodePC\Common\Enums\WizardStep;
 
 #[Layout('layouts.dashboard', ['title' => 'Overview'])]
 #[Title('Overview — VibeCodePC')]
@@ -38,9 +41,34 @@ class Overview extends Component
     /** @var array<int, array{message: string, type: string, created_at: string}> */
     public array $recentActivity = [];
 
+    public bool $canContinueSetup = false;
+
     public function mount(TunnelService $tunnelService): void
     {
         $this->refreshStatus($tunnelService);
+        $this->checkIfSetupCanBeContinued();
+    }
+
+    /**
+     * Check if the user can continue setup (wizard was completed but tunnel step was skipped).
+     */
+    private function checkIfSetupCanBeContinued(): void
+    {
+        $progressService = app(WizardProgressService::class);
+
+        // Can continue setup if wizard is complete and tunnel step was skipped
+        $this->canContinueSetup = $progressService->isWizardComplete() &&
+            WizardProgress::where('step', WizardStep::Tunnel->value)
+                ->where('status', 'skipped')
+                ->exists();
+    }
+
+    /**
+     * Navigate to the wizard tunnel step to continue setup.
+     */
+    public function continueSetup(): void
+    {
+        $this->redirect(route('wizard', ['step' => 'tunnel']));
     }
 
     /**

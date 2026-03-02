@@ -28,6 +28,34 @@ class WizardController extends Component
     {
         $progressService->seedProgress();
 
+        // Allow re-entry via query parameter (e.g., ?step=tunnel)
+        // This lets users continue setup from the dashboard
+        $requestedStep = request()->query('step');
+
+        if ($requestedStep !== null) {
+            try {
+                $wizardStep = WizardStep::from($requestedStep);
+
+                // Allow navigation to any step if re-entering wizard
+                // Reset the step to pending so user can complete it
+                if ($progressService->isStepAccessible($wizardStep) || $progressService->isWizardComplete()) {
+                    // If step was previously skipped or completed, reset it to pending
+                    // so the user can complete it now
+                    if ($progressService->isStepCompleted($wizardStep) ||
+                        ($progressService->getProgress()->firstWhere('step', $wizardStep->value)?->isSkipped() ?? false)) {
+                        $progressService->resetStep($wizardStep);
+                    }
+
+                    $this->currentStep = $wizardStep->value;
+                    $this->loadSteps($progressService);
+
+                    return;
+                }
+            } catch (\ValueError $e) {
+                // Invalid step, fall through to normal flow
+            }
+        }
+
         if ($progressService->isWizardComplete()) {
             $this->redirect(route('dashboard'));
 

@@ -39,15 +39,25 @@
                 </div>
                 <div class="flex-1">
                     <h3 class="text-amber-400 font-semibold">Device not paired — limited to local network</h3>
-                    <p class="text-amber-200/70 text-sm mt-1">
-                        Your device is running in local-only mode. Pair it with VibeCodePC Cloud to enable remote access, public URLs, and access your projects from anywhere.
-                    </p>
-                    <a href="{{ route('dashboard.tunnels') }}" class="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-gray-950 font-medium text-sm rounded-xl transition-colors">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                        </svg>
-                        Set up remote access
-                    </a>
+    <p class="text-amber-200/70 text-sm mt-1">
+        Your device is running in local-only mode. Pair it with VibeCodePC Cloud to enable remote access, public URLs, and access your projects from anywhere.
+    </p>
+    <div class="flex flex-wrap items-center gap-3 mt-3">
+        <a href="{{ route('dashboard.tunnels') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-gray-950 font-medium text-sm rounded-xl transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
+            Set up remote access
+        </a>
+        @if ($canContinueSetup)
+            <button wire:click="continueSetup" class="inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-medium text-sm rounded-xl transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                </svg>
+                Continue setup
+            </button>
+        @endif
+    </div>
                 </div>
             </div>
         </div>
