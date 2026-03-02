@@ -2,6 +2,7 @@
 
 use App\Jobs\ProvisionQuickTunnelJob;
 use App\Models\QuickTunnel;
+use App\Models\TunnelConfig;
 use App\Services\DeviceRegistry\DeviceIdentityService;
 use App\Services\Tunnel\QuickTunnelService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -41,6 +42,8 @@ it('starts tunnel and registers URL with cloud', function () {
     $cloudUrl = config('vibecodepc.cloud_url');
 
     setupIdentityForJob($uuid);
+
+    TunnelConfig::factory()->verified()->create();
 
     $quickTunnelService = Mockery::mock(QuickTunnelService::class);
     $quickTunnelService->shouldReceive('startForDashboard')
@@ -85,6 +88,8 @@ it('falls back to app URL in local dev when tunnel fails', function () {
     $cloudUrl = config('vibecodepc.cloud_url');
 
     setupIdentityForJob($uuid);
+
+    TunnelConfig::factory()->verified()->create();
 
     app()->detectEnvironment(fn () => 'local');
 
@@ -137,6 +142,8 @@ it('retries URL capture when initial URL is null', function () {
     $cloudUrl = config('vibecodepc.cloud_url');
 
     setupIdentityForJob($uuid);
+
+    TunnelConfig::factory()->verified()->create();
 
     $quickTunnelService = Mockery::mock(QuickTunnelService::class);
     $quickTunnelService->shouldReceive('startForDashboard')

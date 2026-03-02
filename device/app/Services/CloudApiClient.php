@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\CloudCredential;
+use App\Models\TunnelConfig;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -15,6 +16,22 @@ class CloudApiClient
     public function __construct(
         private readonly string $cloudUrl,
     ) {}
+
+    /**
+     * Check if Cloud API calls should be made.
+     * Returns false when tunnel is skipped or not configured.
+     */
+    private function shouldMakeApiCalls(): bool
+    {
+        $tunnelConfig = TunnelConfig::current();
+
+        // Skip API calls if tunnel was explicitly skipped or no config exists
+        if ($tunnelConfig === null || $tunnelConfig->isSkipped()) {
+            return false;
+        }
+
+        return true;
+    }
 
     public function getDeviceStatus(string $deviceId): DeviceStatusResult
     {
@@ -51,6 +68,10 @@ class CloudApiClient
      */
     public function provisionTunnel(string $deviceId, string $subdomain): array
     {
+        if (! $this->shouldMakeApiCalls()) {
+            throw new \RuntimeException('Cannot provision tunnel: tunnel configuration is skipped or not set up');
+        }
+
         $response = $this->authenticatedHttp()
             ->post("/api/devices/{$deviceId}/tunnel/provision", [
                 'subdomain' => $subdomain,
@@ -70,6 +91,12 @@ class CloudApiClient
      */
     public function registerTunnelUrl(string $deviceId, string $tunnelUrl): void
     {
+        if (! $this->shouldMakeApiCalls()) {
+            Log::debug('Skipped registering tunnel URL: tunnel is skipped or not configured');
+
+            return;
+        }
+
         $this->authenticatedHttp()
             ->post("/api/devices/{$deviceId}/tunnel/register", [
                 'tunnel_url' => $tunnelUrl,
@@ -79,6 +106,12 @@ class CloudApiClient
 
     public function reconfigureTunnel(string $deviceId, int $port): void
     {
+        if (! $this->shouldMakeApiCalls()) {
+            Log::debug('Skipped reconfiguring tunnel: tunnel is skipped or not configured');
+
+            return;
+        }
+
         $this->authenticatedHttp()
             ->post("/api/devices/{$deviceId}/tunnel/reconfigure", [
                 'port' => $port,
@@ -93,6 +126,12 @@ class CloudApiClient
      */
     public function reconfigureTunnelIngress(string $deviceId, array $ingress): void
     {
+        if (! $this->shouldMakeApiCalls()) {
+            Log::debug('Skipped reconfiguring tunnel ingress: tunnel is skipped or not configured');
+
+            return;
+        }
+
         $this->authenticatedHttp()
             ->post("/api/devices/{$deviceId}/tunnel/reconfigure", [
                 'ingress' => $ingress,
@@ -105,6 +144,12 @@ class CloudApiClient
      */
     public function sendHeartbeat(string $deviceId, array $metrics): void
     {
+        if (! $this->shouldMakeApiCalls()) {
+            Log::debug('Skipped sending heartbeat: tunnel is skipped or not configured');
+
+            return;
+        }
+
         try {
             $payload = [
                 'cpu_percent' => $metrics['cpu_percent'],
@@ -135,6 +180,10 @@ class CloudApiClient
      */
     public function fetchTrafficStats(string $deviceId): ?array
     {
+        if (! $this->shouldMakeApiCalls()) {
+            return null;
+        }
+
         try {
             $response = $this->authenticatedHttp()
                 ->get("/api/devices/{$deviceId}/stats");
@@ -154,6 +203,10 @@ class CloudApiClient
      */
     public function getDeviceConfig(string $deviceId): ?array
     {
+        if (! $this->shouldMakeApiCalls()) {
+            return null;
+        }
+
         try {
             $response = $this->authenticatedHttp()
                 ->get("/api/devices/{$deviceId}/config");
