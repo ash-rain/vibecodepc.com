@@ -120,6 +120,7 @@ class WizardController extends Component
             'ai_services' => 'AI Services',
             'github' => 'GitHub',
             'code_server' => 'VS Code',
+            'tunnel' => 'Remote Access',
             'complete' => 'Done',
         ];
 

@@ -5,11 +5,15 @@ Core structural & routing changes
 [x] 2026-03-02  Add named route alias e.g. 'dashboard' that points to /dashboard/overview (used when not paired)
 
 Wizard flow changes
-[ ]  Make TunnelManager / QuickTunnel step skippable in WizardController / WizardProgress
-     ? add new state/flag ? 'skipped_tunnel_step'
-[ ]  Update Wizard\TunnelManager Livewire component
-     ? show big "Skip for now ? use locally" button
-     ? on skip ? mark wizard as complete + set skipped_tunnel_step = true
+[x] 2026-03-02  Make TunnelManager / QuickTunnel step skippable in WizardController / WizardProgress
+     - added new 'tunnel' step to WizardStep enum in common package
+     - created Wizard\Tunnel Livewire component with skip functionality
+     - created tunnel blade view with skip and continue options
+     - updated WizardController labels to include tunnel step
+     - WizardProgressService already supports skipped steps for completion
+[x] 2026-03-02  Update Wizard\Tunnel Livewire component
+     - show big "Skip for now — use locally" button
+     - on skip marks wizard step as skipped and advances
 [ ]  Update Complete.blade.php
      ? if skipped_tunnel_step ? show different success message ("Device ready for local use  pair later from settings")
      ? add link/button "Pair device later" ? route('tunnel-manager')

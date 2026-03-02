@@ -17,6 +17,7 @@ beforeEach(function () {
     $service->skipStep(WizardStep::AiServices);
     $service->skipStep(WizardStep::GitHub);
     $service->skipStep(WizardStep::CodeServer);
+    $service->skipStep(WizardStep::Tunnel);
 
     $mock = Mockery::mock(CodeServerService::class);
     $mock->shouldReceive('getUrl')->andReturn('http://localhost:8443');
@@ -52,5 +53,5 @@ it('builds summary excluding the complete step itself', function () {
     $stepValues = array_column($summary, 'step');
 
     expect($stepValues)->not->toContain('complete')
-        ->and($summary)->toHaveCount(4);
+        ->and($summary)->toHaveCount(5);
 });

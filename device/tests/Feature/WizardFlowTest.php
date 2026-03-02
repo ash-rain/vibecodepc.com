@@ -6,6 +6,7 @@ use App\Livewire\Wizard\AiServices;
 use App\Livewire\Wizard\CodeServer;
 use App\Livewire\Wizard\Complete;
 use App\Livewire\Wizard\GitHub;
+use App\Livewire\Wizard\Tunnel;
 use App\Livewire\Wizard\Welcome;
 use App\Livewire\Wizard\WizardController;
 use App\Models\CloudCredential;
@@ -88,6 +89,7 @@ it('completes full wizard flow with skips and transitions to dashboard', functio
     Livewire::test(AiServices::class)->call('skip');
     Livewire::test(GitHub::class)->call('skip');
     Livewire::test(CodeServer::class)->call('skip');
+    Livewire::test(Tunnel::class)->call('skip');
 
     expect($service->getCurrentStep())->toBe(WizardStep::Complete);
 
