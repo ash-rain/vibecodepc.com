@@ -60,7 +60,7 @@ Tests  critical areas
 [x] 2026-03-02  Dashboard\OverviewTest ? test unpaired state banner / reduced sidebar
 [x] 2026-03-02  CodeEditorTest ? test local access warning when unpaired
 [x] 2026-03-02 WizardFlowTest ? add test case: complete wizard while skipping tunnel step
-[ ]  TunnelManagerTest ? test skip button flow + later pairing from dashboard
+[x] 2026-03-02 TunnelManagerTest ? test skip button flow + later pairing from dashboard
 [ ]  ProjectDetailTest ? test local access hints when unpaired
 [ ]  TunnelServiceTest ? add cases for skipped state
 
