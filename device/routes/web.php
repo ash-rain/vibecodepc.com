@@ -36,6 +36,7 @@ Route::get('/wizard', WizardController::class)->name('wizard');
 // Dashboard — optional tunnel auth (local access passes through freely, tunnel access can prompt for auth)
 Route::middleware('tunnel.auth.optional')->group(function () {
     Route::get('/dashboard', Overview::class)->name('dashboard');
+    Route::get('/dashboard/overview', fn () => redirect()->route('dashboard'))->name('dashboard.overview');
     Route::get('/dashboard/projects', ProjectList::class)->name('dashboard.projects');
     Route::get('/dashboard/projects/create', ProjectCreate::class)->name('dashboard.projects.create');
     Route::get('/dashboard/projects/{project}', ProjectDetail::class)->name('dashboard.projects.show');
