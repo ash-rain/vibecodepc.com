@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Livewire\Dashboard\Overview;
 use App\Models\CloudCredential;
+use App\Models\TunnelConfig;
 use Illuminate\Support\Facades\Process;
 use Livewire\Livewire;
 
@@ -38,4 +39,19 @@ it('shows quick action buttons', function () {
         ->assertSee('New Project')
         ->assertSee('Open Editor')
         ->assertSee('Manage AI Keys');
+});
+
+it('shows not paired banner when device is not paired', function () {
+    Livewire::test(Overview::class)
+        ->assertSee('Device not paired')
+        ->assertSee('limited to local network')
+        ->assertSee('Set up remote access');
+});
+
+it('does not show not paired banner when device is paired', function () {
+    TunnelConfig::factory()->verified()->create();
+
+    Livewire::test(Overview::class)
+        ->assertDontSee('Device not paired')
+        ->assertDontSee('limited to local network');
 });

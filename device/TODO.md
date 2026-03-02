@@ -21,8 +21,10 @@ Wizard flow changes
      - allow wizard to reach 'completed' state even when tunnel step is skipped
 
 Dashboard / UI visibility & guards
-[ ]  Update Dashboard\Overview & HealthBar Livewire components
-     ? show prominent "Device not paired  limited to local network" banner / alert when !TunnelConfig::current()?->is_verified
+[x] 2026-03-02  Update Dashboard\Overview & HealthBar Livewire components
+     - added isPaired property to Overview component
+     - show prominent "Device not paired  limited to local network" banner / alert when !TunnelConfig::current()?->verified_at
+     - HealthBar component displays system metrics only, no pairing status needed
 [ ]  Add conditional rendering in sidebar / top-bar
      ? hide or disable "Public URL", "Share", "Remote Access" items when not paired
      ? show "Set up remote access" call-to-action button instead
@@ -48,9 +50,9 @@ Backend model & service adjustments
      ? make sure they tolerate missing tunnel config gracefully
 
 Tests  critical areas
+[x] 2026-03-02  Dashboard\OverviewTest ? test unpaired state banner / reduced sidebar
 [ ]  WizardFlowTest ? add test case: complete wizard while skipping tunnel step
 [ ]  TunnelManagerTest ? test skip button flow + later pairing from dashboard
-[ ]  Dashboard\OverviewTest ? test unpaired state banner / reduced sidebar
 [ ]  ProjectDetailTest & CodeEditorTest ? test local access hints when unpaired
 [ ]  TunnelServiceTest ? add cases for skipped state
 

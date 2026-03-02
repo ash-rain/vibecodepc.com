@@ -9,6 +9,7 @@ use App\Models\CloudCredential;
 use App\Models\GitHubCredential;
 use App\Models\Project;
 use App\Models\ProjectLog;
+use App\Models\TunnelConfig;
 use App\Services\Tunnel\TunnelService;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -26,6 +27,8 @@ class Overview extends Component
 
     public bool $tunnelRunning = false;
 
+    public bool $isPaired = false;
+
     public int $aiProviderCount = 0;
 
     public bool $hasCopilot = false;
@@ -41,6 +44,7 @@ class Overview extends Component
         $this->projectCount = Project::count();
         $this->runningCount = Project::running()->count();
         $this->tunnelRunning = $tunnelService->isRunning();
+        $this->isPaired = TunnelConfig::current()?->verified_at !== null;
         $this->aiProviderCount = AiProviderConfig::whereNotNull('validated_at')->count();
         $this->hasCopilot = GitHubCredential::current()?->hasCopilot() ?? false;
 

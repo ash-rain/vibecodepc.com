@@ -1,4 +1,29 @@
 <div class="space-y-6">
+    {{-- Not Paired Banner --}}
+    @if (!$isPaired)
+        <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-5">
+            <div class="flex items-start gap-4">
+                <div class="shrink-0 w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center">
+                    <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-amber-400 font-semibold">Device not paired — limited to local network</h3>
+                    <p class="text-amber-200/70 text-sm mt-1">
+                        Your device is running in local-only mode. Pair it with VibeCodePC Cloud to enable remote access, public URLs, and access your projects from anywhere.
+                    </p>
+                    <a href="{{ route('dashboard.tunnels') }}" class="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-gray-950 font-medium text-sm rounded-xl transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                        </svg>
+                        Set up remote access
+                    </a>
+                </div>
+            </div>
+        </div>
+    @endif
+
     {{-- Welcome --}}
     <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6">
         <h2 class="text-xl font-semibold text-white">Welcome back, {{ $username }}</h2>
