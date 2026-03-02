@@ -55,3 +55,19 @@ it('does not show not paired banner when device is paired', function () {
         ->assertDontSee('Device not paired')
         ->assertDontSee('limited to local network');
 });
+
+it('shows pair device card when device is not paired', function () {
+    Livewire::test(Overview::class)
+        ->assertSee('Pair your device')
+        ->assertSee('Pair Device Now')
+        ->assertSee('remote access')
+        ->assertSee('Optional');
+});
+
+it('does not show pair device card when device is paired', function () {
+    TunnelConfig::factory()->verified()->create();
+
+    Livewire::test(Overview::class)
+        ->assertDontSee('Pair your device')
+        ->assertDontSee('Pair Device Now');
+});

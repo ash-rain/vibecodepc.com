@@ -22,13 +22,49 @@
                 </div>
             </div>
         </div>
-    @endif
+@endif
 
-    {{-- Welcome --}}
-    <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6">
-        <h2 class="text-xl font-semibold text-white">Welcome back, {{ $username }}</h2>
-        <p class="text-gray-400 text-sm mt-1">Here's what's happening on your VibeCodePC.</p>
-    </div>
+{{-- Pair Device Card --}}
+@if (!$isPaired)
+<div class="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/30 rounded-2xl p-6">
+<div class="flex items-start gap-5">
+<div class="w-14 h-14 rounded-2xl bg-indigo-500/20 flex items-center justify-center shrink-0">
+<svg class="w-7 h-7 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+</svg>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-start justify-between gap-4">
+<div>
+<h3 class="text-lg font-semibold text-white">Pair your device</h3>
+<p class="text-gray-400 text-sm mt-1 max-w-xl">Connect your VibeCodePC to the cloud for remote access, public URLs, and the ability to manage your projects from anywhere in the world.</p>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<span class="text-xs bg-gray-500/20 text-gray-400 px-2 py-1 rounded-full">Optional</span>
+</div>
+</div>
+<div class="flex flex-wrap items-center gap-3 mt-4">
+<a href="{{ route('dashboard.tunnels') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-500 hover:bg-indigo-400 text-white font-medium text-sm rounded-xl transition-colors">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+</svg>
+Pair Device Now
+</a>
+<span class="text-gray-500 text-xs">Free &bull; Takes 2 minutes</span>
+</div>
+<div class="mt-4 pt-4 border-t border-white/[0.06]">
+<p class="text-gray-500 text-xs">Or continue using locally at <span class="text-gray-400 font-mono">http://{{ gethostname() }}.local</span></p>
+</div>
+</div>
+</div>
+</div>
+@endif
+
+{{-- Welcome --}}
+<div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6">
+<h2 class="text-xl font-semibold text-white">Welcome back, {{ $username }}</h2>
+<p class="text-gray-400 text-sm mt-1">Here's what's happening on your VibeCodePC.</p>
+</div>
 
     {{-- Quick Stats --}}
     <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
