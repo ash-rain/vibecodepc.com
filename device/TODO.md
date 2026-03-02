@@ -33,8 +33,8 @@ Dashboard / UI visibility & guards
      - added prominent "Set up Cloudflare Tunnel" CTA card when not configured
 
 Project & Code-server behavior when unpaired
-[ ]  Review ProjectContainerService & CodeServerService
-     ? confirm they do NOT depend on tunnel being active (should already be true)
+[x] 2026-03-02  Review ProjectContainerService & CodeServerService
+     ✓ confirmed - both services work independently of tunnel/pairing
 [ ]  In CodeEditor Livewire component
      ? if not paired ? show smaller warning "Code Server is only available on local network (http://localhost:8443 or similar)"
 [ ]  Add local access hint in ProjectDetail / CodeEditor
