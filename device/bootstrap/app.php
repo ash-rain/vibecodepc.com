@@ -15,6 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // requests as HTTP with X-Forwarded-* headers. Without this,
         // Laravel generates http:// URLs causing Mixed Content errors.
         $middleware->trustProxies(at: '*');
+
+        $middleware->alias([
+            'tunnel.auth' => \App\Http\Middleware\RequireTunnelAuth::class,
+            'tunnel.auth.optional' => \App\Http\Middleware\OptionalTunnelAuth::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
