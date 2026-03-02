@@ -140,7 +140,7 @@ class CloudApiClient
     }
 
     /**
-     * @param  array{cpu_percent: float, ram_used_mb: int, ram_total_mb: int, disk_used_gb: float, disk_total_gb: float, temperature_c: float|null, running_projects: int, tunnel_active: bool, firmware_version: string, quick_tunnels?: array}  $metrics
+     * @param  array{cpu_percent: float, ram_used_mb: int, ram_total_mb: int, disk_used_gb: float, disk_total_gb: float, temperature_c: float|null, running_projects: int, tunnel_active: bool, firmware_version: string, quick_tunnels?: array, analytics?: array<string, int>}  $metrics
      */
     public function sendHeartbeat(string $deviceId, array $metrics): void
     {
@@ -165,6 +165,10 @@ class CloudApiClient
 
             if (! empty($metrics['quick_tunnels'])) {
                 $payload['quick_tunnels'] = $metrics['quick_tunnels'];
+            }
+
+            if (! empty($metrics['analytics'])) {
+                $payload['analytics'] = $metrics['analytics'];
             }
 
             $this->authenticatedHttp()

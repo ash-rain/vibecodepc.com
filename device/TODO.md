@@ -75,4 +75,10 @@ Nice-to-have / later phase (after basic optional works)
 [x] 2026-03-02 Add "Pair Device" card/section on dashboard when unpaired
 [x] 2026-03-02 Auto-detect if tunnel became available later ? refresh status
 [x] 2026-03-02 Add wizard re-entry path: "Continue setup" button that jumps to tunnel step
-[ ] Analytics / telemetry (if implemented) ? track % of users who skip vs complete pairing
+[x] 2026-03-02 Analytics / telemetry (if implemented) ? track % of users who skip vs complete pairing
+   - Created AnalyticsEvent model and migration
+   - Created AnalyticsService with trackTunnelEvent() and trackWizardEvent() methods
+   - Track 'tunnel.skipped' event when user skips pairing
+   - Track 'tunnel.completed' event when user completes pairing
+   - Send aggregated analytics with heartbeat to cloud API
+   - Added comprehensive test coverage for AnalyticsService and Tunnel component

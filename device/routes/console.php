@@ -66,6 +66,10 @@ Schedule::call(function () {
         ])->all();
     }
 
+    // Include analytics events data
+    $analytics = app(AnalyticsService::class);
+    $metrics['analytics'] = $analytics->getAggregatedData();
+
     app(CloudApiClient::class)->sendHeartbeat($deviceId, $metrics);
 
     app(ConfigSyncService::class)->syncIfNeeded($deviceId);

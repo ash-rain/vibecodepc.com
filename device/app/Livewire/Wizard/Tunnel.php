@@ -6,6 +6,7 @@ namespace App\Livewire\Wizard;
 
 use App\Models\CloudCredential;
 use App\Models\TunnelConfig;
+use App\Services\AnalyticsService;
 use App\Services\CloudApiClient;
 use App\Services\DeviceRegistry\DeviceIdentityService;
 use App\Services\Tunnel\TunnelService;
@@ -140,6 +141,10 @@ class Tunnel extends Component
 
     public function complete(WizardProgressService $progressService): void
     {
+        app(AnalyticsService::class)->trackTunnelEvent('completed', [
+            'subdomain' => $this->subdomain,
+        ]);
+
         $progressService->completeStep(WizardStep::Tunnel, [
             'subdomain' => $this->subdomain,
         ]);
@@ -149,6 +154,10 @@ class Tunnel extends Component
 
     public function skip(WizardProgressService $progressService): void
     {
+        app(AnalyticsService::class)->trackTunnelEvent('skipped', [
+            'reason' => 'user_choice',
+        ]);
+
         $progressService->skipStep(WizardStep::Tunnel);
         $this->dispatch('step-skipped');
     }
