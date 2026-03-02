@@ -16,9 +16,9 @@ it('allows local requests through without authentication', function () {
         ->assertSuccessful();
 });
 
-it('redirects tunnel requests to login when unauthenticated', function () {
+it('allows tunnel requests through without authentication (optional auth)', function () {
     $this->get(route('dashboard'), ['CF-Connecting-IP' => '1.2.3.4'])
-        ->assertRedirect(route('tunnel.login'));
+        ->assertSuccessful();
 });
 
 it('renders the tunnel login page', function () {
@@ -57,13 +57,10 @@ it('allows authenticated tunnel requests through', function () {
         ->assertSuccessful();
 });
 
-it('preserves intended URL through login flow', function () {
-    // First request to a specific page gets redirected
+it('allows tunnel requests through to specific dashboard pages without authentication', function () {
+    // With optional auth, tunnel requests are allowed through
     $this->get(route('dashboard.settings'), ['CF-Connecting-IP' => '1.2.3.4'])
-        ->assertRedirect(route('tunnel.login'));
-
-    // Intended URL should be stored in session
-    expect(session('tunnel_auth_intended_url'))->toContain('/dashboard/settings');
+        ->assertSuccessful();
 });
 
 it('rejects empty password', function () {

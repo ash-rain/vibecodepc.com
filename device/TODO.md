@@ -1,7 +1,7 @@
 Core structural & routing changes
 [x] 2026-03-02  Update bootstrap/app.php — remove RequireTunnelAuth middleware from global middleware stack (or make it conditional)
 [x] 2026-03-02  Create new middleware OptionalTunnelAuth (checks tunnel token exists ? if yes apply auth, if no ? allow through)
-[ ]  Replace RequireTunnelAuth with OptionalTunnelAuth in all relevant route groups (api + web dashboard routes)
+[x] 2026-03-02  Replace RequireTunnelAuth with OptionalTunnelAuth in all relevant route groups (api + web dashboard routes)
 [ ]  Add named route alias e.g. 'dashboard' that points to /dashboard/overview (used when not paired)
 
 Wizard flow changes
