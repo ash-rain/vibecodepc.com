@@ -1,3 +1,7 @@
+{{--
+    Temporary: pairing is optional. Full remote access requires pairing.
+--}}
+
 <div class="space-y-6">
     {{-- Header --}}
     <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6">

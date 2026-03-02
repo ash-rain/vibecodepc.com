@@ -66,8 +66,8 @@ Tests  critical areas
 
 Polish & documentation
 [x] 2026-03-02 Update README.md ? explain local-only mode vs paired mode
-[ ]  Add comment block in TunnelManager blade + TunnelService class:
-     # Temporary: pairing is optional. Full remote access requires pairing.
+[x] 2026-03-02 Add comment block in TunnelManager blade + TunnelService class:
+# Temporary: pairing is optional. Full remote access requires pairing.
 [ ]  Run full Pint + Pest suite after changes
 [ ]  (optional) Add feature flag in config/vibecodepc.php ? 'pairing.required' = false
 

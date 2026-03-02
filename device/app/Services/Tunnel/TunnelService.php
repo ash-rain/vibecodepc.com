@@ -10,6 +10,9 @@ use App\Services\DeviceRegistry\DeviceIdentityService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 
+/**
+ * Temporary: pairing is optional. Full remote access requires pairing.
+ */
 class TunnelService
 {
     public function __construct(
