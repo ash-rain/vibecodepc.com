@@ -65,7 +65,7 @@ Tests  critical areas
 [x] 2026-03-02 TunnelServiceTest ? add cases for skipped state
 
 Polish & documentation
-[ ]  Update README.md ? explain local-only mode vs paired mode
+[x] 2026-03-02 Update README.md ? explain local-only mode vs paired mode
 [ ]  Add comment block in TunnelManager blade + TunnelService class:
      # Temporary: pairing is optional. Full remote access requires pairing.
 [ ]  Run full Pint + Pest suite after changes
