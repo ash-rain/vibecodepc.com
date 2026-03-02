@@ -68,6 +68,10 @@ class WizardProgressService
     public function isWizardComplete(): bool
     {
         foreach (WizardStep::cases() as $step) {
+            if ($step === WizardStep::Complete) {
+                continue;
+            }
+
             $progress = WizardProgress::where('step', $step->value)->first();
 
             if (! $progress || $progress->isPending()) {

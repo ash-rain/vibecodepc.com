@@ -17,8 +17,8 @@ Wizard flow changes
 [x] 2026-03-02  Update Complete.blade.php
      ? if skipped_tunnel_step ? show different success message ("Device ready for local use  pair later from settings")
      ? add link/button "Pair device later" ? route('tunnel-manager')
-[ ]  Modify WizardProgressService
-     ? allow wizard to reach 'completed' state even when tunnel step is skipped
+[x] 2026-03-02  Modify WizardProgressService
+     - allow wizard to reach 'completed' state even when tunnel step is skipped
 
 Dashboard / UI visibility & guards
 [ ]  Update Dashboard\Overview & HealthBar Livewire components
