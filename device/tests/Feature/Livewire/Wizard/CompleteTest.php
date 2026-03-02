@@ -27,7 +27,7 @@ beforeEach(function () {
 it('renders the complete step', function () {
     Livewire::test(Complete::class)
         ->assertStatus(200)
-        ->assertSee('Setup Complete');
+        ->assertSee('Device Ready for Local Use');
 });
 
 it('shows summary of completed and skipped steps', function () {
@@ -54,4 +54,19 @@ it('builds summary excluding the complete step itself', function () {
 
     expect($stepValues)->not->toContain('complete')
         ->and($summary)->toHaveCount(5);
+});
+
+it('shows Setup Complete message when tunnel is completed', function () {
+    $service = app(WizardProgressService::class);
+    $service->completeStep(WizardStep::Tunnel);
+
+    Livewire::test(Complete::class)
+        ->assertSee('Setup Complete')
+        ->assertDontSee('Device Ready for Local Use');
+});
+
+it('shows Pair Device Now button when tunnel is skipped', function () {
+    Livewire::test(Complete::class)
+        ->assertSee('Pair Device Now')
+        ->assertSee(route('dashboard.tunnels'));
 });

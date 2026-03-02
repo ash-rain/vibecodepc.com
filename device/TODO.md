@@ -14,7 +14,7 @@ Wizard flow changes
 [x] 2026-03-02  Update Wizard\Tunnel Livewire component
      - show big "Skip for now — use locally" button
      - on skip marks wizard step as skipped and advances
-[ ]  Update Complete.blade.php
+[x] 2026-03-02  Update Complete.blade.php
      ? if skipped_tunnel_step ? show different success message ("Device ready for local use  pair later from settings")
      ? add link/button "Pair device later" ? route('tunnel-manager')
 [ ]  Modify WizardProgressService

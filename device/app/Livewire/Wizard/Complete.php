@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Wizard;
 
+use App\Models\WizardProgress;
 use App\Services\CodeServer\CodeServerService;
 use App\Services\DeviceStateService;
 use App\Services\WizardProgressService;
@@ -17,15 +18,21 @@ class Complete extends Component
 
     public string $codeServerUrl = '';
 
+    public bool $skippedTunnelStep = false;
+
     public function mount(WizardProgressService $progressService, CodeServerService $codeServer): void
     {
         $this->codeServerUrl = $codeServer->getUrl();
+
+        $tunnelProgress = WizardProgress::where('step', WizardStep::Tunnel->value)->first();
+        $this->skippedTunnelStep = $tunnelProgress?->isSkipped() ?? false;
 
         $labels = [
             'welcome' => 'Welcome & Account',
             'ai_services' => 'AI Services',
             'github' => 'GitHub',
             'code_server' => 'VS Code',
+            'tunnel' => 'Remote Access',
         ];
 
         foreach ($progressService->getProgress() as $progress) {

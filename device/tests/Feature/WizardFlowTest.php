@@ -95,7 +95,7 @@ it('completes full wizard flow with skips and transitions to dashboard', functio
 
     // Complete wizard
     Livewire::test(Complete::class)
-        ->assertSee('Setup Complete')
+        ->assertSee('Device Ready for Local Use')
         ->call('goToDashboard')
         ->assertRedirect(route('home'));
 
