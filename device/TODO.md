@@ -43,7 +43,7 @@ Project & Code-server behavior when unpaired
 ? Added tests: shows local network access hint when not paired and project is running
 
 Backend model & service adjustments
-[ ]  TunnelConfig model  add boolean column nullable_skipped_at (or reuse status = 'skipped')
+[x] 2026-03-02 TunnelConfig model - add nullable skipped_at timestamp (migration exists, model updated)
 [ ]  Update TunnelService::hasCredentials() ? also return true if status = 'skipped' ? (debate needed)
 [ ]  Add TunnelService::isSkipped() helper
 [ ]  Update CloudApiClient calls (heartbeat, reconfigureTunnelIngress, etc.)
