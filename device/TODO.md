@@ -37,8 +37,10 @@ Project & Code-server behavior when unpaired
      ✓ confirmed - both services work independently of tunnel/pairing
 [x] 2026-03-02  In CodeEditor Livewire component
      - if not paired ? show smaller warning "Code Server is only available on local network (http://localhost:8443 or similar)"
-[ ]  Add local access hint in ProjectDetail / CodeEditor
-     ? "Open in browser: http://raspberrypi.local:{{ $project->port }}" or similar
+[x] 2026-03-02 Add local access hint in ProjectDetail / CodeEditor
+? "Open in browser: http://raspberrypi.local:{{ $project->port }}" or similar
+? Already implemented in blade views (lines 39-54 in project-detail.blade.php, lines 65-79 in code-editor.blade.php)
+? Added tests: shows local network access hint when not paired and project is running
 
 Backend model & service adjustments
 [ ]  TunnelConfig model  add boolean column nullable_skipped_at (or reuse status = 'skipped')
