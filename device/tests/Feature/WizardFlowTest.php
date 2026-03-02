@@ -102,3 +102,61 @@ it('completes full wizard flow with skips and transitions to dashboard', functio
     // Verify mode transition
     expect(DeviceState::getValue(DeviceStateService::MODE_KEY))->toBe(DeviceStateService::MODE_DASHBOARD);
 });
+
+it('completes wizard while skipping only tunnel step', function () {
+    $service = app(WizardProgressService::class);
+
+    // Complete welcome step
+    Livewire::test(Welcome::class)
+        ->set('adminPassword', 'securepassword')
+        ->set('adminPasswordConfirmation', 'securepassword')
+        ->set('timezone', 'UTC')
+        ->set('acceptedTos', true)
+        ->call('complete');
+
+    expect($service->isStepCompleted(WizardStep::Welcome))->toBeTrue()
+        ->and($service->getCurrentStep())->toBe(WizardStep::AiServices);
+
+    // Complete AI services step
+    Livewire::test(AiServices::class)
+        ->call('complete');
+
+    expect($service->isStepCompleted(WizardStep::AiServices))->toBeTrue()
+        ->and($service->getCurrentStep())->toBe(WizardStep::GitHub);
+
+    // Complete GitHub step
+    Livewire::test(GitHub::class)
+        ->call('complete');
+
+    expect($service->isStepCompleted(WizardStep::GitHub))->toBeTrue()
+        ->and($service->getCurrentStep())->toBe(WizardStep::CodeServer);
+
+    // Complete Code Server step
+    Livewire::test(CodeServer::class)
+        ->call('complete');
+
+    expect($service->isStepCompleted(WizardStep::CodeServer))->toBeTrue()
+        ->and($service->getCurrentStep())->toBe(WizardStep::Tunnel);
+
+    // Skip only the tunnel step
+    Livewire::test(Tunnel::class)
+        ->call('skip')
+        ->assertDispatched('step-skipped');
+
+    // Tunnel step is skipped (not completed), wizard should advance to Complete
+    $tunnelProgress = \App\Models\WizardProgress::where('step', WizardStep::Tunnel->value)->first();
+    expect($tunnelProgress->isSkipped())->toBeTrue()
+        ->and($service->getCurrentStep())->toBe(WizardStep::Complete);
+
+    // Complete wizard and verify tunnel is marked as skipped
+    Livewire::test(Complete::class)
+        ->assertSee('Device Ready for Local Use')
+        ->assertSee('Pair Device Now')
+        ->assertSee('Skipped')
+        ->call('goToDashboard')
+        ->assertRedirect(route('home'));
+
+    // Verify wizard is complete
+    expect($service->isWizardComplete())->toBeTrue()
+        ->and(DeviceState::getValue(DeviceStateService::MODE_KEY))->toBe(DeviceStateService::MODE_DASHBOARD);
+});
