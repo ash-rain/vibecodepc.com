@@ -97,6 +97,10 @@ class TunnelService
             return 'Tunnel is not configured. Complete the setup wizard to provision tunnel credentials.';
         }
 
+        if ($this->isSkipped()) {
+            return 'Tunnel setup was skipped. Complete tunnel setup to enable remote access.';
+        }
+
         $token = TunnelConfig::current()->tunnel_token_encrypted;
 
         $dir = dirname($this->tokenFilePath);
@@ -140,6 +144,12 @@ class TunnelService
      */
     public function updateIngress(array $routes): void
     {
+        if ($this->isSkipped()) {
+            Log::info('Skipping ingress update: tunnel setup was skipped');
+
+            return;
+        }
+
         $ingress = [];
 
         foreach ($routes as $path => $port) {

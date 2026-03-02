@@ -278,3 +278,114 @@ it('truncates token file and marks config as error on cleanup', function () {
 
     File::deleteDirectory(dirname($tokenFile));
 });
+
+// Skipped state tests
+it('refuses to start when tunnel is skipped', function () {
+    $tokenFile = storage_path('app/test-tunnel-skip-start/token');
+
+    // Clean up any existing test artifacts
+    if (is_dir(dirname($tokenFile))) {
+        File::deleteDirectory(dirname($tokenFile));
+    }
+
+    TunnelConfig::factory()->skipped()->create();
+
+    $service = new TunnelService(tokenFilePath: $tokenFile);
+
+    expect($service->start())->toBe('Tunnel setup was skipped. Complete tunnel setup to enable remote access.');
+    expect(file_exists($tokenFile))->toBeFalse();
+
+    // Cleanup
+    if (is_dir(dirname($tokenFile))) {
+        File::deleteDirectory(dirname($tokenFile));
+    }
+});
+
+it('reports configured but not running when tunnel is skipped', function () {
+    TunnelConfig::factory()->skipped()->create();
+
+    $service = new TunnelService(tokenFilePath: storage_path('app/test-tunnel-skip-status/token'));
+    $status = $service->getStatus();
+
+    expect($status['installed'])->toBeTrue()
+        ->and($status['running'])->toBeFalse()
+        ->and($status['configured'])->toBeTrue();
+});
+
+it('does not update ingress when tunnel is skipped', function () {
+    $mockCloudApi = Mockery::mock(CloudApiClient::class);
+
+    // Cloud API should NOT be called when tunnel is skipped
+    $mockCloudApi->shouldNotReceive('reconfigureTunnelIngress');
+
+    app()->instance(CloudApiClient::class, $mockCloudApi);
+
+    TunnelConfig::factory()->skipped()->create();
+
+    $service = new TunnelService;
+
+    // Should complete without calling the Cloud API
+    $service->updateIngress(['project' => 3000]);
+});
+
+it('reports not configured when config has status skipped but no skipped_at timestamp', function () {
+    // Edge case: status is 'skipped' but skipped_at is null (incomplete skip)
+    TunnelConfig::factory()->create([
+        'status' => 'skipped',
+        'skipped_at' => null,
+        'tunnel_token_encrypted' => null,
+    ]);
+
+    $service = new TunnelService(tokenFilePath: storage_path('app/test-tunnel-skip-edge/token'));
+
+    // isSkipped should return true based on status alone
+    expect($service->isSkipped())->toBeTrue()
+        ->and($service->hasCredentials())->toBeTrue();
+});
+
+it('returns correct status array when tunnel is skipped with token file existing', function () {
+    // Edge case: skipped config but token file exists from previous setup
+    $tokenFile = storage_path('app/test-tunnel-skip-existing/token');
+
+    // Clean up first
+    if (is_dir(dirname($tokenFile))) {
+        File::deleteDirectory(dirname($tokenFile));
+    }
+
+    @mkdir(dirname($tokenFile), 0755, true);
+    file_put_contents($tokenFile, 'old-token-value');
+
+    TunnelConfig::factory()->skipped()->create();
+
+    $service = new TunnelService(tokenFilePath: $tokenFile);
+    $status = $service->getStatus();
+
+    // Should report running=true (token file exists) but configured=true (skipped state)
+    expect($status['installed'])->toBeTrue()
+        ->and($status['running'])->toBeTrue()
+        ->and($status['configured'])->toBeTrue();
+
+    File::deleteDirectory(dirname($tokenFile));
+});
+
+it('cleanup marks status as error even when tunnel is already skipped', function () {
+    $tokenFile = storage_path('app/test-tunnel-cleanup-skip/token');
+
+    // Clean up first
+    if (is_dir(dirname($tokenFile))) {
+        File::deleteDirectory(dirname($tokenFile));
+    }
+
+    @mkdir(dirname($tokenFile), 0755, true);
+    file_put_contents($tokenFile, 'test-token-value');
+
+    TunnelConfig::factory()->skipped()->create();
+
+    $service = new TunnelService(tokenFilePath: $tokenFile);
+    $service->cleanup();
+
+    expect(file_get_contents($tokenFile))->toBe('')
+        ->and(TunnelConfig::current()->status)->toBe('error');
+
+    File::deleteDirectory(dirname($tokenFile));
+});

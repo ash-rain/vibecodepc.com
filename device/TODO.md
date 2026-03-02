@@ -62,7 +62,7 @@ Tests  critical areas
 [x] 2026-03-02 WizardFlowTest ? add test case: complete wizard while skipping tunnel step
 [x] 2026-03-02 TunnelManagerTest ? test skip button flow + later pairing from dashboard
 [x] 2026-03-02 ProjectDetailTest ? test local access hints when unpaired
-[ ]  TunnelServiceTest ? add cases for skipped state
+[x] 2026-03-02 TunnelServiceTest ? add cases for skipped state
 
 Polish & documentation
 [ ]  Update README.md ? explain local-only mode vs paired mode
