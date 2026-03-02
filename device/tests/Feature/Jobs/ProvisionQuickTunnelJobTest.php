@@ -173,3 +173,27 @@ it('retries URL capture when initial URL is null', function () {
     Http::assertSent(fn ($request) => str_contains($request->url(), '/tunnel/register')
         && $request['tunnel_url'] === $tunnelUrl);
 });
+
+it('returns early when tunnel is skipped', function () {
+    $uuid = 'test-device-uuid';
+
+    setupIdentityForJob($uuid);
+
+    TunnelConfig::factory()->skipped()->create();
+
+    $quickTunnelService = Mockery::mock(QuickTunnelService::class);
+    $quickTunnelService->shouldNotReceive('startForDashboard');
+
+    app()->instance(QuickTunnelService::class, $quickTunnelService);
+
+    Http::fake();
+
+    $job = new ProvisionQuickTunnelJob;
+    app()->call([$job, 'handle']);
+
+    // Should not try to start tunnel or make any cloud API calls
+    Http::assertNothingSent();
+
+    // But wizard progress should still be seeded
+    expect(\App\Models\WizardProgress::count())->toBeGreaterThan(0);
+});

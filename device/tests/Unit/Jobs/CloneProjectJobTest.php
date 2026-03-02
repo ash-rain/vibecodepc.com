@@ -50,3 +50,19 @@ it('sets status to Error on failure', function () {
     expect($project->fresh()->status)->toBe(ProjectStatus::Error);
     expect($project->logs()->where('type', 'error')->exists())->toBeTrue();
 });
+
+it('works independently of tunnel configuration', function () {
+    $project = Project::factory()->create([
+        'status' => ProjectStatus::Cloning,
+        'framework' => ProjectFramework::Custom,
+    ]);
+
+    // No tunnel config exists - job should still work
+    $mockService = Mockery::mock(ProjectCloneService::class);
+    $mockService->shouldReceive('runClone')
+        ->once()
+        ->with($project, 'https://github.com/user/repo.git');
+
+    $job = new CloneProjectJob($project, 'https://github.com/user/repo.git');
+    $job->handle($mockService);
+});

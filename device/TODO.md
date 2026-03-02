@@ -51,8 +51,10 @@ Backend model & service adjustments
 ? added shouldMakeApiCalls() helper to CloudApiClient
 ? updated all authenticated methods: sendHeartbeat, reconfigureTunnelIngress, reconfigureTunnel, registerTunnelUrl, provisionTunnel, fetchTrafficStats, getDeviceConfig
 ? updated tests: CloudApiClientHeartbeatTest, ProvisionQuickTunnelJobTest
-[ ]  Review ProvisionQuickTunnelJob & CloneProjectJob
-     ? make sure they tolerate missing tunnel config gracefully
+[x] 2026-03-02 Review ProvisionQuickTunnelJob & CloneProjectJob
+  ? ProvisionQuickTunnelJob: added early return check when tunnel is skipped
+  ? CloneProjectJob: already works independently of tunnel config
+  ? added tests: skipped tunnel handling, tunnel-independent operation
 
 Tests  critical areas
 [x] 2026-03-02  Dashboard\OverviewTest ? test unpaired state banner / reduced sidebar
