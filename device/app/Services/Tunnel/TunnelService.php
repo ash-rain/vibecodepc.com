@@ -29,13 +29,32 @@ class TunnelService
 
     /**
      * Check if a tunnel token has been provisioned via the wizard.
+     * Also returns true if the tunnel step was explicitly skipped by the user.
      */
     public function hasCredentials(): bool
     {
         $config = TunnelConfig::current();
 
-        return $config !== null
-            && ! empty($config->tunnel_token_encrypted);
+        if ($config === null) {
+            return false;
+        }
+
+        // User explicitly skipped tunnel setup - consider it "configured" for wizard purposes
+        if ($config->isSkipped()) {
+            return true;
+        }
+
+        return ! empty($config->tunnel_token_encrypted);
+    }
+
+    /**
+     * Check if the tunnel setup was explicitly skipped by the user.
+     */
+    public function isSkipped(): bool
+    {
+        $config = TunnelConfig::current();
+
+        return $config !== null && $config->isSkipped();
     }
 
     public function testConnectivity(string $subdomain): bool

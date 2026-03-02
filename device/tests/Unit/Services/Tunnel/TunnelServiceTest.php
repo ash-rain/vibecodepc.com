@@ -84,6 +84,36 @@ it('rejects credentials when tunnel token is empty string', function () {
     expect($service->hasCredentials())->toBeFalse();
 });
 
+it('accepts credentials when tunnel status is skipped', function () {
+    TunnelConfig::factory()->skipped()->create();
+
+    $service = new TunnelService(tokenFilePath: storage_path('app/test-tunnel/token'));
+
+    expect($service->hasCredentials())->toBeTrue();
+});
+
+it('returns true for isSkipped when tunnel is skipped', function () {
+    TunnelConfig::factory()->skipped()->create();
+
+    $service = new TunnelService(tokenFilePath: storage_path('app/test-tunnel/token'));
+
+    expect($service->isSkipped())->toBeTrue();
+});
+
+it('returns false for isSkipped when tunnel is not skipped', function () {
+    TunnelConfig::factory()->verified()->create();
+
+    $service = new TunnelService(tokenFilePath: storage_path('app/test-tunnel/token'));
+
+    expect($service->isSkipped())->toBeFalse();
+});
+
+it('returns false for isSkipped when no config exists', function () {
+    $service = new TunnelService(tokenFilePath: storage_path('app/test-tunnel/token'));
+
+    expect($service->isSkipped())->toBeFalse();
+});
+
 it('returns status array with configured key', function () {
     $tokenFile = storage_path('app/test-tunnel-status/token');
     @mkdir(dirname($tokenFile), 0755, true);

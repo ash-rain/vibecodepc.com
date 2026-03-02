@@ -44,8 +44,8 @@ Project & Code-server behavior when unpaired
 
 Backend model & service adjustments
 [x] 2026-03-02 TunnelConfig model - add nullable skipped_at timestamp (migration exists, model updated)
-[ ]  Update TunnelService::hasCredentials() ? also return true if status = 'skipped' ? (debate needed)
-[ ]  Add TunnelService::isSkipped() helper
+[x] 2026-03-02 Update TunnelService::hasCredentials() — return true if status = 'skipped' (enables wizard completion when tunnel is skipped)
+[x] 2026-03-02 Add TunnelService::isSkipped() helper — implemented with tests
 [ ]  Update CloudApiClient calls (heartbeat, reconfigureTunnelIngress, etc.)
      ? early return / no-op when tunnel is skipped/not configured
 [ ]  Review ProvisionQuickTunnelJob & CloneProjectJob

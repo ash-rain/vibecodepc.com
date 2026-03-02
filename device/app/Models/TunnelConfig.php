@@ -17,6 +17,7 @@ class TunnelConfig extends Model
         'tunnel_id',
         'status',
         'verified_at',
+        'skipped_at',
     ];
 
     protected function casts(): array
@@ -24,7 +25,13 @@ class TunnelConfig extends Model
         return [
             'tunnel_token_encrypted' => 'encrypted',
             'verified_at' => 'datetime',
+            'skipped_at' => 'datetime',
         ];
+    }
+
+    public function isSkipped(): bool
+    {
+        return $this->skipped_at !== null || $this->status === 'skipped';
     }
 
     public static function current(): ?self

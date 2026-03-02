@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Dashboard;
 
 use App\Models\Project;
+use App\Models\TunnelConfig;
 use App\Services\Docker\ProjectContainerService;
 use App\Services\Tunnel\TunnelService;
 use Illuminate\Support\Facades\File;
@@ -15,6 +16,8 @@ use Livewire\Component;
 class ProjectDetail extends Component
 {
     public Project $project;
+
+    public bool $isPaired = false;
 
     /** @var array<string, string> */
     public array $envVars = [];
@@ -37,6 +40,7 @@ class ProjectDetail extends Component
     public function mount(Project $project, ProjectContainerService $containerService): void
     {
         $this->project = $project;
+        $this->isPaired = TunnelConfig::current()?->verified_at !== null;
         $this->envVars = $project->env_vars ?? [];
 
         if ($project->isProvisioning()) {
