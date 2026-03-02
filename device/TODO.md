@@ -25,9 +25,9 @@ Dashboard / UI visibility & guards
      - added isPaired property to Overview component
      - show prominent "Device not paired  limited to local network" banner / alert when !TunnelConfig::current()?->verified_at
      - HealthBar component displays system metrics only, no pairing status needed
-[ ]  Add conditional rendering in sidebar / top-bar
-     ? hide or disable "Public URL", "Share", "Remote Access" items when not paired
-     ? show "Set up remote access" call-to-action button instead
+[x] 2026-03-02  Add conditional rendering in sidebar / top-bar
+     - hide Tunnels and Cloud Dashboard when not paired
+     - show "Set up remote access" CTA button when not paired
 [ ]  Update TunnelManager Livewire component
      ? already has pairing logic ? make it reachable from dashboard sidebar even after wizard is complete
      ? add "Pair now" / "Set up Cloudflare Tunnel" CTA when not configured

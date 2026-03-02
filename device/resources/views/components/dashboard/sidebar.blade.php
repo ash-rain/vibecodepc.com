@@ -12,6 +12,23 @@
         <span class="font-bold text-lg text-white">VibeCodePC</span>
     </div>
 
+    {{-- Remote access CTA when not paired --}}
+    @php
+        $isPaired = \App\Models\TunnelConfig::current()?->verified_at !== null;
+    @endphp
+    @if (!$isPaired)
+        <div class="px-3 pt-4">
+            <a href="{{ route('dashboard.tunnels') }}" class="block w-full px-4 py-3 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-lg text-emerald-400 text-sm font-medium text-center transition-colors">
+                <div class="flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Set up remote access
+                </div>
+            </a>
+        </div>
+    @endif
+
     {{-- Navigation --}}
     <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         <x-dashboard.nav-item route="dashboard" label="Overview" :exact="true"
@@ -30,17 +47,21 @@
             icon='<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>'
         />
 
-        <x-dashboard.nav-item route="dashboard.tunnels" label="Tunnels"
-            icon='<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>'
-        />
+        @if ($isPaired)
+            <x-dashboard.nav-item route="dashboard.tunnels" label="Tunnels"
+                icon='<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>'
+            />
+        @endif
 
         <x-dashboard.nav-item route="dashboard.containers" label="Containers"
             icon='<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>'
         />
 
-        <x-dashboard.nav-item :href="config('vibecodepc.cloud_browser_url') . '/dashboard'" label="Cloud Dashboard" :external="true"
-            icon='<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" /></svg>'
-        />
+        @if ($isPaired)
+            <x-dashboard.nav-item :href="config('vibecodepc.cloud_browser_url') . '/dashboard'" label="Cloud Dashboard" :external="true"
+                icon='<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" /></svg>'
+            />
+        @endif
 
         <div class="pt-4 mt-4 border-t border-white/[0.06]">
             <x-dashboard.nav-item route="dashboard.settings" label="Settings"
