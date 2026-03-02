@@ -60,6 +60,25 @@ class TunnelService
         return $config !== null && $config->isSkipped();
     }
 
+    /**
+     * Check if tunnel was skipped but token file now exists (auto-detected).
+     */
+    public function wasSkippedButNowAvailable(): bool
+    {
+        $config = TunnelConfig::current();
+
+        return $config !== null && $config->isAvailableAfterSkip();
+    }
+
+    /**
+     * Check if tunnel is effectively configured and ready to use.
+     * Returns true if credentials exist OR if tunnel was skipped but token is now available.
+     */
+    public function isEffectivelyConfigured(): bool
+    {
+        return $this->hasCredentials() || $this->wasSkippedButNowAvailable();
+    }
+
     public function testConnectivity(string $subdomain): bool
     {
         $url = sprintf('https://%s.%s', $subdomain, config('vibecodepc.cloud_domain'));

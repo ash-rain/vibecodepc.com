@@ -1,6 +1,35 @@
-<div class="space-y-6">
-    {{-- Not Paired Banner --}}
-    @if (!$isPaired)
+<div class="space-y-6"
+    @if (!$isPaired && !$tunnelAvailable)
+        wire:poll.30s="poll"
+    @endif>
+
+{{-- Tunnel Auto-Detected Banner --}}
+@if ($tunnelAvailable && !$isPaired)
+<div class="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-5">
+    <div class="flex items-start gap-4">
+        <div class="shrink-0 w-10 h-10 bg-emerald-500/20 rounded-full flex items-center justify-center">
+            <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        </div>
+        <div class="flex-1">
+            <h3 class="text-emerald-400 font-semibold">Tunnel detected!</h3>
+            <p class="text-emerald-200/70 text-sm mt-1">
+                Your device tunnel token was detected. Remote access is now available. Complete pairing to access cloud features.
+            </p>
+            <a href="{{ route('dashboard.tunnels') }}" class="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-medium text-sm rounded-xl transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                </svg>
+                Complete Pairing
+            </a>
+        </div>
+    </div>
+</div>
+@endif
+
+{{-- Not Paired Banner --}}
+@if (!$isPaired && !$tunnelAvailable)
         <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-5">
             <div class="flex items-start gap-4">
                 <div class="shrink-0 w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center">
@@ -25,7 +54,7 @@
 @endif
 
 {{-- Pair Device Card --}}
-@if (!$isPaired)
+@if (!$isPaired && !$tunnelAvailable)
 <div class="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/30 rounded-2xl p-6">
 <div class="flex items-start gap-5">
 <div class="w-14 h-14 rounded-2xl bg-indigo-500/20 flex items-center justify-center shrink-0">
@@ -80,14 +109,16 @@ Pair Device Now
             <div class="text-2xl font-bold text-green-400 mt-1">{{ $runningCount }}</div>
         </div>
 
-        {{-- Tunnel --}}
-        <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-5">
-            <div class="text-gray-500 text-sm">Tunnel</div>
-            <div class="mt-1">
-                @if ($tunnelRunning)
-                    <span class="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">Online</span>
-                @else
-                    <span class="text-xs bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full">Offline</span>
+{{-- Tunnel --}}
+<div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-5">
+<div class="text-gray-500 text-sm">Tunnel</div>
+<div class="mt-1">
+@if ($tunnelRunning)
+<span class="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">Online</span>
+@elseif ($tunnelAvailable && !$isPaired)
+<span class="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">Available</span>
+@else
+<span class="text-xs bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full">Offline</span>
                 @endif
             </div>
         </div>

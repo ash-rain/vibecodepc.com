@@ -389,3 +389,78 @@ it('cleanup marks status as error even when tunnel is already skipped', function
 
     File::deleteDirectory(dirname($tokenFile));
 });
+
+// Auto-detection tests
+it('detects when tunnel was skipped but now has token file', function () {
+    $tokenFile = storage_path('app/test-tunnel-skip-available/token');
+
+    // Clean up first
+    if (is_dir(dirname($tokenFile))) {
+        File::deleteDirectory(dirname($tokenFile));
+    }
+
+    @mkdir(dirname($tokenFile), 0755, true);
+    file_put_contents($tokenFile, 'available-token');
+
+    TunnelConfig::factory()->available()->create();
+
+    $service = new TunnelService(tokenFilePath: $tokenFile);
+
+    expect($service->wasSkippedButNowAvailable())->toBeTrue()
+        ->and($service->isEffectivelyConfigured())->toBeTrue();
+
+    File::deleteDirectory(dirname($tokenFile));
+});
+
+it('returns false for wasSkippedButNowAvailable when tunnel is verified', function () {
+    TunnelConfig::factory()->verified()->create();
+
+    $service = new TunnelService(tokenFilePath: storage_path('app/test-tunnel/token'));
+
+    expect($service->wasSkippedButNowAvailable())->toBeFalse()
+        ->and($service->isEffectivelyConfigured())->toBeTrue();
+});
+
+it('returns false for wasSkippedButNowAvailable when tunnel is pending', function () {
+    TunnelConfig::factory()->create(['status' => 'pending']);
+
+    $service = new TunnelService(tokenFilePath: storage_path('app/test-tunnel/token'));
+
+    expect($service->wasSkippedButNowAvailable())->toBeFalse()
+        ->and($service->isEffectivelyConfigured())->toBeFalse();
+});
+
+it('returns false for wasSkippedButNowAvailable when no config exists', function () {
+    $service = new TunnelService(tokenFilePath: storage_path('app/test-tunnel/token'));
+
+    expect($service->wasSkippedButNowAvailable())->toBeFalse()
+        ->and($service->isEffectivelyConfigured())->toBeFalse();
+});
+
+it('isEffectivelyConfigured returns true when tunnel has credentials', function () {
+    TunnelConfig::factory()->verified()->create();
+
+    $service = new TunnelService(tokenFilePath: storage_path('app/test-tunnel/token'));
+
+    expect($service->isEffectivelyConfigured())->toBeTrue();
+});
+
+it('isEffectivelyConfigured returns true when tunnel was skipped but now available', function () {
+    $tokenFile = storage_path('app/test-tunnel-eff-conf/token');
+
+    // Clean up first
+    if (is_dir(dirname($tokenFile))) {
+        File::deleteDirectory(dirname($tokenFile));
+    }
+
+    @mkdir(dirname($tokenFile), 0755, true);
+    file_put_contents($tokenFile, 'token');
+
+    TunnelConfig::factory()->available()->create();
+
+    $service = new TunnelService(tokenFilePath: $tokenFile);
+
+    expect($service->isEffectivelyConfigured())->toBeTrue();
+
+    File::deleteDirectory(dirname($tokenFile));
+});

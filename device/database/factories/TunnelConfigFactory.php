@@ -46,4 +46,26 @@ class TunnelConfigFactory extends Factory
             'skipped_at' => now(),
         ]);
     }
+
+    public function active(): static
+    {
+        return $this->state(fn () => [
+            'status' => 'active',
+            'tunnel_token_encrypted' => fake()->sha256(),
+            'tunnel_id' => fake()->uuid(),
+            'verified_at' => null,
+            'skipped_at' => null,
+        ]);
+    }
+
+    public function available(): static
+    {
+        return $this->state(fn () => [
+            'status' => 'available',
+            'tunnel_token_encrypted' => null,
+            'tunnel_id' => null,
+            'verified_at' => null,
+            'skipped_at' => null,
+        ]);
+    }
 }

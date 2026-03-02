@@ -34,6 +34,26 @@ class TunnelConfig extends Model
         return $this->skipped_at !== null || $this->status === 'skipped';
     }
 
+    /**
+     * Mark the tunnel as available when token file appears after being skipped.
+     * This updates the status from 'skipped' to 'available'.
+     */
+    public function markAsAvailable(): void
+    {
+        $this->update([
+            'status' => 'available',
+            'skipped_at' => null,
+        ]);
+    }
+
+    /**
+     * Check if the tunnel was skipped but is now available (token detected).
+     */
+    public function isAvailableAfterSkip(): bool
+    {
+        return $this->status === 'available' && $this->verified_at === null;
+    }
+
     public static function current(): ?self
     {
         return static::latest()->first();

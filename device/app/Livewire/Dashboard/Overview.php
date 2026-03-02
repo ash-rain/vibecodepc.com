@@ -29,6 +29,8 @@ class Overview extends Component
 
     public bool $isPaired = false;
 
+    public bool $tunnelAvailable = false;
+
     public int $aiProviderCount = 0;
 
     public bool $hasCopilot = false;
@@ -38,6 +40,26 @@ class Overview extends Component
 
     public function mount(TunnelService $tunnelService): void
     {
+        $this->refreshStatus($tunnelService);
+    }
+
+    /**
+     * Poll for tunnel status updates when tunnel was skipped.
+     * This allows the UI to auto-refresh when tunnel becomes available.
+     */
+    public function poll(TunnelService $tunnelService): void
+    {
+        $wasAvailable = $this->tunnelAvailable;
+        $this->refreshStatus($tunnelService);
+
+        // If tunnel just became available, dispatch a browser event
+        if (! $wasAvailable && $this->tunnelAvailable) {
+            $this->dispatch('tunnel-available');
+        }
+    }
+
+    private function refreshStatus(TunnelService $tunnelService): void
+    {
         $credential = CloudCredential::current();
         $this->username = $credential?->cloud_username ?? 'User';
 
@@ -45,6 +67,8 @@ class Overview extends Component
         $this->runningCount = Project::running()->count();
         $this->tunnelRunning = $tunnelService->isRunning();
         $this->isPaired = TunnelConfig::current()?->verified_at !== null;
+        // tunnelAvailable is true only when tunnel was skipped but token file now exists
+        $this->tunnelAvailable = $tunnelService->wasSkippedButNowAvailable();
         $this->aiProviderCount = AiProviderConfig::whereNotNull('validated_at')->count();
         $this->hasCopilot = GitHubCredential::current()?->hasCopilot() ?? false;
 

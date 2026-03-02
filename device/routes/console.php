@@ -22,6 +22,12 @@ Schedule::command('device:poll-pairing')
     ->withoutOverlapping()
     ->name('device-pairing-poll');
 
+// Poll for tunnel token file appearance when tunnel was skipped
+Schedule::command('device:poll-tunnel-status')
+    ->everyMinute()
+    ->withoutOverlapping()
+    ->name('device-tunnel-status-poll');
+
 Schedule::call(function () {
     $credential = CloudCredential::current();
 
