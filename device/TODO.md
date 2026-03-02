@@ -35,8 +35,8 @@ Dashboard / UI visibility & guards
 Project & Code-server behavior when unpaired
 [x] 2026-03-02  Review ProjectContainerService & CodeServerService
      ✓ confirmed - both services work independently of tunnel/pairing
-[ ]  In CodeEditor Livewire component
-     ? if not paired ? show smaller warning "Code Server is only available on local network (http://localhost:8443 or similar)"
+[x] 2026-03-02  In CodeEditor Livewire component
+     - if not paired ? show smaller warning "Code Server is only available on local network (http://localhost:8443 or similar)"
 [ ]  Add local access hint in ProjectDetail / CodeEditor
      ? "Open in browser: http://raspberrypi.local:{{ $project->port }}" or similar
 
@@ -51,9 +51,10 @@ Backend model & service adjustments
 
 Tests  critical areas
 [x] 2026-03-02  Dashboard\OverviewTest ? test unpaired state banner / reduced sidebar
+[x] 2026-03-02  CodeEditorTest ? test local access warning when unpaired
 [ ]  WizardFlowTest ? add test case: complete wizard while skipping tunnel step
 [ ]  TunnelManagerTest ? test skip button flow + later pairing from dashboard
-[ ]  ProjectDetailTest & CodeEditorTest ? test local access hints when unpaired
+[ ]  ProjectDetailTest ? test local access hints when unpaired
 [ ]  TunnelServiceTest ? add cases for skipped state
 
 Polish & documentation

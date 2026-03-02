@@ -110,3 +110,18 @@ it('can restart the editor', function () {
         ->assertSet('isRunning', true)
         ->assertSet('error', '');
 });
+
+it('shows local network warning when not paired', function () {
+    $mock = Mockery::mock(CodeServerService::class);
+    $mock->shouldReceive('isInstalled')->andReturn(true);
+    $mock->shouldReceive('isRunning')->andReturn(true);
+    $mock->shouldReceive('getVersion')->andReturn('4.23.1');
+    $mock->shouldReceive('getUrl')->andReturn('http://localhost:8443');
+    $mock->shouldReceive('listExtensions')->andReturn([]);
+    app()->instance(CodeServerService::class, $mock);
+
+    Livewire::test(CodeEditor::class)
+        ->assertSet('isPaired', false)
+        ->assertSee('Local network only')
+        ->assertSee('http://localhost:8443');
+});
