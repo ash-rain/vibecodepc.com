@@ -28,9 +28,9 @@ Dashboard / UI visibility & guards
 [x] 2026-03-02  Add conditional rendering in sidebar / top-bar
      - hide Tunnels and Cloud Dashboard when not paired
      - show "Set up remote access" CTA button when not paired
-[ ]  Update TunnelManager Livewire component
-     ? already has pairing logic ? make it reachable from dashboard sidebar even after wizard is complete
-     ? add "Pair now" / "Set up Cloudflare Tunnel" CTA when not configured
+[x] 2026-03-02  Update TunnelManager Livewire component
+     - made Tunnels nav item always visible in sidebar (not just when paired)
+     - added prominent "Set up Cloudflare Tunnel" CTA card when not configured
 
 Project & Code-server behavior when unpaired
 [ ]  Review ProjectContainerService & CodeServerService
