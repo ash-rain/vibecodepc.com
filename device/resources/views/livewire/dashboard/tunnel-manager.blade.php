@@ -1,3 +1,7 @@
+{{--
+    Temporary: pairing is optional. Full remote access requires pairing.
+--}}
+
 <div class="space-y-6">
     {{-- Header --}}
     <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6">
@@ -48,54 +52,87 @@
 
         {{-- Setup form (only when not configured) --}}
         @if (!$subdomain)
-            <div class="mt-4 space-y-3">
-                <p class="text-gray-400 text-sm">Set up a subdomain to expose your device to the internet.</p>
-
-                <div class="flex items-center gap-2">
-                    <div @class([
-                        'flex-1 flex items-center bg-white/[0.04] border rounded-lg overflow-hidden focus-within:ring-1 transition-colors',
-                        'border-white/[0.08] focus-within:border-emerald-500/50 focus-within:ring-emerald-500/30' => !$errors->has('newSubdomain'),
-                        'border-red-500/50 focus-within:border-red-500/50 focus-within:ring-red-500/30' => $errors->has('newSubdomain'),
-                    ])>
-                        <input type="text" wire:model="newSubdomain" placeholder="my-device"
-                            wire:keydown.enter="{{ $subdomainAvailable ? 'provisionTunnel' : 'checkAvailability' }}"
-                            class="flex-1 bg-transparent px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none">
-                        <span class="text-gray-500 pr-3 text-xs whitespace-nowrap">.{{ config('vibecodepc.cloud_domain') }}</span>
+            <div class="mt-4">
+                {{-- Prominent CTA Card --}}
+                <div class="bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border border-emerald-500/30 rounded-xl p-6 mb-4">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center shrink-0">
+                            <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-white font-semibold mb-1">Enable Remote Access</h3>
+                            <p class="text-gray-400 text-sm mb-4">Set up a Cloudflare Tunnel to access your device from anywhere in the world. You'll get a custom subdomain like <span class="text-emerald-400 font-mono">your-device.{{ config('vibecodepc.cloud_domain') }}</span></p>
+                            <div class="flex items-center gap-3">
+                                <button wire:click="checkAvailability" wire:loading.attr="disabled"
+                                    wire:target="checkAvailability"
+                                    class="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-gray-950 text-sm font-medium rounded-lg transition-colors">
+                                    <span wire:loading.remove wire:target="checkAvailability">Set up Cloudflare Tunnel</span>
+                                    <span wire:loading wire:target="checkAvailability">Checking...</span>
+                                </button>
+                                <span class="text-gray-500 text-xs">Free &bull; No credit card</span>
+                            </div>
+                        </div>
                     </div>
-
-                    @if ($subdomainAvailable)
-                        <button wire:click="provisionTunnel" wire:loading.attr="disabled"
-                            wire:target="provisionTunnel, checkAvailability"
-                            class="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 disabled:opacity-50 text-emerald-400 text-sm font-medium rounded-lg transition-colors whitespace-nowrap">
-                            <span wire:loading.remove wire:target="provisionTunnel">Setup Tunnel</span>
-                            <span wire:loading wire:target="provisionTunnel">Setting up...</span>
-                        </button>
-                    @else
-                        <button wire:click="checkAvailability" wire:loading.attr="disabled"
-                            wire:target="checkAvailability"
-                            class="px-4 py-2 bg-white/[0.06] hover:bg-white/10 disabled:opacity-50 text-white text-sm rounded-lg transition-colors whitespace-nowrap">
-                            <span wire:loading.remove wire:target="checkAvailability">Check</span>
-                            <span wire:loading wire:target="checkAvailability">Checking...</span>
-                        </button>
-                    @endif
                 </div>
 
-                @if ($newSubdomain)
-                    <a href="https://{{ $newSubdomain }}.{{ config('vibecodepc.cloud_domain') }}" target="_blank"
-                        class="text-xs text-gray-300 font-mono hover:underline block">https://{{ $newSubdomain }}.{{ config('vibecodepc.cloud_domain') }}</a>
-                @endif
+                {{-- Inline form (collapsible) --}}
+                <details class="group">
+                    <summary class="text-gray-500 text-sm cursor-pointer hover:text-gray-400 transition-colors flex items-center gap-1">
+                        <svg class="w-4 h-4 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                        Or enter a custom subdomain
+                    </summary>
+                    <div class="mt-3 space-y-3 pt-3 border-t border-white/[0.06]">
+                        <div class="flex items-center gap-2">
+                            <div @class([
+                                'flex-1 flex items-center bg-white/[0.04] border rounded-lg overflow-hidden focus-within:ring-1 transition-colors',
+                                'border-white/[0.08] focus-within:border-emerald-500/50 focus-within:ring-emerald-500/30' => !$errors->has('newSubdomain'),
+                                'border-red-500/50 focus-within:border-red-500/50 focus-within:ring-red-500/30' => $errors->has('newSubdomain'),
+                            ])>
+                                <input type="text" wire:model="newSubdomain" placeholder="my-device"
+                                    wire:keydown.enter="{{ $subdomainAvailable ? 'provisionTunnel' : 'checkAvailability' }}"
+                                    class="flex-1 bg-transparent px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none">
+                                <span class="text-gray-500 pr-3 text-xs whitespace-nowrap">.{{ config('vibecodepc.cloud_domain') }}</span>
+                            </div>
 
-                @error('newSubdomain')
-                    <p class="text-red-400 text-xs">{{ $message }}</p>
-                @enderror
+                            @if ($subdomainAvailable)
+                                <button wire:click="provisionTunnel" wire:loading.attr="disabled"
+                                    wire:target="provisionTunnel, checkAvailability"
+                                    class="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 disabled:opacity-50 text-emerald-400 text-sm font-medium rounded-lg transition-colors whitespace-nowrap">
+                                    <span wire:loading.remove wire:target="provisionTunnel">Setup Tunnel</span>
+                                    <span wire:loading wire:target="provisionTunnel">Setting up...</span>
+                                </button>
+                            @else
+                                <button wire:click="checkAvailability" wire:loading.attr="disabled"
+                                    wire:target="checkAvailability"
+                                    class="px-4 py-2 bg-white/[0.06] hover:bg-white/10 disabled:opacity-50 text-white text-sm rounded-lg transition-colors whitespace-nowrap">
+                                    <span wire:loading.remove wire:target="checkAvailability">Check</span>
+                                    <span wire:loading wire:target="checkAvailability">Checking...</span>
+                                </button>
+                            @endif
+                        </div>
 
-                @if ($provisionStatus)
-                    <p @class([
-                        'text-xs',
-                        'text-emerald-400' => $subdomainAvailable,
-                        'text-amber-400' => !$subdomainAvailable,
-                    ])>{{ $provisionStatus }}</p>
-                @endif
+                        @if ($newSubdomain)
+                            <a href="https://{{ $newSubdomain }}.{{ config('vibecodepc.cloud_domain') }}" target="_blank"
+                                class="text-xs text-gray-300 font-mono hover:underline block">https://{{ $newSubdomain }}.{{ config('vibecodepc.cloud_domain') }}</a>
+                        @endif
+
+                        @error('newSubdomain')
+                            <p class="text-red-400 text-xs">{{ $message }}</p>
+                        @enderror
+
+                        @if ($provisionStatus)
+                            <p @class([
+                                'text-xs',
+                                'text-emerald-400' => $subdomainAvailable,
+                                'text-amber-400' => !$subdomainAvailable,
+                            ])>{{ $provisionStatus }}</p>
+                        @endif
+                    </div>
+                </details>
             </div>
         @endif
     </div>

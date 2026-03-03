@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Dashboard;
 
 use App\Models\GitHubCredential;
+use App\Models\TunnelConfig;
 use App\Services\CodeServer\CodeServerService;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -21,6 +22,8 @@ class CodeEditor extends Component
     public ?string $version = null;
 
     public bool $hasCopilot = false;
+
+    public bool $isPaired = false;
 
     public string $error = '';
 
@@ -44,6 +47,8 @@ class CodeEditor extends Component
 
         $github = GitHubCredential::current();
         $this->hasCopilot = $github?->hasCopilot() ?? false;
+
+        $this->isPaired = TunnelConfig::current()?->verified_at !== null;
 
         $this->loadExtensions($codeServerService);
     }

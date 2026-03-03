@@ -77,3 +77,34 @@ Key variables in `.env` (see `.env.example` for the full list):
 | `CLOUDFLARED_CONFIG` | `/etc/cloudflared/config.yml` | Cloudflare tunnel config path |
 
 > On the actual Raspberry Pi, `VIBECODEPC_DEVICE_JSON` defaults to `storage/device.json`.
+
+## Device Modes
+
+VibeCodePC supports two operational modes:
+
+### Local-Only Mode (Unpaired)
+
+When you skip the Cloudflare Tunnel setup during the first-run wizard, your device operates in **local-only mode**:
+
+- **Access**: Dashboard and code-server are only available on your local network
+- **URLs**: Access via `http://raspberrypi.local:8000` (dashboard) and `http://raspberrypi.local:8443` (code-server)
+- **Features**: All core features work locally—project creation, code editing, and container management
+- **Limitations**: No remote access from outside your network, no cloud dashboard features
+- **Upgrade**: You can pair the device later from Settings → Cloudflare Tunnel
+
+### Paired Mode (Remote Access)
+
+When you complete the Cloudflare Tunnel setup, your device operates in **paired mode**:
+
+- **Access**: Full remote access via the cloud dashboard at `https://vibecodepc.com`
+- **Tunnel**: Secure Cloudflare tunnel provides encrypted access from anywhere
+- **Features**: Remote code editing, project management, and device monitoring
+- **Requirements**: Internet connection and Cloudflare account
+
+### Switching Between Modes
+
+| Action | How To |
+|--------|--------|
+| Skip pairing during setup | Click "Skip for now — use locally" in the tunnel setup step |
+| Pair later | Go to Settings → Cloudflare Tunnel → "Set up remote access" |
+| Check current mode | Dashboard shows "Device not paired" banner when in local-only mode |

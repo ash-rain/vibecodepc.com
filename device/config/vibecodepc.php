@@ -6,6 +6,10 @@ return [
     'cloud_domain' => parse_url(env('VIBECODEPC_CLOUD_BROWSER_URL', env('VIBECODEPC_CLOUD_URL', 'https://vibecodepc.com')), PHP_URL_HOST),
     'device_json_path' => env('VIBECODEPC_DEVICE_JSON', storage_path('device.json')),
 
+    'pairing' => [
+        'required' => env('VIBECODEPC_PAIRING_REQUIRED', false),
+    ],
+
     'code_server' => [
         'port' => env('CODE_SERVER_PORT') ? (int) env('CODE_SERVER_PORT') : null,
         'config_path' => env('CODE_SERVER_CONFIG', ($_SERVER['HOME'] ?? '/home/vibecodepc').'/.config/code-server/config.yaml'),

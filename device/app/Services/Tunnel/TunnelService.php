@@ -10,6 +10,9 @@ use App\Services\DeviceRegistry\DeviceIdentityService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 
+/**
+ * Temporary: pairing is optional. Full remote access requires pairing.
+ */
 class TunnelService
 {
     public function __construct(
@@ -29,13 +32,51 @@ class TunnelService
 
     /**
      * Check if a tunnel token has been provisioned via the wizard.
+     * Also returns true if the tunnel step was explicitly skipped by the user.
      */
     public function hasCredentials(): bool
     {
         $config = TunnelConfig::current();
 
-        return $config !== null
-            && ! empty($config->tunnel_token_encrypted);
+        if ($config === null) {
+            return false;
+        }
+
+        // User explicitly skipped tunnel setup - consider it "configured" for wizard purposes
+        if ($config->isSkipped()) {
+            return true;
+        }
+
+        return ! empty($config->tunnel_token_encrypted);
+    }
+
+    /**
+     * Check if the tunnel setup was explicitly skipped by the user.
+     */
+    public function isSkipped(): bool
+    {
+        $config = TunnelConfig::current();
+
+        return $config !== null && $config->isSkipped();
+    }
+
+    /**
+     * Check if tunnel was skipped but token file now exists (auto-detected).
+     */
+    public function wasSkippedButNowAvailable(): bool
+    {
+        $config = TunnelConfig::current();
+
+        return $config !== null && $config->isAvailableAfterSkip();
+    }
+
+    /**
+     * Check if tunnel is effectively configured and ready to use.
+     * Returns true if credentials exist OR if tunnel was skipped but token is now available.
+     */
+    public function isEffectivelyConfigured(): bool
+    {
+        return $this->hasCredentials() || $this->wasSkippedButNowAvailable();
     }
 
     public function testConnectivity(string $subdomain): bool
@@ -76,6 +117,10 @@ class TunnelService
     {
         if (! $this->hasCredentials()) {
             return 'Tunnel is not configured. Complete the setup wizard to provision tunnel credentials.';
+        }
+
+        if ($this->isSkipped()) {
+            return 'Tunnel setup was skipped. Complete tunnel setup to enable remote access.';
         }
 
         $token = TunnelConfig::current()->tunnel_token_encrypted;
@@ -121,6 +166,12 @@ class TunnelService
      */
     public function updateIngress(array $routes): void
     {
+        if ($this->isSkipped()) {
+            Log::info('Skipping ingress update: tunnel setup was skipped');
+
+            return;
+        }
+
         $ingress = [];
 
         foreach ($routes as $path => $port) {

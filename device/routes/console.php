@@ -22,6 +22,12 @@ Schedule::command('device:poll-pairing')
     ->withoutOverlapping()
     ->name('device-pairing-poll');
 
+// Poll for tunnel token file appearance when tunnel was skipped
+Schedule::command('device:poll-tunnel-status')
+    ->everyMinute()
+    ->withoutOverlapping()
+    ->name('device-tunnel-status-poll');
+
 Schedule::call(function () {
     $credential = CloudCredential::current();
 
@@ -59,6 +65,10 @@ Schedule::call(function () {
             'started_at' => $qt->started_at?->toIso8601String(),
         ])->all();
     }
+
+    // Include analytics events data
+    $analytics = app(AnalyticsService::class);
+    $metrics['analytics'] = $analytics->getAggregatedData();
 
     app(CloudApiClient::class)->sendHeartbeat($deviceId, $metrics);
 

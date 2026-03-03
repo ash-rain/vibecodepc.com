@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Jobs;
 
 use App\Models\QuickTunnel;
+use App\Models\TunnelConfig;
 use App\Services\CloudApiClient;
 use App\Services\DeviceRegistry\DeviceIdentityService;
 use App\Services\Tunnel\QuickTunnelService;
@@ -31,6 +32,15 @@ class ProvisionQuickTunnelJob implements ShouldBeUnique, ShouldQueue
         CloudApiClient $client,
         DeviceIdentityService $identity,
     ): void {
+        // Skip if tunnel was explicitly skipped by user
+        $tunnelConfig = TunnelConfig::current();
+        if ($tunnelConfig?->isSkipped()) {
+            Log::info('Skipping quick tunnel provisioning: tunnel setup was skipped');
+            $progressService->seedProgress();
+
+            return;
+        }
+
         $url = null;
 
         try {

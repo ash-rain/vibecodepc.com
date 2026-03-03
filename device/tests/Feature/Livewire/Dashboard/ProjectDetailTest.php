@@ -90,3 +90,20 @@ it('can open the editor', function () {
         ->call('openInEditor')
         ->assertRedirect(route('dashboard.code-editor', ['folder' => $project->path]));
 });
+
+it('shows local network access hint when not paired and project is running', function () {
+    $project = Project::factory()->running()->create(['port' => 3000]);
+
+    Livewire::test(ProjectDetail::class, ['project' => $project])
+        ->assertSet('isPaired', false)
+        ->assertSee('Local network only')
+        ->assertSee('http://localhost:3000');
+});
+
+it('does not show local network hint when project is not running', function () {
+    $project = Project::factory()->stopped()->create(['port' => 3000]);
+
+    Livewire::test(ProjectDetail::class, ['project' => $project])
+        ->assertSet('isPaired', false)
+        ->assertDontSee('Local network only');
+});
