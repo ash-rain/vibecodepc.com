@@ -7,8 +7,14 @@
 [x] 2026-03-03 Manually write fake token file before "Running" assertions ? File::put(storage_path('app/cloudflared/token'), 'fake-token')  
 [x] 2026-03-03 Mock TunnelService::isRunning() / start() in relevant tests to return true or specific error  
 [x] 2026-03-03 Add ->dump() / ->dumpState() right before every failing assertSee / assertSet  
-[ ] Run isolated: php artisan test --filter TunnelManagerTest --debug (compare local vs CI output)  
-[ ] Check CI logs for: permission denied, storage path mismatch, job queue not running, real HTTP calls  
+[x] 2026-03-03 Run isolated: php artisan test --filter TunnelManagerTest --debug (compare local vs CI output)  
+[x] 2026-03-03 Check CI logs for: permission denied, storage path mismatch, job queue not running, real HTTP calls
+  - Found: Real HTTP calls to Cloud API (401 errors, Connection refused)
+  - Found: Docker permission denied on /var/run/docker.sock
+  - Root cause: CloudApiClientFake has empty constructor, doesn't init parent $cloudUrl
+  - Some tests make real HTTP calls instead of using fake
+  - Queue is sync (correct) - no job queue issues
+  - Storage paths working - token file created/truncated correctly  
 [ ] Try RefreshDatabase + Storage::fake('local') to eliminate file-system differences  
 [ ] After each fix: push & re-run CI ? verify which test(s) turn green  
 [ ] Once all 5 pass: squash + merge + delete failing assertions that were too brittle  
