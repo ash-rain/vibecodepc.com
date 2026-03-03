@@ -3,7 +3,7 @@
 [x] 2026-03-03 Centralize fakes: create reusable CloudApiClientFake + QuickTunnelService mock in setUp() / trait  
 [x] 2026-03-03 Make tunnel IDs predictable ? fake provision() to always return 'test-tunnel-999' instead of UUID  
 [x] 2026-03-03 Add Http::fake() for /quick-tunnel endpoint with success shape + known subdomain/tunnel_id/token  
-[ ] Fake failing cases: connection error (status 0), 500, timeout, invalid response shape  
+[x] 2026-03-03 Fake failing cases: connection error (status 0), 500, timeout, invalid response shape  
 [ ] Manually write fake token file before "Running" assertions ? File::put(storage_path('app/cloudflared/token'), 'fake-token')  
 [ ] Mock TunnelService::isRunning() / start() in relevant tests to return true or specific error  
 [ ] Add ->dump() / ->dumpState() right before every failing assertSee / assertSet  

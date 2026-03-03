@@ -202,12 +202,14 @@ trait HasTunnelFakes
     }
 
     /**
-     * Configure Http fake for connection error (status 0).
+     * Configure Http fake for connection error.
      */
     protected function configureHttpConnectionError(): void
     {
         Http::fake([
-            '*' => Http::response(null, 0),
+            '*' => function () {
+                throw new \Illuminate\Http\Client\ConnectionException('Connection refused');
+            },
         ]);
     }
 

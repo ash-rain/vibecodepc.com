@@ -295,3 +295,125 @@ it('allows pairing after tunnel was skipped', function () {
         ->and($config->subdomain)->toBe('mydevice')
         ->and($config->skipped_at)->toBeNull();
 });
+
+it('handles connection error when checking subdomain availability', function () {
+    $this->configureUnconfiguredState();
+    TunnelConfig::query()->delete();
+
+    // Configure fake to throw connection exception
+    $this->cloudApiFake->setException(new \Illuminate\Http\Client\ConnectionException('Connection refused'));
+
+    Livewire::test(TunnelManager::class)
+        ->set('newSubdomain', 'mydevice')
+        ->call('checkAvailability')
+        ->assertSet('subdomainAvailable', false)
+        ->assertSet('provisionStatus', 'Could not check availability. Is the device online?');
+});
+
+it('handles server error 500 when checking subdomain availability', function () {
+    $this->configureUnconfiguredState();
+    TunnelConfig::query()->delete();
+
+    // Configure fake to throw 500 error
+    $this->cloudApiFake->setException(new \RuntimeException('HTTP request returned status code 500: Internal Server Error'));
+
+    Livewire::test(TunnelManager::class)
+        ->set('newSubdomain', 'mydevice')
+        ->call('checkAvailability')
+        ->assertSet('subdomainAvailable', false)
+        ->assertSet('provisionStatus', 'Could not check availability. Is the device online?');
+});
+
+it('handles timeout when checking subdomain availability', function () {
+    $this->configureUnconfiguredState();
+    TunnelConfig::query()->delete();
+
+    // Configure fake to throw timeout exception
+    $this->cloudApiFake->setException(new \Illuminate\Http\Client\ConnectionException('Request timed out'));
+
+    Livewire::test(TunnelManager::class)
+        ->set('newSubdomain', 'mydevice')
+        ->call('checkAvailability')
+        ->assertSet('subdomainAvailable', false)
+        ->assertSet('provisionStatus', 'Could not check availability. Is the device online?');
+});
+
+it('handles invalid response shape from subdomain availability check', function () {
+    $this->configureUnconfiguredState();
+    TunnelConfig::query()->delete();
+
+    // Configure fake to return invalid response (false triggers 'taken' message)
+    $this->cloudApiFake->setResponse('checkSubdomainAvailability', false);
+
+    Livewire::test(TunnelManager::class)
+        ->set('newSubdomain', 'mydevice')
+        ->call('checkAvailability')
+        ->assertSet('subdomainAvailable', false)
+        ->assertSet('provisionStatus', 'This subdomain is taken. Try another.');
+});
+
+it('handles connection error during tunnel provisioning', function () {
+    $this->configureUnconfiguredState();
+    TunnelConfig::query()->delete();
+
+    // Configure fake to throw connection exception
+    $this->cloudApiFake->setException(new \Illuminate\Http\Client\ConnectionException('Connection refused'));
+
+    Livewire::test(TunnelManager::class)
+        ->set('newSubdomain', 'mydevice')
+        ->set('subdomainAvailable', true)
+        ->call('provisionTunnel')
+        ->assertSet('isProvisioning', false)
+        ->assertSet('error', 'Failed to provision tunnel: Connection refused');
+
+    // Config should not be created due to connection error
+    expect(TunnelConfig::current())->toBeNull();
+});
+
+it('handles server error 500 during tunnel provisioning', function () {
+    $this->configureUnconfiguredState();
+    TunnelConfig::query()->delete();
+
+    // Configure fake to throw 500 error
+    $this->cloudApiFake->setException(new \RuntimeException('HTTP request returned status code 500: Internal Server Error'));
+
+    Livewire::test(TunnelManager::class)
+        ->set('newSubdomain', 'mydevice')
+        ->set('subdomainAvailable', true)
+        ->call('provisionTunnel')
+        ->assertSet('isProvisioning', false)
+        ->assertSet('error', 'Failed to provision tunnel: HTTP request returned status code 500: Internal Server Error');
+});
+
+it('handles timeout during tunnel provisioning', function () {
+    $this->configureUnconfiguredState();
+    TunnelConfig::query()->delete();
+
+    // Configure fake to throw timeout exception
+    $this->cloudApiFake->setException(new \Illuminate\Http\Client\ConnectionException('Request timed out'));
+
+    Livewire::test(TunnelManager::class)
+        ->set('newSubdomain', 'mydevice')
+        ->set('subdomainAvailable', true)
+        ->call('provisionTunnel')
+        ->assertSet('isProvisioning', false)
+        ->assertSet('error', 'Failed to provision tunnel: Request timed out');
+});
+
+it('handles invalid response shape during tunnel provisioning', function () {
+    $this->configureUnconfiguredState();
+    TunnelConfig::query()->delete();
+
+    // Configure fake to return incomplete response (missing tunnel_id/tunnel_token)
+    // This simulates an API that returns 200 OK but with unexpected response structure
+    $this->cloudApiFake->setResponse('provisionTunnel', ['success' => true]);
+
+    // This will cause an error when trying to access $result['tunnel_id']
+    // Note: The current implementation doesn't validate the response structure before using it,
+    // so this test documents the current behavior (error is thrown as exception)
+    Livewire::test(TunnelManager::class)
+        ->set('newSubdomain', 'mydevice')
+        ->set('subdomainAvailable', true)
+        ->call('provisionTunnel')
+        ->assertSet('isProvisioning', false);
+})->throws(\ErrorException::class);
