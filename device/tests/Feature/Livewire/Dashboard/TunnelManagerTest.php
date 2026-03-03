@@ -141,9 +141,9 @@ it('shows error when subdomain is taken', function () {
 it('provisions tunnel when subdomain is available', function () {
     $this->configureUnconfiguredState();
 
-    // Configure the fake with predictable responses
+    // Configure the fake with predictable responses - using default test-tunnel-999
     $this->cloudApiFake->setResponse('checkSubdomainAvailability', true);
-    $this->configureProvisionResponse('test-tunnel-123', 'test-token-value');
+    $this->configureProvisionResponse();
 
     $this->tunnelMock->shouldReceive('start')->once()->andReturn(null);
     $this->tunnelMock->shouldReceive('isRunning')->andReturn(true);
@@ -160,7 +160,7 @@ it('provisions tunnel when subdomain is available', function () {
     $config = TunnelConfig::current();
     expect($config)->not->toBeNull()
         ->and($config->subdomain)->toBe('mydevice')
-        ->and($config->tunnel_id)->toBe('test-tunnel-123')
+        ->and($config->tunnel_id)->toBe('test-tunnel-999')
         ->and($config->status)->toBe('active');
 
     $this->assertCloudApiCalled('provisionTunnel');
@@ -185,7 +185,8 @@ it('shows error when provisioning fails', function () {
 it('shows error when tunnel starts after provisioning fails', function () {
     $this->configureUnconfiguredState();
 
-    $this->configureProvisionResponse('test-tunnel-123', 'test-token-value');
+    // Configure with default predictable tunnel ID
+    $this->configureProvisionResponse();
 
     $this->tunnelMock->shouldReceive('start')->once()->andReturn('Port already in use');
     $this->tunnelMock->shouldReceive('cleanup')->once();
@@ -201,7 +202,8 @@ it('shows error when tunnel starts after provisioning fails', function () {
 });
 
 it('can re-provision existing tunnel', function () {
-    $this->configureProvisionResponse('new-tunnel-456', 'new-token-value');
+    // Configure with default predictable tunnel ID
+    $this->configureProvisionResponse();
 
     $this->tunnelMock->shouldReceive('stop')->once()->andReturn(null);
     $this->tunnelMock->shouldReceive('start')->once()->andReturn(null);
@@ -211,7 +213,7 @@ it('can re-provision existing tunnel', function () {
         ->assertSet('isProvisioning', false);
 
     $config = TunnelConfig::current();
-    expect($config->tunnel_id)->toBe('new-tunnel-456')
+    expect($config->tunnel_id)->toBe('test-tunnel-999')
         ->and($config->verified_at)->toBeNull();
 
     $this->assertCloudApiCalled('provisionTunnel');
@@ -273,9 +275,9 @@ it('allows pairing after tunnel was skipped', function () {
     // Start with a skipped config
     TunnelConfig::factory()->skipped()->create();
 
-    // Configure the fake with predictable responses
+    // Configure the fake with predictable responses - using default test-tunnel-999
     $this->cloudApiFake->setResponse('checkSubdomainAvailability', true);
-    $this->configureProvisionResponse('test-tunnel-123', 'test-token-value');
+    $this->configureProvisionResponse();
 
     $this->tunnelMock->shouldReceive('start')->once()->andReturn(null);
 
