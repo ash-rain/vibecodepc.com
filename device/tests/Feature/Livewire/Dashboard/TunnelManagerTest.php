@@ -63,6 +63,7 @@ it('can toggle project tunnel', function () {
 it('can restart the tunnel', function () {
     $this->tunnelMock->shouldReceive('stop')->once()->andReturn(null);
     $this->tunnelMock->shouldReceive('start')->once()->andReturn(null);
+    $this->tunnelMock->shouldReceive('isRunning')->andReturn(true);
 
     Livewire::test(TunnelManager::class)
         ->call('restartTunnel')
@@ -190,6 +191,7 @@ it('shows error when tunnel starts after provisioning fails', function () {
 
     $this->tunnelMock->shouldReceive('start')->once()->andReturn('Port already in use');
     $this->tunnelMock->shouldReceive('cleanup')->once();
+    $this->tunnelMock->shouldReceive('isRunning')->andReturn(false);
 
     TunnelConfig::query()->delete();
 
@@ -207,6 +209,7 @@ it('can re-provision existing tunnel', function () {
 
     $this->tunnelMock->shouldReceive('stop')->once()->andReturn(null);
     $this->tunnelMock->shouldReceive('start')->once()->andReturn(null);
+    $this->tunnelMock->shouldReceive('isRunning')->andReturn(true);
 
     Livewire::test(TunnelManager::class)
         ->call('reprovisionTunnel')
@@ -280,6 +283,7 @@ it('allows pairing after tunnel was skipped', function () {
     $this->configureProvisionResponse();
 
     $this->tunnelMock->shouldReceive('start')->once()->andReturn(null);
+    $this->tunnelMock->shouldReceive('isRunning')->andReturn(true);
 
     // User comes back to TunnelManager and sets up the tunnel
     Livewire::test(TunnelManager::class)
