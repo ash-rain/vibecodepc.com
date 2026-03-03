@@ -25,9 +25,7 @@ afterEach(function () {
 it('renders the tunnel manager', function () {
     Livewire::test(TunnelManager::class)
         ->assertStatus(200)
-        ->dump()
         ->assertSee('Tunnel')
-        ->dump()
         ->assertSee('Running');
 });
 
@@ -35,7 +33,6 @@ it('shows the device subdomain', function () {
     $expected = 'mydevice.'.config('vibecodepc.cloud_domain');
 
     Livewire::test(TunnelManager::class)
-        ->dump()
         ->assertSee($expected);
 });
 
@@ -43,7 +40,6 @@ it('shows not configured when tunnel has no credentials', function () {
     $this->configureUnconfiguredState();
 
     Livewire::test(TunnelManager::class)
-        ->dump()
         ->assertSee('Not Configured')
         ->assertDontSee('Restart');
 });
@@ -52,7 +48,6 @@ it('lists projects with tunnel toggle', function () {
     Project::factory()->create(['name' => 'Test Project']);
 
     Livewire::test(TunnelManager::class)
-        ->dump()
         ->assertSee('Test Project');
 });
 
@@ -84,7 +79,6 @@ it('shows error when restart fails', function () {
     Livewire::test(TunnelManager::class)
         ->call('restartTunnel')
         ->assertSet('tunnelRunning', false)
-        ->dump()
         ->assertSee('Failed to start cloudflared.');
 });
 
@@ -95,13 +89,9 @@ it('shows setup cta when tunnel is not configured', function () {
     TunnelConfig::query()->delete();
 
     Livewire::test(TunnelManager::class)
-        ->dump()
         ->assertSee('Enable Remote Access')
-        ->dump()
         ->assertSee('Set up Cloudflare Tunnel')
-        ->dump()
         ->assertSee('Free')
-        ->dump()
         ->assertSee('No credit card');
 });
 
@@ -111,7 +101,6 @@ it('shows custom subdomain form in collapsible section', function () {
     TunnelConfig::query()->delete();
 
     Livewire::test(TunnelManager::class)
-        ->dump()
         ->assertSee('Or enter a custom subdomain');
 });
 
@@ -127,7 +116,6 @@ it('checks subdomain availability when requested', function () {
         ->set('newSubdomain', 'mydevice')
         ->call('checkAvailability')
         ->assertSet('subdomainAvailable', true)
-        ->dump()
         ->assertSee('mydevice.'.config('vibecodepc.cloud_domain').' is available!');
 
     // Verify the API was called
@@ -146,7 +134,6 @@ it('shows error when subdomain is taken', function () {
         ->set('newSubdomain', 'taken')
         ->call('checkAvailability')
         ->assertSet('subdomainAvailable', false)
-        ->dump()
         ->assertSee('This subdomain is taken. Try another.');
 
     $this->assertCloudApiCalled('checkSubdomainAvailability');
@@ -193,7 +180,6 @@ it('shows error when provisioning fails', function () {
         ->set('subdomainAvailable', true)
         ->call('provisionTunnel')
         ->assertSet('isProvisioning', false)
-        ->dump()
         ->assertSee('Failed to provision tunnel: API connection failed');
 });
 
@@ -214,7 +200,6 @@ it('shows error when tunnel starts after provisioning fails', function () {
         ->set('subdomainAvailable', true)
         ->call('provisionTunnel')
         ->assertSet('isProvisioning', false)
-        ->dump()
         ->assertSee('Tunnel provisioned but failed to start: Port already in use');
 });
 
@@ -245,7 +230,6 @@ it('shows error when re-provisioning without existing config', function () {
     Livewire::test(TunnelManager::class)
         ->call('reprovisionTunnel')
         ->assertSet('isProvisioning', false)
-        ->dump()
         ->assertSee('No tunnel configuration found. Use the setup form instead.');
 
     // Should not call provision API without config
@@ -286,9 +270,7 @@ it('shows not configured state after skip', function () {
     $this->configureSkippedState();
 
     Livewire::test(TunnelManager::class)
-        ->dump()
         ->assertSee('Enable Remote Access')
-        ->dump()
         ->assertSee('Set up Cloudflare Tunnel');
 });
 
@@ -309,7 +291,6 @@ it('allows pairing after tunnel was skipped', function () {
         ->set('subdomainAvailable', true)
         ->call('provisionTunnel')
         ->assertSet('subdomain', 'mydevice')
-        ->dump()
         ->assertSee('Running');
 
     // Verify the config is now active, not skipped
