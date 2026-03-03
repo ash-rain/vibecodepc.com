@@ -6,7 +6,7 @@
 [x] 2026-03-03 Fake failing cases: connection error (status 0), 500, timeout, invalid response shape  
 [x] 2026-03-03 Manually write fake token file before "Running" assertions ? File::put(storage_path('app/cloudflared/token'), 'fake-token')  
 [x] 2026-03-03 Mock TunnelService::isRunning() / start() in relevant tests to return true or specific error  
-[ ] Add ->dump() / ->dumpState() right before every failing assertSee / assertSet  
+[x] 2026-03-03 Add ->dump() / ->dumpState() right before every failing assertSee / assertSet  
 [ ] Run isolated: php artisan test --filter TunnelManagerTest --debug (compare local vs CI output)  
 [ ] Check CI logs for: permission denied, storage path mismatch, job queue not running, real HTTP calls  
 [ ] Try RefreshDatabase + Storage::fake('local') to eliminate file-system differences  
