@@ -15,6 +15,6 @@
   - Some tests make real HTTP calls instead of using fake
   - Queue is sync (correct) - no job queue issues
   - Storage paths working - token file created/truncated correctly  
-[ ] Try RefreshDatabase + Storage::fake('local') to eliminate file-system differences  
+[x] 2026-03-03 Try RefreshDatabase + Storage::fake('local') to eliminate file-system differences  
 [ ] After each fix: push & re-run CI ? verify which test(s) turn green  
 [ ] Once all 5 pass: squash + merge + delete failing assertions that were too brittle  

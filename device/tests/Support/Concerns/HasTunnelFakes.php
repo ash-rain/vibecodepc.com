@@ -8,6 +8,7 @@ use App\Services\CloudApiClient;
 use App\Services\Tunnel\QuickTunnelService;
 use App\Services\Tunnel\TunnelService;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Mockery;
 use Tests\Support\Fakes\CloudApiClientFake;
 
@@ -33,6 +34,9 @@ trait HasTunnelFakes
      */
     protected function setUpTunnelFakes(): void
     {
+        // Use a fake filesystem to eliminate file-system differences between local and CI
+        Storage::fake('local');
+
         // Create and bind the CloudApiClient fake with predictable responses
         $this->cloudApiFake = new CloudApiClientFake;
         $this->app->instance(CloudApiClient::class, $this->cloudApiFake);
