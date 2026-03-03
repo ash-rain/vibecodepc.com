@@ -5,20 +5,21 @@ declare(strict_types=1);
 use App\Livewire\Dashboard\TunnelManager;
 use App\Models\Project;
 use App\Models\TunnelConfig;
-use App\Services\Tunnel\TunnelService;
 use Livewire\Livewire;
 
 beforeEach(function () {
-    $this->tunnelMock = Mockery::mock(TunnelService::class);
-    $this->tunnelMock->shouldReceive('getStatus')->andReturn([
-        'installed' => true,
-        'running' => true,
-        'configured' => true,
-    ])->byDefault();
+    // Set up centralized tunnel fakes via the trait
+    $this->setUpTunnelFakes();
 
-    $this->app->instance(TunnelService::class, $this->tunnelMock);
-
+    // Create default verified tunnel config
     TunnelConfig::factory()->verified()->create(['subdomain' => 'mydevice']);
+});
+
+afterEach(function () {
+    // Reset the fake to clean state between tests
+    if (isset($this->cloudApiFake)) {
+        $this->cloudApiFake->reset();
+    }
 });
 
 it('renders the tunnel manager', function () {
@@ -36,11 +37,7 @@ it('shows the device subdomain', function () {
 });
 
 it('shows not configured when tunnel has no credentials', function () {
-    $this->tunnelMock->shouldReceive('getStatus')->andReturn([
-        'installed' => true,
-        'running' => false,
-        'configured' => false,
-    ]);
+    $this->configureUnconfiguredState();
 
     Livewire::test(TunnelManager::class)
         ->assertSee('Not Configured')
@@ -66,8 +63,6 @@ it('can toggle project tunnel', function () {
 it('can restart the tunnel', function () {
     $this->tunnelMock->shouldReceive('stop')->once()->andReturn(null);
     $this->tunnelMock->shouldReceive('start')->once()->andReturn(null);
-    $this->tunnelMock->shouldReceive('isRunning')->andReturn(true);
-    $this->tunnelMock->shouldReceive('hasCredentials')->andReturn(true);
 
     Livewire::test(TunnelManager::class)
         ->call('restartTunnel')
@@ -79,7 +74,6 @@ it('shows error when restart fails', function () {
     $this->tunnelMock->shouldReceive('stop')->once()->andReturn(null);
     $this->tunnelMock->shouldReceive('start')->once()->andReturn('Failed to start cloudflared.');
     $this->tunnelMock->shouldReceive('isRunning')->andReturn(false);
-    $this->tunnelMock->shouldReceive('hasCredentials')->andReturn(true);
 
     Livewire::test(TunnelManager::class)
         ->call('restartTunnel')
@@ -88,11 +82,7 @@ it('shows error when restart fails', function () {
 });
 
 it('shows setup cta when tunnel is not configured', function () {
-    $this->tunnelMock->shouldReceive('getStatus')->andReturn([
-        'installed' => true,
-        'running' => false,
-        'configured' => false,
-    ]);
+    $this->configureUnconfiguredState();
 
     // Clear any existing tunnel config
     TunnelConfig::query()->delete();
@@ -105,11 +95,7 @@ it('shows setup cta when tunnel is not configured', function () {
 });
 
 it('shows custom subdomain form in collapsible section', function () {
-    $this->tunnelMock->shouldReceive('getStatus')->andReturn([
-        'installed' => true,
-        'running' => false,
-        'configured' => false,
-    ]);
+    $this->configureUnconfiguredState();
 
     TunnelConfig::query()->delete();
 
@@ -118,19 +104,10 @@ it('shows custom subdomain form in collapsible section', function () {
 });
 
 it('checks subdomain availability when requested', function () {
-    $mockCloudApi = Mockery::mock(\App\Services\CloudApiClient::class);
-    $mockCloudApi->shouldReceive('checkSubdomainAvailability')
-        ->with('mydevice')
-        ->once()
-        ->andReturn(true);
+    $this->configureUnconfiguredState();
 
-    $this->app->instance(\App\Services\CloudApiClient::class, $mockCloudApi);
-
-    $this->tunnelMock->shouldReceive('getStatus')->andReturn([
-        'installed' => true,
-        'running' => false,
-        'configured' => false,
-    ]);
+    // Configure the fake to make 'mydevice' available
+    $this->cloudApiFake->setResponse('checkSubdomainAvailability', true);
 
     TunnelConfig::query()->delete();
 
@@ -139,22 +116,16 @@ it('checks subdomain availability when requested', function () {
         ->call('checkAvailability')
         ->assertSet('subdomainAvailable', true)
         ->assertSee('mydevice.'.config('vibecodepc.cloud_domain').' is available!');
+
+    // Verify the API was called
+    $this->assertCloudApiCalled('checkSubdomainAvailability');
 });
 
 it('shows error when subdomain is taken', function () {
-    $mockCloudApi = Mockery::mock(\App\Services\CloudApiClient::class);
-    $mockCloudApi->shouldReceive('checkSubdomainAvailability')
-        ->with('taken')
-        ->once()
-        ->andReturn(false);
+    $this->configureUnconfiguredState();
 
-    $this->app->instance(\App\Services\CloudApiClient::class, $mockCloudApi);
-
-    $this->tunnelMock->shouldReceive('getStatus')->andReturn([
-        'installed' => true,
-        'running' => false,
-        'configured' => false,
-    ]);
+    // Configure the fake to make 'taken' unavailable
+    $this->cloudApiFake->setResponse('checkSubdomainAvailability', false);
 
     TunnelConfig::query()->delete();
 
@@ -163,29 +134,19 @@ it('shows error when subdomain is taken', function () {
         ->call('checkAvailability')
         ->assertSet('subdomainAvailable', false)
         ->assertSee('This subdomain is taken. Try another.');
+
+    $this->assertCloudApiCalled('checkSubdomainAvailability');
 });
 
 it('provisions tunnel when subdomain is available', function () {
-    $mockCloudApi = Mockery::mock(\App\Services\CloudApiClient::class);
-    $mockCloudApi->shouldReceive('checkSubdomainAvailability')
-        ->andReturn(true);
-    $mockCloudApi->shouldReceive('provisionTunnel')
-        ->once()
-        ->andReturn([
-            'tunnel_id' => 'test-tunnel-123',
-            'tunnel_token' => 'test-token-value',
-        ]);
+    $this->configureUnconfiguredState();
 
-    $this->app->instance(\App\Services\CloudApiClient::class, $mockCloudApi);
+    // Configure the fake with predictable responses
+    $this->cloudApiFake->setResponse('checkSubdomainAvailability', true);
+    $this->configureProvisionResponse('test-tunnel-123', 'test-token-value');
 
-    $this->tunnelMock->shouldReceive('getStatus')->andReturn([
-        'installed' => true,
-        'running' => false,
-        'configured' => false,
-    ]);
     $this->tunnelMock->shouldReceive('start')->once()->andReturn(null);
     $this->tunnelMock->shouldReceive('isRunning')->andReturn(true);
-    $this->tunnelMock->shouldReceive('hasCredentials')->andReturn(true);
 
     TunnelConfig::query()->delete();
 
@@ -201,21 +162,15 @@ it('provisions tunnel when subdomain is available', function () {
         ->and($config->subdomain)->toBe('mydevice')
         ->and($config->tunnel_id)->toBe('test-tunnel-123')
         ->and($config->status)->toBe('active');
+
+    $this->assertCloudApiCalled('provisionTunnel');
 });
 
 it('shows error when provisioning fails', function () {
-    $mockCloudApi = Mockery::mock(\App\Services\CloudApiClient::class);
-    $mockCloudApi->shouldReceive('provisionTunnel')
-        ->once()
-        ->andThrow(new \Exception('API connection failed'));
+    $this->configureUnconfiguredState();
 
-    $this->app->instance(\App\Services\CloudApiClient::class, $mockCloudApi);
-
-    $this->tunnelMock->shouldReceive('getStatus')->andReturn([
-        'installed' => true,
-        'running' => false,
-        'configured' => false,
-    ]);
+    // Configure the fake to throw an exception
+    $this->cloudApiFake->setException(new \Exception('API connection failed'));
 
     TunnelConfig::query()->delete();
 
@@ -228,21 +183,10 @@ it('shows error when provisioning fails', function () {
 });
 
 it('shows error when tunnel starts after provisioning fails', function () {
-    $mockCloudApi = Mockery::mock(\App\Services\CloudApiClient::class);
-    $mockCloudApi->shouldReceive('provisionTunnel')
-        ->once()
-        ->andReturn([
-            'tunnel_id' => 'test-tunnel-123',
-            'tunnel_token' => 'test-token-value',
-        ]);
+    $this->configureUnconfiguredState();
 
-    $this->app->instance(\App\Services\CloudApiClient::class, $mockCloudApi);
+    $this->configureProvisionResponse('test-tunnel-123', 'test-token-value');
 
-    $this->tunnelMock->shouldReceive('getStatus')->andReturn([
-        'installed' => true,
-        'running' => false,
-        'configured' => false,
-    ]);
     $this->tunnelMock->shouldReceive('start')->once()->andReturn('Port already in use');
     $this->tunnelMock->shouldReceive('cleanup')->once();
 
@@ -257,25 +201,10 @@ it('shows error when tunnel starts after provisioning fails', function () {
 });
 
 it('can re-provision existing tunnel', function () {
-    $mockCloudApi = Mockery::mock(\App\Services\CloudApiClient::class);
-    $mockCloudApi->shouldReceive('provisionTunnel')
-        ->once()
-        ->andReturn([
-            'tunnel_id' => 'new-tunnel-456',
-            'tunnel_token' => 'new-token-value',
-        ]);
+    $this->configureProvisionResponse('new-tunnel-456', 'new-token-value');
 
-    $this->app->instance(\App\Services\CloudApiClient::class, $mockCloudApi);
-
-    $this->tunnelMock->shouldReceive('getStatus')->andReturn([
-        'installed' => true,
-        'running' => true,
-        'configured' => true,
-    ]);
     $this->tunnelMock->shouldReceive('stop')->once()->andReturn(null);
     $this->tunnelMock->shouldReceive('start')->once()->andReturn(null);
-    $this->tunnelMock->shouldReceive('isRunning')->andReturn(true);
-    $this->tunnelMock->shouldReceive('hasCredentials')->andReturn(true);
 
     Livewire::test(TunnelManager::class)
         ->call('reprovisionTunnel')
@@ -284,14 +213,12 @@ it('can re-provision existing tunnel', function () {
     $config = TunnelConfig::current();
     expect($config->tunnel_id)->toBe('new-tunnel-456')
         ->and($config->verified_at)->toBeNull();
+
+    $this->assertCloudApiCalled('provisionTunnel');
 });
 
 it('shows error when re-provisioning without existing config', function () {
-    $this->tunnelMock->shouldReceive('getStatus')->andReturn([
-        'installed' => true,
-        'running' => false,
-        'configured' => false,
-    ]);
+    $this->configureUnconfiguredState();
 
     TunnelConfig::query()->delete();
 
@@ -299,14 +226,13 @@ it('shows error when re-provisioning without existing config', function () {
         ->call('reprovisionTunnel')
         ->assertSet('isProvisioning', false)
         ->assertSee('No tunnel configuration found. Use the setup form instead.');
+
+    // Should not call provision API without config
+    $this->assertCloudApiNotCalled('provisionTunnel');
 });
 
 it('validates subdomain format', function () {
-    $this->tunnelMock->shouldReceive('getStatus')->andReturn([
-        'installed' => true,
-        'running' => false,
-        'configured' => false,
-    ]);
+    $this->configureUnconfiguredState();
 
     TunnelConfig::query()->delete();
 
@@ -317,11 +243,7 @@ it('validates subdomain format', function () {
 });
 
 it('validates subdomain must start with a letter', function () {
-    $this->tunnelMock->shouldReceive('getStatus')->andReturn([
-        'installed' => true,
-        'running' => false,
-        'configured' => false,
-    ]);
+    $this->configureUnconfiguredState();
 
     TunnelConfig::query()->delete();
 
@@ -340,12 +262,7 @@ it('shows not configured state after skip', function () {
         'subdomain' => null,
     ]);
 
-    $this->tunnelMock->shouldReceive('getStatus')->andReturn([
-        'installed' => true,
-        'running' => false,
-        'configured' => true, // hasCredentials returns true for skipped
-    ]);
-    $this->tunnelMock->shouldReceive('isSkipped')->andReturn(true);
+    $this->configureSkippedState();
 
     Livewire::test(TunnelManager::class)
         ->assertSee('Enable Remote Access')
@@ -356,26 +273,11 @@ it('allows pairing after tunnel was skipped', function () {
     // Start with a skipped config
     TunnelConfig::factory()->skipped()->create();
 
-    $mockCloudApi = Mockery::mock(\App\Services\CloudApiClient::class);
-    $mockCloudApi->shouldReceive('checkSubdomainAvailability')
-        ->andReturn(true);
-    $mockCloudApi->shouldReceive('provisionTunnel')
-        ->once()
-        ->andReturn([
-            'tunnel_id' => 'test-tunnel-123',
-            'tunnel_token' => 'test-token-value',
-        ]);
+    // Configure the fake with predictable responses
+    $this->cloudApiFake->setResponse('checkSubdomainAvailability', true);
+    $this->configureProvisionResponse('test-tunnel-123', 'test-token-value');
 
-    $this->app->instance(\App\Services\CloudApiClient::class, $mockCloudApi);
-
-    $this->tunnelMock->shouldReceive('getStatus')->andReturn([
-        'installed' => true,
-        'running' => false,
-        'configured' => true,
-    ]);
     $this->tunnelMock->shouldReceive('start')->once()->andReturn(null);
-    $this->tunnelMock->shouldReceive('isRunning')->andReturn(true);
-    $this->tunnelMock->shouldReceive('hasCredentials')->andReturn(true);
 
     // User comes back to TunnelManager and sets up the tunnel
     Livewire::test(TunnelManager::class)
