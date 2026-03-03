@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace Tests\Support\Concerns;
 
 use App\Services\CloudApiClient;
+use App\Services\DeviceRegistry\DeviceIdentityService;
 use App\Services\Tunnel\QuickTunnelService;
 use App\Services\Tunnel\TunnelService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Mockery;
 use Tests\Support\Fakes\CloudApiClientFake;
+use VibecodePC\Common\DTOs\DeviceInfo;
 
 trait HasTunnelFakes
 {
@@ -36,6 +39,9 @@ trait HasTunnelFakes
     {
         // Use a fake filesystem to eliminate file-system differences between local and CI
         Storage::fake('local');
+
+        // Auto-generate test device identity if none exists
+        $this->ensureTestDeviceIdentity();
 
         // Create and bind the CloudApiClient fake with predictable responses
         $this->cloudApiFake = new CloudApiClientFake;
@@ -237,5 +243,42 @@ trait HasTunnelFakes
                 throw new \Illuminate\Http\Client\ConnectionException('Request timed out');
             },
         ]);
+    }
+
+    /**
+     * Ensure test device identity exists for tests.
+     * Auto-generates a device.json file if it doesn't exist.
+     */
+    protected function ensureTestDeviceIdentity(): void
+    {
+        $path = config('vibecodepc.device_json_path');
+
+        // If device.json already exists, we're done
+        if (file_exists($path)) {
+            return;
+        }
+
+        // Create directory if it doesn't exist
+        $dir = dirname($path);
+        if (! is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        // Generate test device identity
+        $device = new DeviceInfo(
+            id: 'test-device-'.Str::uuid()->toString(),
+            hardwareSerial: 'test-serial-'.Str::random(16),
+            manufacturedAt: now()->toIso8601String(),
+            firmwareVersion: '1.0.0-test',
+        );
+
+        // Write device.json
+        file_put_contents($path, $device->toJson());
+
+        // Bind DeviceIdentityService with the test device.json path
+        $this->app->singleton(
+            DeviceIdentityService::class,
+            fn () => new DeviceIdentityService($path)
+        );
     }
 }
