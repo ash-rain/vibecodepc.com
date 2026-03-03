@@ -66,13 +66,22 @@ trait HasTunnelFakes
         $this->app->instance(QuickTunnelService::class, $this->quickTunnelMock);
 
         // Set up Http fake for quick-tunnel endpoint
+        $cloudUrl = config('vibecodepc.cloud_url', 'https://vibecodepc.com');
         Http::fake([
+            // Fake the cloud API tunnel registration endpoint
+            "{$cloudUrl}/api/devices/*/tunnel/register" => Http::response([
+                'success' => true,
+                'subdomain' => 'test-subdomain-abc123',
+                'tunnel_id' => 'test-tunnel-999',
+                'token' => 'fake-token-for-testing',
+            ], 200),
+            // Also fake the trycloudflare.com URLs for QuickTunnelService
             '*.trycloudflare.com/*' => Http::response([
                 'success' => true,
                 'subdomain' => 'test-subdomain-abc123',
                 'tunnel_id' => 'test-tunnel-999',
                 'token' => 'fake-token-for-testing',
-            ]),
+            ], 200),
         ]);
     }
 
