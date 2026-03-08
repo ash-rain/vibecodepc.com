@@ -108,3 +108,84 @@ When you complete the Cloudflare Tunnel setup, your device operates in **paired 
 | Skip pairing during setup | Click "Skip for now — use locally" in the tunnel setup step |
 | Pair later | Go to Settings → Cloudflare Tunnel → "Set up remote access" |
 | Check current mode | Dashboard shows "Device not paired" banner when in local-only mode |
+
+## Backups
+
+VibeCodePC includes an encrypted backup system for your device configuration. All backups are encrypted using Laravel's `Crypt` facade and stored as ZIP archives containing the encrypted payload.
+
+### What Gets Backed Up
+
+Backups include data from the following tables:
+
+- `ai_providers` — AI provider API configurations
+- `tunnel_configs` — Cloudflare tunnel settings
+- `github_credentials` — GitHub OAuth credentials
+- `device_state` — Device state and metadata
+- `wizard_progress` — First-run wizard completion status
+- `cloud_credentials` — Cloud API credentials
+
+Additionally, your `.env` file is included in the backup (encrypted).
+
+### Creating a Backup
+
+**Via the Dashboard:**
+
+1. Go to **Settings → System**
+2. Click **"Download Backup"**
+3. The backup will be downloaded as a ZIP file with a timestamped filename (e.g., `backup-2025-03-08-143022.zip`)
+
+**Via Code:**
+
+```php
+use App\Services\BackupService;
+
+$backupService = new BackupService;
+$path = $backupService->createBackup();
+// $path contains the full path to the created ZIP file
+```
+
+### Restoring a Backup
+
+**Via the Dashboard:**
+
+1. Go to **Settings → System**
+2. Under **"Restore from Backup"**, select your backup ZIP file
+3. Click **"Restore Backup"**
+4. The device will restore all database tables and `.env` settings from the backup
+
+**Via Code:**
+
+```php
+use App\Services\BackupService;
+
+$backupService = new BackupService;
+$backupService->restoreBackup('/path/to/backup-2025-03-08-143022.zip');
+```
+
+### Restore Procedures
+
+When restoring a backup:
+
+1. **Database tables are truncated** before restoration — existing data will be replaced
+2. **Only configured tables are restored** — tables not in the backup list are left untouched
+3. **The `.env` file is overwritten** — current environment variables will be replaced with backed-up values
+4. **Some settings may require a restart** — tunnel configurations and environment variables may need a device restart to take effect
+
+### Security
+
+- All backup data is **encrypted** using Laravel's `Crypt` facade before being stored
+- The encryption uses your app's `APP_KEY` — **you must use the same `APP_KEY`** to decrypt a backup
+- If you lose your `APP_KEY`, backups cannot be restored
+- Backup files have the `.zip` extension but the contents are encrypted
+
+### Error Handling
+
+Restore operations may fail with the following exceptions:
+
+| Error | Cause |
+|-------|-------|
+| `Failed to open backup file.` | ZIP file is corrupted or inaccessible |
+| `Invalid backup file — missing encrypted payload.` | ZIP is valid but missing the `backup.enc` file inside |
+| `Invalid backup data structure.` | Decryption failed or backup data is malformed (possible `APP_KEY` mismatch) |
+
+Always verify your backup file integrity before attempting restoration, especially after transferring between devices.
