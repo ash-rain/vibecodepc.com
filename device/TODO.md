@@ -37,7 +37,7 @@
 - [x] 2026-03-08 test: add unit tests for AnalyticsEvent model scopes (type, category, occurredBetween)
 - [x] 2026-03-08 test: add unit tests for QuickTunnel model relationships and status helper methods
 - [x] 2026-03-08 docs: document BackupService usage and restore procedures in README
-- [ ] docs: add troubleshooting section for device identity generation and QR pairing
+- [x] 2026-03-08 docs: add troubleshooting section for device identity generation and QR pairing
 - [ ] chore: add GitHub Actions CI workflow for automated testing on push and PR
 - [ ] feat: add health check endpoint for external monitoring systems
 - [ ] refactor: extract magic strings from BackupService table list into a configuration file
@@ -45,6 +45,7 @@
 
 ## Done
 
+- [x] 2026-03-08 docs: add troubleshooting section for device identity generation and QR pairing
 - [x] 2026-03-08 docs: document BackupService usage and restore procedures in README
 - [x] 2026-03-08 test: add unit tests for QuickTunnel model relationships and status helper methods
 - [x] 2026-03-08 test: add unit tests for AnalyticsEvent model scopes (type, category, occurredBetween)
