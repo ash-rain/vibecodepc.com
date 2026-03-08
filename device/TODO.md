@@ -28,7 +28,7 @@
 ## Todo
 
 - [x] 2026-03-08 test: add unit tests for BackupService createBackup and restoreBackup methods with encrypted zip validation
-- [ ] test: add unit tests for ConfigSyncService syncIfNeeded with remote version handling and token updates
+- [x] 2026-03-08 test: add unit tests for ConfigSyncService syncIfNeeded with remote version handling and token updates
 - [ ] test: add unit tests for SystemService admin password, timezone setting, and timezone retrieval
 - [ ] test: add feature tests for GenerateDeviceId command with --force and --path options
 - [ ] test: add feature tests for ShowDeviceQr command output and error handling when no identity exists
