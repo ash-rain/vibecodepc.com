@@ -2,6 +2,7 @@
 
 use App\Jobs\ProvisionQuickTunnelJob;
 use App\Models\QuickTunnel;
+use App\Models\TunnelConfig;
 use App\Services\DeviceRegistry\DeviceIdentityService;
 use App\Services\Tunnel\QuickTunnelService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -41,6 +42,8 @@ it('starts tunnel and registers URL with cloud', function () {
     $cloudUrl = config('vibecodepc.cloud_url');
 
     setupIdentityForJob($uuid);
+
+    TunnelConfig::factory()->verified()->create();
 
     $quickTunnelService = Mockery::mock(QuickTunnelService::class);
     $quickTunnelService->shouldReceive('startForDashboard')
@@ -85,6 +88,8 @@ it('falls back to app URL in local dev when tunnel fails', function () {
     $cloudUrl = config('vibecodepc.cloud_url');
 
     setupIdentityForJob($uuid);
+
+    TunnelConfig::factory()->verified()->create();
 
     app()->detectEnvironment(fn () => 'local');
 
@@ -138,6 +143,8 @@ it('retries URL capture when initial URL is null', function () {
 
     setupIdentityForJob($uuid);
 
+    TunnelConfig::factory()->verified()->create();
+
     $quickTunnelService = Mockery::mock(QuickTunnelService::class);
     $quickTunnelService->shouldReceive('startForDashboard')
         ->once()
@@ -165,4 +172,28 @@ it('retries URL capture when initial URL is null', function () {
 
     Http::assertSent(fn ($request) => str_contains($request->url(), '/tunnel/register')
         && $request['tunnel_url'] === $tunnelUrl);
+});
+
+it('returns early when tunnel is skipped', function () {
+    $uuid = 'test-device-uuid';
+
+    setupIdentityForJob($uuid);
+
+    TunnelConfig::factory()->skipped()->create();
+
+    $quickTunnelService = Mockery::mock(QuickTunnelService::class);
+    $quickTunnelService->shouldNotReceive('startForDashboard');
+
+    app()->instance(QuickTunnelService::class, $quickTunnelService);
+
+    Http::fake();
+
+    $job = new ProvisionQuickTunnelJob;
+    app()->call([$job, 'handle']);
+
+    // Should not try to start tunnel or make any cloud API calls
+    Http::assertNothingSent();
+
+    // But wizard progress should still be seeded
+    expect(\App\Models\WizardProgress::count())->toBeGreaterThan(0);
 });

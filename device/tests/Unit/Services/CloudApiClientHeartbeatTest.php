@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\CloudCredential;
+use App\Models\TunnelConfig;
 use App\Services\CloudApiClient;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -18,6 +19,8 @@ it('sends heartbeat with correct payload and endpoint', function () {
         'is_paired' => true,
         'paired_at' => now(),
     ]);
+
+    TunnelConfig::factory()->verified()->create();
 
     Http::fake([
         "{$cloudUrl}/api/devices/{$uuid}/heartbeat" => Http::response([], 200),
@@ -64,6 +67,8 @@ it('gracefully handles HTTP failure without throwing', function () {
         'paired_at' => now(),
     ]);
 
+    TunnelConfig::factory()->verified()->create();
+
     Http::fake([
         "{$cloudUrl}/api/devices/{$uuid}/heartbeat" => Http::response('Server Error', 500),
     ]);
@@ -101,6 +106,8 @@ it('sends heartbeat with bearer token from cloud credential', function () {
         'paired_at' => now(),
     ]);
 
+    TunnelConfig::factory()->verified()->create();
+
     Http::fake([
         "{$cloudUrl}/api/devices/{$uuid}/heartbeat" => Http::response([], 200),
     ]);
@@ -121,5 +128,87 @@ it('sends heartbeat with bearer token from cloud credential', function () {
     Http::assertSent(function ($request) {
         return $request->hasHeader('Authorization')
             && str_contains($request->header('Authorization')[0], 'Bearer');
+    });
+});
+
+it('skips heartbeat when tunnel is not configured', function () {
+    $uuid = (string) Str::uuid();
+    $cloudUrl = 'https://vibecodepc.test';
+
+    CloudCredential::create([
+        'pairing_token_encrypted' => 'test-token-123',
+        'cloud_username' => 'testuser',
+        'cloud_email' => 'test@example.com',
+        'cloud_url' => $cloudUrl,
+        'is_paired' => true,
+        'paired_at' => now(),
+    ]);
+
+    // No TunnelConfig created - should skip heartbeat
+
+    Http::fake([
+        "{$cloudUrl}/api/devices/{$uuid}/heartbeat" => Http::response([], 200),
+    ]);
+
+    Log::shouldReceive('debug')
+        ->once()
+        ->withArgs(fn (string $message) => str_contains($message, 'Skipped sending heartbeat'));
+
+    $client = new CloudApiClient($cloudUrl);
+    $client->sendHeartbeat($uuid, [
+        'cpu_percent' => 25.5,
+        'temperature_c' => 42.3,
+        'ram_used_mb' => 1024,
+        'ram_total_mb' => 8192,
+        'disk_used_gb' => 12.5,
+        'disk_total_gb' => 64.0,
+        'running_projects' => 2,
+        'tunnel_active' => true,
+        'firmware_version' => '1.0.0',
+    ]);
+
+    Http::assertNotSent(function ($request) use ($cloudUrl, $uuid) {
+        return $request->url() === "{$cloudUrl}/api/devices/{$uuid}/heartbeat";
+    });
+});
+
+it('skips heartbeat when tunnel is explicitly skipped', function () {
+    $uuid = (string) Str::uuid();
+    $cloudUrl = 'https://vibecodepc.test';
+
+    CloudCredential::create([
+        'pairing_token_encrypted' => 'test-token-123',
+        'cloud_username' => 'testuser',
+        'cloud_email' => 'test@example.com',
+        'cloud_url' => $cloudUrl,
+        'is_paired' => true,
+        'paired_at' => now(),
+    ]);
+
+    TunnelConfig::factory()->skipped()->create();
+
+    Http::fake([
+        "{$cloudUrl}/api/devices/{$uuid}/heartbeat" => Http::response([], 200),
+    ]);
+
+    Log::shouldReceive('debug')
+        ->once()
+        ->withArgs(fn (string $message) => str_contains($message, 'Skipped sending heartbeat'));
+
+    $client = new CloudApiClient($cloudUrl);
+    $client->sendHeartbeat($uuid, [
+        'cpu_percent' => 25.5,
+        'temperature_c' => 42.3,
+        'ram_used_mb' => 1024,
+        'ram_total_mb' => 8192,
+        'disk_used_gb' => 12.5,
+        'disk_total_gb' => 64.0,
+        'running_projects' => 2,
+        'tunnel_active' => true,
+        'firmware_version' => '1.0.0',
+    ]);
+
+    Http::assertNotSent(function ($request) use ($cloudUrl, $uuid) {
+        return $request->url() === "{$cloudUrl}/api/devices/{$uuid}/heartbeat";
     });
 });

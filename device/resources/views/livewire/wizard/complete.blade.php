@@ -4,8 +4,13 @@
             <svg class="w-16 h-16 mx-auto text-green-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <h2 class="text-2xl font-bold text-white mb-2">Setup Complete!</h2>
-            <p class="text-gray-400">Your VibeCodePC is ready to use. Here's a summary of what was configured.</p>
+            @if ($skippedTunnelStep)
+                <h2 class="text-2xl font-bold text-white mb-2">Device Ready for Local Use!</h2>
+                <p class="text-gray-400">Your VibeCodePC is set up and ready. You can pair it later to enable remote access.</p>
+            @else
+                <h2 class="text-2xl font-bold text-white mb-2">Setup Complete!</h2>
+                <p class="text-gray-400">Your VibeCodePC is ready to use. Here's a summary of what was configured.</p>
+            @endif
         </div>
 
         {{-- Summary --}}
@@ -49,12 +54,21 @@
                 </svg>
                 <span class="text-sm text-gray-300">Open VS Code</span>
             </a>
-            <a href="{{ route('dashboard') }}" class="bg-white/[0.06] hover:bg-white/10 border border-white/10 rounded-lg p-4 transition-colors block">
-                <svg class="w-8 h-8 mx-auto text-emerald-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                <span class="text-sm text-gray-300">Create Project</span>
-            </a>
+            @if ($skippedTunnelStep)
+                <a href="{{ route('dashboard.tunnels') }}" class="bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 rounded-lg p-4 transition-colors block">
+                    <svg class="w-8 h-8 mx-auto text-blue-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
+                    <span class="text-sm text-blue-300">Pair Device Now</span>
+                </a>
+            @else
+                <a href="{{ route('dashboard') }}" class="bg-white/[0.06] hover:bg-white/10 border border-white/10 rounded-lg p-4 transition-colors block">
+                    <svg class="w-8 h-8 mx-auto text-emerald-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    <span class="text-sm text-gray-300">Create Project</span>
+                </a>
+            @endif
         </div>
     </div>
 

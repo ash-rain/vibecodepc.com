@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Middleware\RequireTunnelAuth;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -18,7 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
 
         $middleware->alias([
-            'tunnel.auth' => RequireTunnelAuth::class,
+            'tunnel.auth' => \App\Http\Middleware\RequireTunnelAuth::class,
+            'tunnel.auth.optional' => \App\Http\Middleware\OptionalTunnelAuth::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

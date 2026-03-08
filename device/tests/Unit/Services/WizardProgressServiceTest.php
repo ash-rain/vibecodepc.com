@@ -105,6 +105,7 @@ it('detects wizard completion with skipped steps', function () {
     $this->service->skipStep(WizardStep::AiServices);
     $this->service->skipStep(WizardStep::GitHub);
     $this->service->skipStep(WizardStep::CodeServer);
+    $this->service->skipStep(WizardStep::Tunnel);
     $this->service->completeStep(WizardStep::Complete);
 
     expect($this->service->isWizardComplete())->toBeTrue();

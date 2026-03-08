@@ -68,6 +68,10 @@ class WizardProgressService
     public function isWizardComplete(): bool
     {
         foreach (WizardStep::cases() as $step) {
+            if ($step === WizardStep::Complete) {
+                continue;
+            }
+
             $progress = WizardProgress::where('step', $step->value)->first();
 
             if (! $progress || $progress->isPending()) {
@@ -94,6 +98,22 @@ class WizardProgressService
     {
         WizardProgress::truncate();
         $this->seedProgress();
+    }
+
+    /**
+     * Reset a specific step to pending status.
+     * Used when user wants to re-enter the wizard at a specific step.
+     */
+    public function resetStep(WizardStep $step): void
+    {
+        WizardProgress::updateOrCreate(
+            ['step' => $step->value],
+            [
+                'status' => WizardStepStatus::Pending,
+                'data_json' => null,
+                'completed_at' => null,
+            ],
+        );
     }
 
     public function seedProgress(): void

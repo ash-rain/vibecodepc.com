@@ -75,3 +75,68 @@ it('renders progress bar with correct step statuses', function () {
         ->assertSee('AI Services')
         ->assertSee('GitHub');
 });
+
+it('allows re-entry at a specific step via query parameter', function () {
+    $service = new WizardProgressService;
+    $service->seedProgress();
+
+    // Complete wizard first
+    foreach (WizardStep::cases() as $step) {
+        if ($step === WizardStep::Complete) {
+            continue;
+        }
+        $service->completeStep($step);
+    }
+    $service->completeStep(WizardStep::Complete);
+
+    expect($service->isWizardComplete())->toBeTrue();
+
+    // Re-enter wizard at tunnel step
+    Livewire::withQueryParams(['step' => 'tunnel'])
+        ->test(WizardController::class)
+        ->assertSet('currentStep', 'tunnel')
+        ->assertSee('Remote Access');
+});
+
+it('allows re-entry at a skipped step via query parameter', function () {
+    $service = new WizardProgressService;
+    $service->seedProgress();
+
+    // Complete wizard with skipped tunnel step
+    foreach (WizardStep::cases() as $step) {
+        if ($step === WizardStep::Complete) {
+            continue;
+        }
+        if ($step === WizardStep::Tunnel) {
+            $service->skipStep($step);
+        } else {
+            $service->completeStep($step);
+        }
+    }
+    $service->completeStep(WizardStep::Complete);
+
+    expect($service->isWizardComplete())->toBeTrue();
+
+    // Re-enter wizard at tunnel step
+    Livewire::withQueryParams(['step' => 'tunnel'])
+        ->test(WizardController::class)
+        ->assertSet('currentStep', 'tunnel');
+});
+
+it('redirects to dashboard when re-entering with invalid step', function () {
+    $service = new WizardProgressService;
+    $service->seedProgress();
+
+    // Complete wizard first
+    foreach (WizardStep::cases() as $step) {
+        if ($step === WizardStep::Complete) {
+            continue;
+        }
+        $service->completeStep($step);
+    }
+    $service->completeStep(WizardStep::Complete);
+
+    Livewire::withQueryParams(['step' => 'invalid-step'])
+        ->test(WizardController::class)
+        ->assertRedirect(route('dashboard'));
+});
