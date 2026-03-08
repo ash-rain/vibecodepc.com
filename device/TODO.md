@@ -35,7 +35,7 @@
 - [x] 2026-03-08 test: add Livewire tests for HealthBar component polling and metric display
 - [x] 2026-03-08 test: add Livewire tests for Wizard Tunnel component step validation and skip functionality
 - [x] 2026-03-08 test: add unit tests for AnalyticsEvent model scopes (type, category, occurredBetween)
-- [ ] test: add unit tests for QuickTunnel model relationships and status helper methods
+- [x] 2026-03-08 test: add unit tests for QuickTunnel model relationships and status helper methods
 - [ ] docs: document BackupService usage and restore procedures in README
 - [ ] docs: add troubleshooting section for device identity generation and QR pairing
 - [ ] chore: add GitHub Actions CI workflow for automated testing on push and PR
@@ -45,6 +45,7 @@
 
 ## Done
 
+- [x] 2026-03-08 test: add unit tests for QuickTunnel model relationships and status helper methods
 - [x] 2026-03-08 test: add unit tests for AnalyticsEvent model scopes (type, category, occurredBetween)
 - [x] 2026-03-08 test: add Livewire tests for Wizard Tunnel component step validation and skip functionality
 - [x] 2026-03-08 test: add unit tests for SystemService admin password, timezone setting, and timezone retrieval
