@@ -11,7 +11,7 @@ use ZipArchive;
 class BackupService
 {
     private const BACKUP_TABLES = [
-        'ai_provider_configs',
+        'ai_providers',
         'tunnel_configs',
         'github_credentials',
         'device_state',

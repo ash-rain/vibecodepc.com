@@ -27,7 +27,7 @@
 
 ## Todo
 
-- [ ] test: add unit tests for BackupService createBackup and restoreBackup methods with encrypted zip validation
+- [x] 2026-03-08 test: add unit tests for BackupService createBackup and restoreBackup methods with encrypted zip validation
 - [ ] test: add unit tests for ConfigSyncService syncIfNeeded with remote version handling and token updates
 - [ ] test: add unit tests for SystemService admin password, timezone setting, and timezone retrieval
 - [ ] test: add feature tests for GenerateDeviceId command with --force and --path options
@@ -45,6 +45,7 @@
 
 ## Done
 
+- [x] 2026-03-08 test: add unit tests for BackupService createBackup and restoreBackup methods with encrypted zip validation
 - [x] 2026-03-03 Centralize fakes: create reusable CloudApiClientFake + QuickTunnelService mock in setUp() / trait
 - [x] 2026-03-03 Make tunnel IDs predictable ? fake provision() to always return 'test-tunnel-999' instead of UUID
 - [x] 2026-03-03 Add Http::fake() for /quick-tunnel endpoint with success shape + known subdomain/tunnel_id/token
