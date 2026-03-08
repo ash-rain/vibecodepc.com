@@ -34,7 +34,7 @@
 - [x] 2026-03-08 test: add feature tests for ShowDeviceQr command output and error handling when no identity exists
 - [x] 2026-03-08 test: add Livewire tests for HealthBar component polling and metric display
 - [x] 2026-03-08 test: add Livewire tests for Wizard Tunnel component step validation and skip functionality
-- [ ] test: add unit tests for AnalyticsEvent model scopes (type, category, occurredBetween)
+- [x] 2026-03-08 test: add unit tests for AnalyticsEvent model scopes (type, category, occurredBetween)
 - [ ] test: add unit tests for QuickTunnel model relationships and status helper methods
 - [ ] docs: document BackupService usage and restore procedures in README
 - [ ] docs: add troubleshooting section for device identity generation and QR pairing
@@ -45,6 +45,7 @@
 
 ## Done
 
+- [x] 2026-03-08 test: add unit tests for AnalyticsEvent model scopes (type, category, occurredBetween)
 - [x] 2026-03-08 test: add Livewire tests for Wizard Tunnel component step validation and skip functionality
 - [x] 2026-03-08 test: add unit tests for SystemService admin password, timezone setting, and timezone retrieval
 - [x] 2026-03-08 test: add unit tests for BackupService createBackup and restoreBackup methods with encrypted zip validation
