@@ -321,7 +321,7 @@ describe('restoreBackup', function () {
         $service = new BackupService;
 
         expect(fn () => $service->restoreBackup('/nonexistent/backup.zip'))
-            ->toThrow(\RuntimeException::class, 'Failed to open backup file.');
+            ->toThrow(\RuntimeException::class, 'Backup file does not exist.');
     });
 
     it('throws exception for zip missing backup.enc', function () {
@@ -382,6 +382,42 @@ describe('restoreBackup', function () {
         }
     });
 
+    it('throws exception for tampered backup with invalid checksum', function () {
+        DB::table('ai_providers')->insert([
+            'provider' => 'test',
+            'api_key_encrypted' => encrypt('key'),
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $service = new BackupService;
+        $zipPath = $service->createBackup();
+
+        $zip = new ZipArchive;
+        $zip->open($zipPath);
+        $encrypted = $zip->getFromName('backup.enc');
+        $zip->close();
+
+        $data = json_decode(Crypt::decryptString($encrypted), true);
+        $data['tables']['ai_providers'][0]['provider'] = 'hacked';
+
+        $tamperedZipPath = storage_path('app/private/tampered-backup.zip');
+        $tamperedZip = new ZipArchive;
+        $tamperedZip->open($tamperedZipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+        $tamperedZip->addFromString('backup.enc', Crypt::encryptString(json_encode($data)));
+        $tamperedZip->close();
+
+        try {
+            expect(fn () => $service->restoreBackup($tamperedZipPath))
+                ->toThrow(\RuntimeException::class, 'Backup file integrity check failed');
+        } finally {
+            if (file_exists($tamperedZipPath)) {
+                unlink($tamperedZipPath);
+            }
+        }
+    });
+
     it('skips tables not in BACKUP_TABLES constant', function () {
         DB::table('ai_providers')->insert([
             'provider' => 'valid',
@@ -400,8 +436,10 @@ describe('restoreBackup', function () {
         $zip->close();
 
         $data = json_decode(Crypt::decryptString($encrypted), true);
+        unset($data['checksum']);
         $data['tables']['unknown_table'] = [['id' => 1, 'data' => 'test']];
         $data['tables']['another_invalid'] = [['id' => 2]];
+        $data['checksum'] = hash('sha256', json_encode($data, JSON_UNESCAPED_UNICODE));
 
         $newZipPath = storage_path('app/private/modified-backup.zip');
         $newZip = new ZipArchive;

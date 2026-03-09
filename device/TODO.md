@@ -41,8 +41,7 @@
 - [x] 2026-03-08 chore: add GitHub Actions CI workflow for automated testing on push and PR
 - [x] 2026-03-09 feat: add health check endpoint for external monitoring systems
 - [x] 2026-03-09 refactor: extract magic strings from BackupService table list into a configuration file
-- [ ] fix: validate backup file integrity before attempting restore in BackupService
-- [ ] fix: validate backup file integrity before attempting restore in BackupService
+- [x] 2026-03-09 fix: validate backup file integrity before attempting restore in BackupService
 
 ## Done
 
