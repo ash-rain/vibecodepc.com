@@ -27,8 +27,8 @@
 
 ## Todo
 
-- [ ] 2026-03-09 test: add unit tests for AiProviderConfig model isValidated and getDecryptedKey methods
-- [ ] 2026-03-09 test: add unit tests for AiProviderConfig model isValidated and getDecryptedKey methods
+- [x] 2026-03-09 test: add unit tests for AiProviderConfig model isValidated and getDecryptedKey methods
+- [x] 2026-03-09 test: add unit tests for AiProviderConfig model isValidated and getDecryptedKey methods
 - [ ] 2026-03-09 test: add unit tests for CloudCredential model isPaired relationship
 - [ ] 2026-03-09 test: add unit tests for QuickTunnelService provision and status methods
 - [ ] 2026-03-09 test: add feature tests for PollTunnelStatus command output and error handling
