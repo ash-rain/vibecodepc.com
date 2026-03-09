@@ -71,6 +71,38 @@ class TunnelService
     }
 
     /**
+     * Poll the tunnel status and update config if token file appears after skip.
+     *
+     * @return array{detected: bool, message: string|null, error: string|null}
+     */
+    public function pollStatus(): array
+    {
+        $config = TunnelConfig::current();
+
+        // Only check if tunnel was skipped but not yet verified
+        if (! $config || ! $config->isSkipped()) {
+            return ['detected' => false, 'message' => null, 'error' => null];
+        }
+
+        // Check if tunnel token file now exists (provisioned externally)
+        if (! $this->isRunning()) {
+            return ['detected' => false, 'message' => null, 'error' => null];
+        }
+
+        // Tunnel token appeared! Update the config
+        try {
+            $config->markAsAvailable();
+            Log::info('Tunnel status auto-detected: token file appeared, tunnel marked as available');
+
+            return ['detected' => true, 'message' => 'Tunnel is now available and marked as active', 'error' => null];
+        } catch (\Throwable $e) {
+            Log::error('Failed to update tunnel status on auto-detect', ['error' => $e->getMessage()]);
+
+            return ['detected' => false, 'message' => null, 'error' => "Failed to update tunnel status: {$e->getMessage()}"];
+        }
+    }
+
+    /**
      * Check if tunnel is effectively configured and ready to use.
      * Returns true if credentials exist OR if tunnel was skipped but token is now available.
      */

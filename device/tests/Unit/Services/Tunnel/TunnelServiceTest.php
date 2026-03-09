@@ -464,3 +464,90 @@ it('isEffectivelyConfigured returns true when tunnel was skipped but now availab
 
     File::deleteDirectory(dirname($tokenFile));
 });
+
+// Poll status tests
+it('pollStatus returns not detected when no config exists', function () {
+    $service = new TunnelService(tokenFilePath: storage_path('app/test-tunnel/token'));
+    $result = $service->pollStatus();
+
+    expect($result['detected'])->toBeFalse()
+        ->and($result['message'])->toBeNull()
+        ->and($result['error'])->toBeNull();
+});
+
+it('pollStatus returns not detected when tunnel is not skipped', function () {
+    TunnelConfig::factory()->active()->create();
+
+    $service = new TunnelService(tokenFilePath: storage_path('app/test-tunnel/token'));
+    $result = $service->pollStatus();
+
+    expect($result['detected'])->toBeFalse()
+        ->and($result['message'])->toBeNull()
+        ->and($result['error'])->toBeNull();
+});
+
+it('pollStatus returns not detected when tunnel is skipped but token file does not exist', function () {
+    TunnelConfig::factory()->skipped()->create();
+
+    $service = new TunnelService(tokenFilePath: storage_path('app/test-tunnel-poll-missing/token'));
+    $result = $service->pollStatus();
+
+    expect($result['detected'])->toBeFalse()
+        ->and($result['message'])->toBeNull()
+        ->and($result['error'])->toBeNull();
+});
+
+it('pollStatus detects token and updates status when token file appears', function () {
+    $tokenFile = storage_path('app/test-tunnel-poll-detect/token');
+
+    // Clean up first
+    if (is_dir(dirname($tokenFile))) {
+        File::deleteDirectory(dirname($tokenFile));
+    }
+
+    @mkdir(dirname($tokenFile), 0755, true);
+    file_put_contents($tokenFile, 'test-tunnel-token');
+
+    TunnelConfig::factory()->skipped()->create();
+
+    $service = new TunnelService(tokenFilePath: $tokenFile);
+    $result = $service->pollStatus();
+
+    expect($result['detected'])->toBeTrue()
+        ->and($result['message'])->toBe('Tunnel is now available and marked as active')
+        ->and($result['error'])->toBeNull();
+
+    $config = TunnelConfig::current();
+    expect($config->status)->toBe('available')
+        ->and($config->skipped_at)->toBeNull();
+
+    File::deleteDirectory(dirname($tokenFile));
+});
+
+it('pollStatus handles edge case when config is deleted during execution', function () {
+    $tokenFile = storage_path('app/test-tunnel-poll-race/token');
+
+    // Clean up first
+    if (is_dir(dirname($tokenFile))) {
+        File::deleteDirectory(dirname($tokenFile));
+    }
+
+    @mkdir(dirname($tokenFile), 0755, true);
+    file_put_contents($tokenFile, 'test-token');
+
+    TunnelConfig::factory()->skipped()->create();
+
+    $service = new TunnelService(tokenFilePath: $tokenFile);
+
+    // Delete config after creating service
+    TunnelConfig::query()->delete();
+
+    $result = $service->pollStatus();
+
+    // Should handle gracefully - no config means not detected
+    expect($result['detected'])->toBeFalse()
+        ->and($result['message'])->toBeNull()
+        ->and($result['error'])->toBeNull();
+
+    File::deleteDirectory(dirname($tokenFile));
+});
