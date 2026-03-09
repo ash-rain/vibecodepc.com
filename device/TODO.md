@@ -28,8 +28,7 @@
 ## Todo
 
 - [x] 2026-03-09 test: add unit tests for AiProviderConfig model isValidated and getDecryptedKey methods
-- [x] 2026-03-09 test: add unit tests for AiProviderConfig model isValidated and getDecryptedKey methods
-- [ ] 2026-03-09 test: add unit tests for CloudCredential model isPaired relationship
+- [x] 2026-03-09 test: add unit tests for CloudCredential model isPaired relationship
 - [ ] 2026-03-09 test: add unit tests for QuickTunnelService provision and status methods
 - [ ] 2026-03-09 test: add feature tests for PollTunnelStatus command output and error handling
 - [ ] 2026-03-09 test: add Livewire tests for TunnelLogin component authentication flow
@@ -42,6 +41,7 @@
 
 ## Done
 
+- [x] 2026-03-09 test: add unit tests for CloudCredential model isPaired relationship
 - [x] 2026-03-09 test: add unit tests for DeviceState model getValue and setValue methods
 - [x] 2026-03-08 docs: add troubleshooting section for device identity generation and QR pairing
 - [x] 2026-03-08 docs: document BackupService usage and restore procedures in README
