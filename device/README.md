@@ -66,15 +66,269 @@ app/
 
 ## Environment Variables
 
-Key variables in `.env` (see `.env.example` for the full list):
+This application uses environment variables for configuration. Copy `.env.example` to `.env` and customize as needed.
+
+### Application Settings
 
 | Variable | Default | Description |
 |---|---|---|
-| `VIBECODEPC_CLOUD_URL` | `https://vibecodepc.com` | Cloud edge URL |
+| `APP_NAME` | `VibeCodePC` | Application name displayed in UI |
+| `APP_ENV` | `local` | Environment: `local`, `production`, `testing` |
+| `APP_KEY` | — | 32-character encryption key (generate with `php artisan key:generate`) |
+| `APP_DEBUG` | `true` | Enable debug mode (disable in production) |
+| `APP_URL` | `http://vibecodepc.local` | Base URL for URL generation |
+| `APP_LOCALE` | `en` | Default language locale |
+| `APP_FALLBACK_LOCALE` | `en` | Fallback locale when translation missing |
+| `APP_FAKER_LOCALE` | `en_US` | Locale for fake data generation |
+| `APP_MAINTENANCE_DRIVER` | `file` | Maintenance mode driver: `file`, `cache` |
+| `BCRYPT_ROUNDS` | `12` | Password hashing rounds |
+
+### Database Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `DB_CONNECTION` | `sqlite` | Database driver: `sqlite`, `mysql`, `mariadb`, `pgsql`, `sqlsrv` |
+| `DB_DATABASE` | `database.sqlite` | Database name/path (SQLite: path, MySQL: name) |
+| `DB_URL` | — | Database connection URL (overrides other settings) |
+| `DB_FOREIGN_KEYS` | `true` | Enable foreign key constraints (SQLite) |
+
+**MySQL/MariaDB specific:**
+| Variable | Default | Description |
+|---|---|---|
+| `DB_HOST` | `127.0.0.1` | Database host |
+| `DB_PORT` | `3306` / `3306` | Database port |
+| `DB_USERNAME` | `root` | Database username |
+| `DB_PASSWORD` | — | Database password |
+| `DB_SOCKET` | — | Unix socket path |
+| `DB_CHARSET` | `utf8mb4` | Character set |
+| `DB_COLLATION` | `utf8mb4_unicode_ci` | Collation |
+| `MYSQL_ATTR_SSL_CA` | — | SSL CA certificate path |
+
+**PostgreSQL specific:**
+| Variable | Default | Description |
+|---|---|---|
+| `DB_HOST` | `127.0.0.1` | Database host |
+| `DB_PORT` | `5432` | Database port |
+| `DB_SSLMODE` | `prefer` | SSL mode: `disable`, `allow`, `prefer`, `require`, `verify-ca`, `verify-full` |
+
+### Session Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `SESSION_DRIVER` | `database` | Session driver: `file`, `cookie`, `database`, `memcached`, `redis`, `dynamodb`, `array` |
+| `SESSION_LIFETIME` | `120` | Session idle timeout in minutes (default: 2 hours) |
+| `SESSION_ENCRYPT` | `false` | Encrypt session data |
+| `SESSION_PATH` | `/` | Session cookie path |
+| `SESSION_DOMAIN` | `null` | Session cookie domain |
+| `SESSION_CONNECTION` | — | Database connection for session storage |
+| `SESSION_TABLE` | `sessions` | Database table for sessions |
+| `SESSION_STORE` | — | Cache store for session (affects `redis`, `memcached`, `dynamodb`) |
+| `SESSION_COOKIE` | `{app}-session` | Session cookie name |
+| `SESSION_SECURE_COOKIE` | — | HTTPS-only cookies |
+| `SESSION_HTTP_ONLY` | `true` | HTTP-only cookies (prevents JS access) |
+| `SESSION_SAME_SITE` | `lax` | SameSite cookie attribute: `lax`, `strict`, `none` |
+| `SESSION_PARTITIONED_COOKIE` | `false` | Partitioned cookies for cross-site contexts |
+| `SESSION_EXPIRE_ON_CLOSE` | `false` | Expire session when browser closes |
+
+> **Note:** On the device, `SESSION_LIFETIME` is set to `10080` (1 week) since the device is always-on.
+
+### Cache Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `CACHE_STORE` | `database` | Cache driver: `array`, `database`, `file`, `memcached`, `redis`, `dynamodb`, `octane`, `failover`, `null` |
+| `CACHE_PREFIX` | `{app}-cache-` | Key prefix for cache entries |
+
+**Database cache:**
+| Variable | Default | Description |
+|---|---|---|
+| `DB_CACHE_CONNECTION` | — | Database connection for cache |
+| `DB_CACHE_TABLE` | `cache` | Cache table name |
+| `DB_CACHE_LOCK_CONNECTION` | — | Connection for cache locks |
+| `DB_CACHE_LOCK_TABLE` | — | Table for cache locks |
+
+**Memcached:**
+| Variable | Default | Description |
+|---|---|---|
+| `MEMCACHED_PERSISTENT_ID` | — | Persistent connection ID |
+| `MEMCACHED_USERNAME` | — | SASL username |
+| `MEMCACHED_PASSWORD` | — | SASL password |
+| `MEMCACHED_HOST` | `127.0.0.1` | Memcached host |
+| `MEMCACHED_PORT` | `11211` | Memcached port |
+
+**Redis cache:**
+| Variable | Default | Description |
+|---|---|---|
+| `REDIS_CACHE_CONNECTION` | `cache` | Redis connection for cache |
+| `REDIS_CACHE_LOCK_CONNECTION` | `default` | Redis connection for cache locks |
+
+**DynamoDB cache:**
+| Variable | Default | Description |
+|---|---|---|
+| `DYNAMODB_CACHE_TABLE` | `cache` | DynamoDB table name |
+| `DYNAMODB_ENDPOINT` | — | Custom endpoint URL |
+
+### Queue Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `QUEUE_CONNECTION` | `database` | Queue driver: `sync`, `database`, `beanstalkd`, `sqs`, `redis`, `deferred`, `background`, `failover`, `null` |
+| `QUEUE_FAILED_DRIVER` | `database-uuids` | Failed job storage: `database-uuids`, `dynamodb`, `file`, `null` |
+
+**Database queue:**
+| Variable | Default | Description |
+|---|---|---|
+| `DB_QUEUE_CONNECTION` | — | Database connection for queue |
+| `DB_QUEUE_TABLE` | `jobs` | Jobs table name |
+| `DB_QUEUE` | `default` | Default queue name |
+| `DB_QUEUE_RETRY_AFTER` | `600` | Seconds before retrying failed jobs |
+
+**Beanstalkd:**
+| Variable | Default | Description |
+|---|---|---|
+| `BEANSTALKD_QUEUE_HOST` | `localhost` | Beanstalkd host |
+| `BEANSTALKD_QUEUE` | `default` | Queue name |
+| `BEANSTALKD_QUEUE_RETRY_AFTER` | `90` | Retry timeout in seconds |
+
+**SQS:**
+| Variable | Default | Description |
+|---|---|---|
+| `SQS_PREFIX` | `https://sqs.us-east-1...` | SQS queue URL prefix |
+| `SQS_QUEUE` | `default` | Queue name |
+| `SQS_SUFFIX` | — | Queue name suffix |
+
+**Redis queue:**
+| Variable | Default | Description |
+|---|---|---|
+| `REDIS_QUEUE_CONNECTION` | `default` | Redis connection |
+| `REDIS_QUEUE` | `default` | Queue name |
+| `REDIS_QUEUE_RETRY_AFTER` | `90` | Retry timeout in seconds |
+
+### Redis Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `REDIS_CLIENT` | `phpredis` | Redis client: `phpredis`, `predis` |
+| `REDIS_URL` | — | Redis connection URL |
+| `REDIS_HOST` | `127.0.0.1` | Redis host |
+| `REDIS_PORT` | `6379` | Redis port |
+| `REDIS_PASSWORD` | `null` | Redis password |
+| `REDIS_USERNAME` | — | Redis username |
+| `REDIS_DB` | `0` | Default database number |
+| `REDIS_CACHE_DB` | `1` | Cache database number |
+| `REDIS_CLUSTER` | `redis` | Cluster mode |
+| `REDIS_PREFIX` | `{app}-database-` | Key prefix |
+| `REDIS_PERSISTENT` | `false` | Persistent connections |
+| `REDIS_MAX_RETRIES` | `3` | Max connection retries |
+| `REDIS_BACKOFF_ALGORITHM` | `decorrelated_jitter` | Retry backoff algorithm |
+| `REDIS_BACKOFF_BASE` | `100` | Backoff base delay (ms) |
+| `REDIS_BACKOFF_CAP` | `1000` | Backoff cap (ms) |
+
+### Logging Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `LOG_CHANNEL` | `stack` | Default log channel |
+| `LOG_STACK` | `single` | Stack channels (comma-separated) |
+| `LOG_DEPRECATIONS_CHANNEL` | `null` | Deprecation log channel |
+| `LOG_LEVEL` | `debug` | Minimum log level: `debug`, `info`, `notice`, `warning`, `error`, `critical`, `alert`, `emergency` |
+
+### Filesystem Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `FILESYSTEM_DISK` | `local` | Default disk: `local`, `public`, `s3` |
+
+**AWS S3:**
+| Variable | Default | Description |
+|---|---|---|
+| `AWS_ACCESS_KEY_ID` | — | AWS access key |
+| `AWS_SECRET_ACCESS_KEY` | — | AWS secret key |
+| `AWS_DEFAULT_REGION` | `us-east-1` | AWS region |
+| `AWS_BUCKET` | — | S3 bucket name |
+| `AWS_URL` | — | Custom S3 URL |
+| `AWS_ENDPOINT` | — | Custom S3 endpoint |
+| `AWS_USE_PATH_STYLE_ENDPOINT` | `false` | Use path-style endpoints |
+
+### VibeCodePC-Specific Settings
+
+| Variable | Default | Description |
+|---|---|---|
+| `VIBECODEPC_CLOUD_URL` | `https://vibecodepc.com` | Cloud API base URL |
+| `VIBECODEPC_CLOUD_BROWSER_URL` | `VIBECODEPC_CLOUD_URL` | Browser-facing cloud URL (for Docker dev) |
 | `VIBECODEPC_DEVICE_JSON` | `storage/device.json` | Path to device identity file |
-| `CODE_SERVER_PORT` | `8443` | code-server port |
-| `GITHUB_CLIENT_ID` | — | GitHub OAuth client ID |
-| `CLOUDFLARED_CONFIG` | `/etc/cloudflared/config.yml` | Cloudflare tunnel config path |
+| `VIBECODEPC_PAIRING_REQUIRED` | `false` | Require cloud pairing to use device |
+| `VIBECODEPC_PROJECTS_PATH` | `storage/app/projects` | Base path for projects |
+| `VIBECODEPC_MAX_PROJECTS` | `10` | Maximum number of projects allowed |
+
+### Code-Server Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `CODE_SERVER_PORT` | `8443` | code-server listening port |
+| `CODE_SERVER_CONFIG` | `~/.config/code-server/config.yaml` | code-server config file path |
+| `CODE_SERVER_SETTINGS` | `~/.local/share/code-server/User/settings.json` | VS Code: settings path |
+
+### GitHub OAuth Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `GITHUB_CLIENT_ID` | — | GitHub OAuth app client ID |
+
+### Cloudflare Tunnel Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `CLOUDFLARED_CONFIG` | `/etc/cloudflared/config.yml` | cloudflared config path |
+| `DEVICE_APP_PORT` | `8081` | Port for device app tunnel |
+| `TUNNEL_TOKEN_PATH` | `storage/tunnel/token` | Path to tunnel token file |
+| `TUNNEL_ORIGIN_HOST` | — | Tunnel origin host override |
+
+### Docker Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `DOCKER_HOST` | `unix:///var/run/docker.sock` | Docker daemon socket |
+| `DOCKER_HOST_PROJECTS_PATH` | — | Host path for projects (Docker dev only) |
+
+### Third-Party Services
+
+**Postmark:**
+| Variable | Default | Description |
+|---|---|---|
+| `POSTMARK_API_KEY` | — | Postmark API key |
+
+**Resend:**
+| Variable | Default | Description |
+|---|---|---|
+| `RESEND_API_KEY` | — | Resend API key |
+
+**Slack:**
+| Variable | Default | Description |
+|---|---|---|
+| `SLACK_BOT_USER_OAUTH_TOKEN` | — | Slack bot OAuth token |
+| `SLACK_BOT_USER_DEFAULT_CHANNEL` | — | Default Slack channel |
+
+### Broadcast Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `BROADCAST_CONNECTION` | `log` | Broadcast driver: `pusher`, `ably`, `redis`, `log`, `null` |
+
+### Mail Configuration
+
+See `config/mail.php` for mail configuration options. Common variables:
+
+| Variable | Description |
+|---|---|
+| `MAIL_MAILER` | Mail driver: `smtp`, `sendmail`, `mailgun`, `postmark`, `ses`, `resend` |
+| `MAIL_HOST` | SMTP host |
+| `MAIL_PORT` | SMTP port |
+| `MAIL_USERNAME` | SMTP username |
+| `MAIL_PASSWORD` | SMTP password |
+| `MAIL_ENCRYPTION` | Encryption: `tls`, `ssl`, `null` |
+| `MAIL_FROM_ADDRESS` | Default from address |
+| `MAIL_FROM_NAME` | Default from name |
 
 > On the actual Raspberry Pi, `VIBECODEPC_DEVICE_JSON` defaults to `storage/device.json`.
 

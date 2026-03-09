@@ -33,8 +33,8 @@
 - [x] 2026-03-09 test: add Livewire tests for TunnelLogin component authentication flow
 - [x] 2026-03-09 test: add Livewire tests for NetworkSetup component IP detection and validation
 - [x] 2026-03-09 refactor: extract tunnel status polling logic from PollTunnelStatus into TunnelService
-- [ ] 2026-03-09 feat: add API rate limiting middleware for public endpoints
-- [ ] 2026-03-09 docs: document environment variables and configuration options in README
+- [x] 2026-03-09 feat: add API rate limiting middleware for public endpoints
+- [x] 2026-03-09 docs: document environment variables and configuration options in README
 - [ ] 2026-03-09 chore: add database seeder for development environments with sample data
 
 ## Done
