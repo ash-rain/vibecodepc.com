@@ -27,21 +27,18 @@
 
 ## Todo
 
-- [x] 2026-03-08 test: add unit tests for BackupService createBackup and restoreBackup methods with encrypted zip validation
-- [x] 2026-03-08 test: add unit tests for ConfigSyncService syncIfNeeded with remote version handling and token updates
-- [x] 2026-03-08 test: add unit tests for SystemService admin password, timezone setting, and timezone retrieval
-- [x] 2026-03-08 test: add feature tests for GenerateDeviceId command with --force and --path options
-- [x] 2026-03-08 test: add feature tests for ShowDeviceQr command output and error handling when no identity exists
-- [x] 2026-03-08 test: add Livewire tests for HealthBar component polling and metric display
-- [x] 2026-03-08 test: add Livewire tests for Wizard Tunnel component step validation and skip functionality
-- [x] 2026-03-08 test: add unit tests for AnalyticsEvent model scopes (type, category, occurredBetween)
-- [x] 2026-03-08 test: add unit tests for QuickTunnel model relationships and status helper methods
-- [x] 2026-03-08 docs: document BackupService usage and restore procedures in README
-- [x] 2026-03-08 docs: add troubleshooting section for device identity generation and QR pairing
-- [x] 2026-03-08 chore: add GitHub Actions CI workflow for automated testing on push and PR
-- [x] 2026-03-09 feat: add health check endpoint for external monitoring systems
-- [x] 2026-03-09 refactor: extract magic strings from BackupService table list into a configuration file
-- [x] 2026-03-09 fix: validate backup file integrity before attempting restore in BackupService
+- [ ] 2026-03-09 test: add unit tests for DeviceState model getValue and setValue methods
+- [ ] 2026-03-09 test: add unit tests for AiProviderConfig model isValidated and getDecryptedKey methods
+- [ ] 2026-03-09 test: add unit tests for CloudCredential model isPaired relationship
+- [ ] 2026-03-09 test: add unit tests for QuickTunnelService provision and status methods
+- [ ] 2026-03-09 test: add feature tests for PollTunnelStatus command output and error handling
+- [ ] 2026-03-09 test: add Livewire tests for TunnelLogin component authentication flow
+- [ ] 2026-03-09 test: add Livewire tests for PairingScreen component pairing state management
+- [ ] 2026-03-09 test: add Livewire tests for NetworkSetup component IP detection and validation
+- [ ] 2026-03-09 refactor: extract tunnel status polling logic from PollTunnelStatus into TunnelService
+- [ ] 2026-03-09 feat: add API rate limiting middleware for public endpoints
+- [ ] 2026-03-09 docs: document environment variables and configuration options in README
+- [ ] 2026-03-09 chore: add database seeder for development environments with sample data
 
 ## Done
 
