@@ -30,7 +30,7 @@
 - [x] 2026-03-09 test: add unit tests for AiProviderConfig model isValidated and getDecryptedKey methods
 - [x] 2026-03-09 test: add unit tests for CloudCredential model isPaired relationship
 - [x] 2026-03-09 test: add feature tests for PollTunnelStatus command output and error handling
-- [ ] 2026-03-09 test: add Livewire tests for TunnelLogin component authentication flow
+- [x] 2026-03-09 test: add Livewire tests for TunnelLogin component authentication flow
 - [ ] 2026-03-09 test: add Livewire tests for PairingScreen component pairing state management
 - [ ] 2026-03-09 test: add Livewire tests for NetworkSetup component IP detection and validation
 - [ ] 2026-03-09 refactor: extract tunnel status polling logic from PollTunnelStatus into TunnelService
