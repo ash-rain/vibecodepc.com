@@ -36,4 +36,15 @@ return [
         'socket' => env('DOCKER_HOST', 'unix:///var/run/docker.sock'),
         'host_projects_path' => env('DOCKER_HOST_PROJECTS_PATH'),
     ],
+
+    'backup' => [
+        'tables' => [
+            'ai_providers',
+            'tunnel_configs',
+            'github_credentials',
+            'device_state',
+            'wizard_progress',
+            'cloud_credentials',
+        ],
+    ],
 ];

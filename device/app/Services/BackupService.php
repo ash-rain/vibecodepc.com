@@ -10,20 +10,23 @@ use ZipArchive;
 
 class BackupService
 {
-    private const BACKUP_TABLES = [
-        'ai_providers',
-        'tunnel_configs',
-        'github_credentials',
-        'device_state',
-        'wizard_progress',
-        'cloud_credentials',
-    ];
+    private function getBackupTables(): array
+    {
+        return config('vibecodepc.backup.tables', [
+            'ai_providers',
+            'tunnel_configs',
+            'github_credentials',
+            'device_state',
+            'wizard_progress',
+            'cloud_credentials',
+        ]);
+    }
 
     public function createBackup(): string
     {
         $data = ['tables' => [], 'created_at' => now()->toIso8601String()];
 
-        foreach (self::BACKUP_TABLES as $table) {
+        foreach ($this->getBackupTables() as $table) {
             $data['tables'][$table] = DB::table($table)->get()->toArray();
         }
 
@@ -70,7 +73,7 @@ class BackupService
 
         DB::transaction(function () use ($data): void {
             foreach ($data['tables'] as $table => $rows) {
-                if (! in_array($table, self::BACKUP_TABLES, true)) {
+                if (! in_array($table, $this->getBackupTables(), true)) {
                     continue;
                 }
 
