@@ -39,7 +39,7 @@
 - [x] 2026-03-08 docs: document BackupService usage and restore procedures in README
 - [x] 2026-03-08 docs: add troubleshooting section for device identity generation and QR pairing
 - [x] 2026-03-08 chore: add GitHub Actions CI workflow for automated testing on push and PR
-- [ ] feat: add health check endpoint for external monitoring systems
+- [x] 2026-03-09 feat: add health check endpoint for external monitoring systems
 - [ ] refactor: extract magic strings from BackupService table list into a configuration file
 - [ ] fix: validate backup file integrity before attempting restore in BackupService
 
