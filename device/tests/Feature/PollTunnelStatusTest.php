@@ -62,3 +62,63 @@ it('detects tunnel token and updates status when token file appears', function (
     expect($config->status)->toBe('available');
     expect($config->skipped_at)->toBeNull();
 });
+
+it('handles edge case when config is deleted during execution', function () {
+    TunnelConfig::factory()->skipped()->create();
+
+    // Create the token file
+    $tokenPath = storage_path('tunnel/token');
+    File::makeDirectory(dirname($tokenPath), 0755, true, true);
+    File::put($tokenPath, 'test-tunnel-token');
+
+    // Delete the config after setup to simulate race condition
+    TunnelConfig::query()->delete();
+
+    // Command should handle gracefully
+    $this->artisan('device:poll-tunnel-status')
+        ->assertSuccessful();
+});
+
+it('handles edge case when token file is empty', function () {
+    TunnelConfig::factory()->skipped()->create();
+
+    // Create an empty token file - should NOT trigger detection since isRunning() checks filesize > 0
+    $tokenPath = storage_path('tunnel/token');
+    File::makeDirectory(dirname($tokenPath), 0755, true, true);
+    File::put($tokenPath, '');
+
+    // Command should exit silently because empty file doesn't count as "running"
+    $this->artisan('device:poll-tunnel-status')
+        ->doesntExpectOutputToContain('Tunnel token detected')
+        ->assertSuccessful();
+
+    $config = TunnelConfig::current();
+    expect($config->status)->toBe('skipped');
+});
+
+it('displays correct output when tunnel is already available', function () {
+    TunnelConfig::factory()->available()->create();
+
+    // Create the token file
+    $tokenPath = storage_path('tunnel/token');
+    File::makeDirectory(dirname($tokenPath), 0755, true, true);
+    File::put($tokenPath, 'test-tunnel-token');
+
+    $this->artisan('device:poll-tunnel-status')
+        ->doesntExpectOutputToContain('Tunnel token detected')
+        ->assertSuccessful();
+});
+
+it('handles missing tunnel config gracefully', function () {
+    // No tunnel config created
+    $this->artisan('device:poll-tunnel-status')
+        ->assertSuccessful()
+        ->doesntExpectOutputToContain('Tunnel token detected');
+});
+
+it('validates command signature and description', function () {
+    $this->artisan('device:poll-tunnel-status --help')
+        ->assertSuccessful()
+        ->expectsOutputToContain('device:poll-tunnel-status')
+        ->expectsOutputToContain('Check if tunnel token file appeared and update tunnel status');
+});
