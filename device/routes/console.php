@@ -74,3 +74,10 @@ Schedule::call(function () {
 
     app(ConfigSyncService::class)->syncIfNeeded($deviceId);
 })->everyThreeMinutes()->name('device-heartbeat');
+
+// Cleanup abandoned and errored projects daily
+Schedule::job(App\Jobs\CleanupAbandonedProjectsJob::class)
+    ->daily()
+    ->at('02:00')
+    ->withoutOverlapping()
+    ->name('cleanup-abandoned-projects');
