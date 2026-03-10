@@ -8,6 +8,7 @@ use App\Services\DeviceRegistry\DeviceIdentityService;
 use App\Services\Tunnel\TunnelService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use VibecodePC\Common\DTOs\DeviceInfo;
 
 uses(RefreshDatabase::class);
@@ -520,6 +521,108 @@ it('pollStatus detects token and updates status when token file appears', functi
     $config = TunnelConfig::current();
     expect($config->status)->toBe('available')
         ->and($config->skipped_at)->toBeNull();
+
+    File::deleteDirectory(dirname($tokenFile));
+});
+
+it('returns error when disk is full during start', function () {
+    $tokenFile = storage_path('app/test-tunnel-disk-full/token');
+    $dir = dirname($tokenFile);
+
+    // Clean up any existing test artifacts
+    if (is_dir($dir)) {
+        File::deleteDirectory($dir);
+    }
+
+    @mkdir($dir, 0755, true);
+
+    // Create a token that would require significant space
+    TunnelConfig::factory()->verified()->create([
+        'tunnel_token_encrypted' => str_repeat('x', 1024 * 1024), // 1MB token
+    ]);
+
+    // Mock disk_free_space to return a very small value to simulate disk full
+    $service = new class(tokenFilePath: $tokenFile) extends TunnelService
+    {
+        protected function hasSufficientDiskSpace(int $requiredBytes = 1024): bool
+        {
+            return false;
+        }
+    };
+
+    $error = $service->start();
+
+    expect($error)->toBe('Failed to write tunnel token file: insufficient disk space')
+        ->and(file_exists($tokenFile))->toBeFalse();
+
+    File::deleteDirectory(dirname($tokenFile));
+});
+
+it('returns error when disk is full during stop', function () {
+    $tokenFile = storage_path('app/test-tunnel-disk-full-stop/token');
+    $dir = dirname($tokenFile);
+    @mkdir($dir, 0755, true);
+    file_put_contents($tokenFile, 'test-token-value');
+
+    $service = new class(tokenFilePath: $tokenFile) extends TunnelService
+    {
+        protected function hasSufficientDiskSpace(int $requiredBytes = 1024): bool
+        {
+            return false;
+        }
+    };
+
+    $error = $service->stop();
+
+    expect($error)->toBe('Failed to truncate tunnel token file: insufficient disk space')
+        ->and(file_get_contents($tokenFile))->toBe('test-token-value'); // File should not be modified
+
+    File::deleteDirectory(dirname($tokenFile));
+});
+
+it('logs error when disk is full during cleanup', function () {
+    $tokenFile = storage_path('app/test-tunnel-disk-full-cleanup/token');
+    $dir = dirname($tokenFile);
+    @mkdir($dir, 0755, true);
+    file_put_contents($tokenFile, 'test-token-value');
+
+    TunnelConfig::factory()->verified()->create();
+
+    Log::spy();
+
+    $service = new class(tokenFilePath: $tokenFile) extends TunnelService
+    {
+        protected function hasSufficientDiskSpace(int $requiredBytes = 1024): bool
+        {
+            return false;
+        }
+    };
+
+    $service->cleanup();
+
+    // The file should still exist (not truncated) and config should be marked as error
+    expect(file_get_contents($tokenFile))->toBe('test-token-value')
+        ->and(TunnelConfig::current()->status)->toBe('error');
+
+    Log::shouldHaveReceived('error')->with('Insufficient disk space for tunnel token file cleanup', \Mockery::any());
+
+    File::deleteDirectory(dirname($tokenFile));
+});
+
+it('successfully writes token when disk has sufficient space', function () {
+    $tokenFile = storage_path('app/test-tunnel-disk-ok/token');
+    $dir = dirname($tokenFile);
+    @mkdir($dir, 0755, true);
+
+    TunnelConfig::factory()->verified()->create();
+
+    $service = new TunnelService(tokenFilePath: $tokenFile);
+
+    $error = $service->start();
+
+    expect($error)->toBeNull()
+        ->and(file_exists($tokenFile))->toBeTrue()
+        ->and(file_get_contents($tokenFile))->not->toBeEmpty();
 
     File::deleteDirectory(dirname($tokenFile));
 });

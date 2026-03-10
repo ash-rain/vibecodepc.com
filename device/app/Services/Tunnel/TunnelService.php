@@ -139,6 +139,20 @@ class TunnelService
     }
 
     /**
+     * Check if there's sufficient disk space for token file operations.
+     *
+     * @param  int  $requiredBytes  The minimum required space in bytes
+     * @return bool True if there's sufficient space, false otherwise
+     */
+    protected function hasSufficientDiskSpace(int $requiredBytes = 1024): bool
+    {
+        $dir = dirname($this->tokenFilePath);
+        $freeSpace = disk_free_space($dir);
+
+        return $freeSpace !== false && $freeSpace >= $requiredBytes;
+    }
+
+    /**
      * Start cloudflared by writing the tunnel token to the shared volume.
      * The cloudflared container picks it up automatically via its entrypoint.
      * If already running with a different token (e.g. after re-provisioning),
@@ -167,6 +181,16 @@ class TunnelService
             return "Tunnel token directory is not writable: {$dir}";
         }
 
+        if (! $this->hasSufficientDiskSpace(strlen($token) + 1024)) {
+            Log::error('Insufficient disk space for tunnel token file', [
+                'path' => $this->tokenFilePath,
+                'required' => strlen($token) + 1024,
+                'available' => disk_free_space($dir),
+            ]);
+
+            return 'Failed to write tunnel token file: insufficient disk space';
+        }
+
         $result = file_put_contents($this->tokenFilePath, $token);
 
         if ($result === false) {
@@ -190,6 +214,15 @@ class TunnelService
     {
         if (! $this->isRunning()) {
             return null;
+        }
+
+        if (! $this->hasSufficientDiskSpace(1)) {
+            Log::error('Insufficient disk space for tunnel token file truncation', [
+                'path' => $this->tokenFilePath,
+                'available' => @disk_free_space(dirname($this->tokenFilePath)),
+            ]);
+
+            return 'Failed to truncate tunnel token file: insufficient disk space';
         }
 
         $result = file_put_contents($this->tokenFilePath, '');
@@ -257,15 +290,22 @@ class TunnelService
         $cleaned = [];
 
         if (file_exists($this->tokenFilePath)) {
-            $result = file_put_contents($this->tokenFilePath, '');
-
-            if ($result === false) {
-                Log::error('Failed to truncate tunnel token file during cleanup', [
+            if (! $this->hasSufficientDiskSpace(1)) {
+                Log::error('Insufficient disk space for tunnel token file cleanup', [
                     'path' => $this->tokenFilePath,
-                    'error' => error_get_last()['message'] ?? 'Unknown error',
+                    'available' => @disk_free_space(dirname($this->tokenFilePath)),
                 ]);
             } else {
-                $cleaned[] = 'token file truncated';
+                $result = file_put_contents($this->tokenFilePath, '');
+
+                if ($result === false) {
+                    Log::error('Failed to truncate tunnel token file during cleanup', [
+                        'path' => $this->tokenFilePath,
+                        'error' => error_get_last()['message'] ?? 'Unknown error',
+                    ]);
+                } else {
+                    $cleaned[] = 'token file truncated';
+                }
             }
         }
 
