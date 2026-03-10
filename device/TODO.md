@@ -27,7 +27,7 @@
 
 ## Todo
 
-- [ ] test: add unit tests for GenerateDeviceId command with --force and --path options
+- [x] 2026-03-10 test: add unit tests for GenerateDeviceId command with --force and --path options
 - [ ] test: add unit tests for PollPairingStatus command with paired and unpaired device states
 - [ ] test: add unit tests for ProjectScaffoldService scaffolding all framework types (Laravel, Next.js, Astro, FastAPI, Static HTML, Custom)
 - [ ] test: add unit tests for ProjectLinkService project linking and unlinking operations
