@@ -6,13 +6,11 @@ namespace App\Services;
 
 use App\Models\CloudCredential;
 use App\Models\TunnelConfig;
-use Exception;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Throwable;
 use VibecodePC\Common\DTOs\DeviceStatusResult;
 
 class CloudApiClient
@@ -184,7 +182,7 @@ class CloudApiClient
             $this->authenticatedHttp()
                 ->post("/api/devices/{$deviceId}/heartbeat", $payload)
                 ->throw();
-        } catch (Exception $e) {
+        } catch (ConnectionException|RequestException $e) {
             Log::warning('Heartbeat failed: '.$e->getMessage());
         }
     }
@@ -205,7 +203,7 @@ class CloudApiClient
             if ($response->successful()) {
                 return $response->json();
             }
-        } catch (Exception $e) {
+        } catch (ConnectionException|RequestException $e) {
             Log::warning('Failed to fetch traffic stats: '.$e->getMessage());
         }
 
@@ -228,7 +226,7 @@ class CloudApiClient
             if ($response->successful()) {
                 return $response->json('config');
             }
-        } catch (Exception $e) {
+        } catch (ConnectionException|RequestException $e) {
             Log::warning('Failed to fetch device config: '.$e->getMessage());
         }
 
@@ -238,7 +236,7 @@ class CloudApiClient
     /**
      * Determine if an exception represents a transient failure that should be retried.
      */
-    private function shouldRetry(Throwable $exception): bool
+    private function shouldRetry(\Throwable $exception): bool
     {
         // Connection errors (network issues, timeouts)
         if ($exception instanceof ConnectionException) {

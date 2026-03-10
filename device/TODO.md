@@ -19,7 +19,7 @@
 
 ### Priority 4: Code Quality & Refactoring
 - [x] 2026-03-10 refactor: add transaction handling to services that update multiple database records
-- [ ] refactor: replace generic \Throwable catches with specific exception types in CloudApiClient
+- [x] 2026-03-10 refactor: replace generic \Throwable catches with specific exception types in CloudApiClient
 
 ### Priority 5: Features & Enhancements
 - [ ] feat: add circuit breaker pattern for CloudApiClient to prevent cascading failures
