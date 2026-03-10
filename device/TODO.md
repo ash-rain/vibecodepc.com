@@ -4,7 +4,7 @@
 - [x] 2026-03-10 test: add unit tests for PollTunnelStatus command edge cases (timeout handling, invalid responses, retry logic)
 - [x] 2026-03-10 test: add unit tests for PollPairingStatus command (network failures, already paired state, invalid device responses)
 - [x] 2026-03-10 test: add unit tests for CloneProjectJob (clone failures, retry logic, partial failure scenarios)
-- [ ] test: add unit tests for RequireTunnelAuth middleware (missing tokens, expired tokens, valid tunnel requests)
+- [x] 2026-03-10 test: add unit tests for RequireTunnelAuth middleware (missing tokens, expired tokens, valid tunnel requests)
 - [ ] test: add unit tests for Project model (status transitions, relationships, business logic methods)
 
 ### Priority 2: Error Handling & Edge Cases (Correctness)
