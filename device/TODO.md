@@ -14,7 +14,7 @@
 - [x] 2026-03-10 fix: add disk full validation before token file operations in TunnelService
 
 ### Priority 3: Documentation
-- [ ] docs: create CHANGELOG.md following Keep a Changelog format with initial version
+- [x] 2026-03-10 docs: create CHANGELOG.md following Keep a Changelog format with initial version
 - [ ] docs: document error handling patterns and retry strategies in CLAUDE.md
 
 ### Priority 4: Code Quality & Refactoring
