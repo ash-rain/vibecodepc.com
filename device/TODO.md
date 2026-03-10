@@ -31,7 +31,7 @@
 - [x] 2026-03-10 test: add unit tests for PollPairingStatus command with paired and unpaired device states
 - [x] 2026-03-10 test: add unit tests for ProjectScaffoldService scaffolding all framework types (Laravel, Next.js, Astro, FastAPI, Static HTML, Custom)
 - [x] 2026-03-10 test: add unit tests for ProjectLinkService project linking and unlinking operations
-- [ ] test: add unit tests for OptionalTunnelAuth middleware with CF-Connecting-IP header scenarios
+- [x] 2026-03-10 test: add unit tests for OptionalTunnelAuth middleware with CF-Connecting-IP header scenarios
 - [ ] test: add unit tests for GitHubCredential model token retrieval and current() scope
 - [ ] test: add unit tests for ProjectLog model relationships and metadata casting
 - [ ] test: add unit tests for TunnelConfig model current() scope and token encryption
@@ -44,6 +44,7 @@
 
 ## Done
 
+- [x] 2026-03-10 test: add unit tests for OptionalTunnelAuth middleware with CF-Connecting-IP header scenarios
 - [x] 2026-03-10 test: add unit tests for PollPairingStatus command with paired and unpaired device states
 - [x] 2026-03-09 chore: add database seeder for development environments with sample data
 - [x] 2026-03-09 test: add Livewire tests for PairingScreen component pairing state management
