@@ -27,15 +27,20 @@
 
 ## Todo
 
-- [x] 2026-03-09 test: add unit tests for AiProviderConfig model isValidated and getDecryptedKey methods
-- [x] 2026-03-09 test: add unit tests for CloudCredential model isPaired relationship
-- [x] 2026-03-09 test: add feature tests for PollTunnelStatus command output and error handling
-- [x] 2026-03-09 test: add Livewire tests for TunnelLogin component authentication flow
-- [x] 2026-03-09 test: add Livewire tests for NetworkSetup component IP detection and validation
-- [x] 2026-03-09 refactor: extract tunnel status polling logic from PollTunnelStatus into TunnelService
-- [x] 2026-03-09 feat: add API rate limiting middleware for public endpoints
-- [x] 2026-03-09 docs: document environment variables and configuration options in README
-- [x] 2026-03-09 chore: add database seeder for development environments with sample data
+- [ ] test: add unit tests for GenerateDeviceId command with --force and --path options
+- [ ] test: add unit tests for PollPairingStatus command with paired and unpaired device states
+- [ ] test: add unit tests for ProjectScaffoldService scaffolding all framework types (Laravel, Next.js, Astro, FastAPI, Static HTML, Custom)
+- [ ] test: add unit tests for ProjectLinkService project linking and unlinking operations
+- [ ] test: add unit tests for OptionalTunnelAuth middleware with CF-Connecting-IP header scenarios
+- [ ] test: add unit tests for GitHubCredential model token retrieval and current() scope
+- [ ] test: add unit tests for ProjectLog model relationships and metadata casting
+- [ ] test: add unit tests for TunnelConfig model current() scope and token encryption
+- [ ] test: add unit tests for WizardProgress model step completion and completion percentage
+- [ ] test: add unit tests for User model authentication and factory scenarios
+- [ ] feat: add ProjectContainerService health check method for monitoring container status
+- [ ] feat: add automatic project cleanup job for abandoned/error projects older than 30 days
+- [ ] docs: add API endpoint documentation with request/response examples for all public routes
+- [ ] chore: add GitHub Actions CI workflow for automated testing on pull requests
 
 ## Done
 
