@@ -167,7 +167,16 @@ class TunnelService
             return "Tunnel token directory is not writable: {$dir}";
         }
 
-        file_put_contents($this->tokenFilePath, $token);
+        $result = file_put_contents($this->tokenFilePath, $token);
+
+        if ($result === false) {
+            Log::error('Failed to write tunnel token file', [
+                'path' => $this->tokenFilePath,
+                'error' => error_get_last()['message'] ?? 'Unknown error',
+            ]);
+
+            return "Failed to write tunnel token file: {$this->tokenFilePath}";
+        }
 
         return null;
     }
@@ -183,7 +192,16 @@ class TunnelService
             return null;
         }
 
-        file_put_contents($this->tokenFilePath, '');
+        $result = file_put_contents($this->tokenFilePath, '');
+
+        if ($result === false) {
+            Log::error('Failed to truncate tunnel token file', [
+                'path' => $this->tokenFilePath,
+                'error' => error_get_last()['message'] ?? 'Unknown error',
+            ]);
+
+            return "Failed to truncate tunnel token file: {$this->tokenFilePath}";
+        }
 
         return null;
     }
@@ -239,8 +257,16 @@ class TunnelService
         $cleaned = [];
 
         if (file_exists($this->tokenFilePath)) {
-            file_put_contents($this->tokenFilePath, '');
-            $cleaned[] = 'token file truncated';
+            $result = file_put_contents($this->tokenFilePath, '');
+
+            if ($result === false) {
+                Log::error('Failed to truncate tunnel token file during cleanup', [
+                    'path' => $this->tokenFilePath,
+                    'error' => error_get_last()['message'] ?? 'Unknown error',
+                ]);
+            } else {
+                $cleaned[] = 'token file truncated';
+            }
         }
 
         // Mark tunnel config as errored so the UI reflects the broken state
