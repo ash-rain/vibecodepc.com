@@ -6,13 +6,23 @@ namespace App\Services;
 
 use App\Models\CloudCredential;
 use App\Models\TunnelConfig;
+use Exception;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 use VibecodePC\Common\DTOs\DeviceStatusResult;
 
 class CloudApiClient
 {
+    private const int MAX_RETRIES = 4;
+
+    private const int BASE_DELAY_MS = 100;
+
+    private const int MAX_DELAY_MS = 5000;
+
     public function __construct(
         private readonly string $cloudUrl,
     ) {}
@@ -174,7 +184,7 @@ class CloudApiClient
             $this->authenticatedHttp()
                 ->post("/api/devices/{$deviceId}/heartbeat", $payload)
                 ->throw();
-        } catch (\Throwable $e) {
+        } catch (Exception $e) {
             Log::warning('Heartbeat failed: '.$e->getMessage());
         }
     }
@@ -195,7 +205,7 @@ class CloudApiClient
             if ($response->successful()) {
                 return $response->json();
             }
-        } catch (\Throwable $e) {
+        } catch (Exception $e) {
             Log::warning('Failed to fetch traffic stats: '.$e->getMessage());
         }
 
@@ -218,18 +228,60 @@ class CloudApiClient
             if ($response->successful()) {
                 return $response->json('config');
             }
-        } catch (\Throwable $e) {
+        } catch (Exception $e) {
             Log::warning('Failed to fetch device config: '.$e->getMessage());
         }
 
         return null;
     }
 
+    /**
+     * Determine if an exception represents a transient failure that should be retried.
+     */
+    private function shouldRetry(Throwable $exception): bool
+    {
+        // Connection errors (network issues, timeouts)
+        if ($exception instanceof ConnectionException) {
+            return true;
+        }
+
+        // HTTP status codes that indicate transient failures
+        $retryableStatuses = [408, 429, 500, 502, 503, 504];
+
+        // Request exceptions with retryable status codes
+        if ($exception instanceof RequestException && $exception->response !== null) {
+            return in_array($exception->response->status(), $retryableStatuses, true);
+        }
+
+        return false;
+    }
+
+    /**
+     * Calculate exponential backoff delay in milliseconds.
+     * Uses exponential backoff with jitter: min(maxDelay, baseDelay * 2^attempt)
+     */
+    private function calculateBackoffDelay(int $attempt): int
+    {
+        $exponentialDelay = self::BASE_DELAY_MS * (2 ** ($attempt - 1));
+        $cappedDelay = min($exponentialDelay, self::MAX_DELAY_MS);
+
+        // Add random jitter (±20%) to prevent thundering herd
+        $jitter = (int) ($cappedDelay * 0.2 * (mt_rand() / mt_getrandmax() * 2 - 1));
+
+        return max(0, $cappedDelay + $jitter);
+    }
+
     private function http(): PendingRequest
     {
         $request = Http::baseUrl($this->cloudUrl)
             ->acceptJson()
-            ->timeout(10);
+            ->timeout(10)
+            ->retry(
+                times: self::MAX_RETRIES,
+                sleepMilliseconds: fn (int $attempt, \Throwable $exception) => $this->calculateBackoffDelay($attempt),
+                when: fn (\Throwable $exception) => $this->shouldRetry($exception),
+                throw: false
+            );
 
         if (config('app.env') === 'local') {
             $request->withoutVerifying();
