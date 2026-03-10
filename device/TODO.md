@@ -39,7 +39,7 @@
 - [x] 2026-03-10 test: add unit tests for User model authentication and factory scenarios
 - [x] 2026-03-10 feat: add automatic project cleanup job for abandoned/error projects older than 30 days
 - [x] 2026-03-10 docs: add API endpoint documentation with request/response examples for all public routes
-- [ ] chore: add GitHub Actions CI workflow for automated testing on pull requests
+- [x] 2026-03-10 chore: add GitHub Actions CI workflow for automated testing on pull requests
 
 ## Done
 
