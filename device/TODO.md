@@ -1,1 +1,36 @@
-[x] 2026-03-10 Fix the unit tests
+## Todo
+
+### Priority 1: Critical Missing Tests (Correctness)
+- [ ] test: add unit tests for PollTunnelStatus command edge cases (timeout handling, invalid responses, retry logic)
+- [ ] test: add unit tests for PollPairingStatus command (network failures, already paired state, invalid device responses)
+- [ ] test: add unit tests for CloneProjectJob (clone failures, retry logic, partial failure scenarios)
+- [ ] test: add unit tests for RequireTunnelAuth middleware (missing tokens, expired tokens, valid tunnel requests)
+- [ ] test: add unit tests for Project model (status transitions, relationships, business logic methods)
+
+### Priority 2: Error Handling & Edge Cases (Correctness)
+- [ ] fix: add retry logic with exponential backoff to CloudApiClient for transient failures
+- [ ] fix: add port range validation (0-65535) and exhaustion handling to PortAllocatorService
+- [ ] fix: add return value checks for file_put_contents() in TunnelService with proper error handling
+- [ ] fix: add disk full validation before token file operations in TunnelService
+
+### Priority 3: Documentation
+- [ ] docs: create CHANGELOG.md following Keep a Changelog format with initial version
+- [ ] docs: document error handling patterns and retry strategies in CLAUDE.md
+
+### Priority 4: Code Quality & Refactoring
+- [ ] refactor: extract duplicate tunnel detection logic from RequireTunnelAuth and OptionalTunnelAuth into a shared trait
+- [ ] refactor: add transaction handling to services that update multiple database records
+- [ ] refactor: replace generic \Throwable catches with specific exception types in CloudApiClient
+
+### Priority 5: Features & Enhancements
+- [ ] feat: add circuit breaker pattern for CloudApiClient to prevent cascading failures
+- [ ] feat: add rate limit differentiation between authenticated and unauthenticated users
+- [ ] feat: add middleware for request ID tracking to improve debugging
+
+### Priority 6: Chores & Maintenance
+- [ ] chore: add return type declarations to all service methods missing them
+- [ ] chore: add strict types declaration to all service classes
+- [ ] chore: verify and fix any Pint code style violations across the codebase
+
+## Done
+- [x] 2026-03-10 Fix the unit tests
