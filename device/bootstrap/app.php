@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'tunnel.auth' => \App\Http\Middleware\RequireTunnelAuth::class,
             'tunnel.auth.optional' => \App\Http\Middleware\OptionalTunnelAuth::class,
+            'api.rate_limit' => \App\Http\Middleware\RateLimitMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

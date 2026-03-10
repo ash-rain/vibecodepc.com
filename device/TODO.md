@@ -35,7 +35,7 @@
 - [x] 2026-03-10 test: add unit tests for GitHubCredential model token retrieval and current() scope
 - [x] 2026-03-10 test: add unit tests for ProjectLog model relationships and metadata casting
 - [x] 2026-03-10 test: add unit tests for TunnelConfig model current() scope and token encryption
-- [ ] test: add unit tests for WizardProgress model step completion and completion percentage
+- [x] 2026-03-10 test: add unit tests for WizardProgress model step completion and completion percentage
 - [ ] test: add unit tests for User model authentication and factory scenarios
 - [ ] feat: add ProjectContainerService health check method for monitoring container status
 - [ ] feat: add automatic project cleanup job for abandoned/error projects older than 30 days
