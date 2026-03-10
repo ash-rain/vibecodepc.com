@@ -9,7 +9,7 @@
 
 ### Priority 2: Error Handling & Edge Cases (Correctness)
 - [x] 2026-03-10 fix: add retry logic with exponential backoff to CloudApiClient for transient failures
-- [ ] fix: add port range validation (0-65535) and exhaustion handling to PortAllocatorService
+- [x] 2026-03-10 fix: add port range validation (0-65535) and exhaustion handling to PortAllocatorService
 - [ ] fix: add return value checks for file_put_contents() in TunnelService with proper error handling
 - [ ] fix: add disk full validation before token file operations in TunnelService
 
