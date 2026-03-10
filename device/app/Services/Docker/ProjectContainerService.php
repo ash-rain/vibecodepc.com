@@ -248,4 +248,60 @@ class ProjectContainerService
             'message' => $message,
         ]);
     }
+
+    /**
+     * Perform a comprehensive health check on a project container.
+     *
+     * @return array{
+     *     status: string,
+     *     isRunning: bool,
+     *     healthStatus: string|null,
+     *     resources: array{cpu: string, memory: string}|null,
+     *     containerId: string|null,
+     *     lastStartedAt: string|null,
+     *     lastStoppedAt: string|null,
+     *     error: string|null,
+     * }
+     */
+    public function healthCheck(Project $project): array
+    {
+        $isRunning = $this->isRunning($project);
+        $resources = $isRunning ? $this->getResourceUsage($project) : null;
+        $healthStatus = $this->getDockerHealthStatus($project);
+
+        return [
+            'status' => $project->status->value,
+            'isRunning' => $isRunning,
+            'healthStatus' => $healthStatus,
+            'resources' => $resources,
+            'containerId' => $project->container_id,
+            'lastStartedAt' => $project->last_started_at?->toISOString(),
+            'lastStoppedAt' => $project->last_stopped_at?->toISOString(),
+            'error' => null,
+        ];
+    }
+
+    /**
+     * Get the Docker health check status for a container.
+     *
+     * @return string|null 'healthy', 'unhealthy', 'starting', or null if no health check configured
+     */
+    private function getDockerHealthStatus(Project $project): ?string
+    {
+        if (! $project->container_id) {
+            return null;
+        }
+
+        $result = Process::run(
+            sprintf('docker inspect --format "{{.State.Health.Status}}" %s', escapeshellarg($project->container_id)),
+        );
+
+        if (! $result->successful()) {
+            return null;
+        }
+
+        $status = trim($result->output());
+
+        return $status === '' ? null : $status;
+    }
 }

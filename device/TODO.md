@@ -37,13 +37,13 @@
 - [x] 2026-03-10 test: add unit tests for TunnelConfig model current() scope and token encryption
 - [x] 2026-03-10 test: add unit tests for WizardProgress model step completion and completion percentage
 - [x] 2026-03-10 test: add unit tests for User model authentication and factory scenarios
-- [ ] feat: add ProjectContainerService health check method for monitoring container status
 - [ ] feat: add automatic project cleanup job for abandoned/error projects older than 30 days
 - [ ] docs: add API endpoint documentation with request/response examples for all public routes
 - [ ] chore: add GitHub Actions CI workflow for automated testing on pull requests
 
 ## Done
 
+- [x] 2026-03-10 feat: add ProjectContainerService health check method for monitoring container status
 - [x] 2026-03-10 test: add unit tests for User model authentication and factory scenarios
 - [x] 2026-03-10 test: add unit tests for OptionalTunnelAuth middleware with CF-Connecting-IP header scenarios
 - [x] 2026-03-10 test: add unit tests for PollPairingStatus command with paired and unpaired device states

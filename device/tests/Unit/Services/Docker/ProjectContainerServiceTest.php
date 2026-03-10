@@ -132,3 +132,84 @@ it('returns null for path translation when path does not match container base', 
 
     expect($result)->toBeNull();
 });
+
+it('performs health check on running container', function () {
+    Process::fake([
+        'docker compose ps --format json' => Process::result(output: '{"State":"running"}'),
+        'docker stats *' => Process::result(output: '12.34%|256MiB / 512MiB'),
+        'docker inspect --format "{{.State.Health.Status}}" *' => Process::result(output: 'healthy'),
+    ]);
+
+    $project = Project::factory()->running()->create([
+        'container_id' => 'abc123',
+        'last_started_at' => now()->subHour(),
+    ]);
+    $service = new ProjectContainerService;
+
+    $health = $service->healthCheck($project);
+
+    expect($health)
+        ->status->toBe(ProjectStatus::Running->value)
+        ->isRunning->toBeTrue()
+        ->healthStatus->toBe('healthy')
+        ->resources->toBe(['cpu' => '12.34%', 'memory' => '256MiB / 512MiB'])
+        ->containerId->toBe('abc123')
+        ->lastStartedAt->not->toBeNull()
+        ->lastStoppedAt->toBeNull()
+        ->error->toBeNull();
+});
+
+it('performs health check on stopped container', function () {
+    Process::fake([
+        'docker compose ps --format json' => Process::result(output: ''),
+    ]);
+
+    $project = Project::factory()->create([
+        'status' => ProjectStatus::Stopped,
+        'container_id' => null,
+        'last_stopped_at' => now()->subMinutes(30),
+    ]);
+    $service = new ProjectContainerService;
+
+    $health = $service->healthCheck($project);
+
+    expect($health)
+        ->status->toBe(ProjectStatus::Stopped->value)
+        ->isRunning->toBeFalse()
+        ->healthStatus->toBeNull()
+        ->resources->toBeNull()
+        ->containerId->toBeNull()
+        ->lastStartedAt->toBeNull()
+        ->lastStoppedAt->not->toBeNull()
+        ->error->toBeNull();
+});
+
+it('returns null health status when container has no health check configured', function () {
+    Process::fake([
+        'docker compose ps --format json' => Process::result(output: '{"State":"running"}'),
+        'docker stats *' => Process::result(output: '5.00%|128MiB / 256MiB'),
+        'docker inspect --format "{{.State.Health.Status}}" *' => Process::result(output: ''),
+    ]);
+
+    $project = Project::factory()->running()->create(['container_id' => 'abc123']);
+    $service = new ProjectContainerService;
+
+    $health = $service->healthCheck($project);
+
+    expect($health['healthStatus'])->toBeNull();
+});
+
+it('returns null health status when docker inspect fails', function () {
+    Process::fake([
+        'docker compose ps --format json' => Process::result(output: '{"State":"running"}'),
+        'docker stats *' => Process::result(output: '5.00%|128MiB / 256MiB'),
+        'docker inspect --format "{{.State.Health.Status}}" *' => Process::result(errorOutput: 'Error: No such container', exitCode: 1),
+    ]);
+
+    $project = Project::factory()->running()->create(['container_id' => 'abc123']);
+    $service = new ProjectContainerService;
+
+    $health = $service->healthCheck($project);
+
+    expect($health['healthStatus'])->toBeNull();
+});
