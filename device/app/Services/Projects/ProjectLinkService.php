@@ -6,6 +6,7 @@ namespace App\Services\Projects;
 
 use App\Models\Project;
 use App\Models\ProjectLog;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use VibecodePC\Common\Enums\ProjectStatus;
@@ -20,35 +21,37 @@ class ProjectLinkService
 
     public function link(string $name, string $folderPath): Project
     {
-        $slug = Str::slug($name);
-        $symlinkPath = "{$this->basePath}/{$slug}";
+        return DB::transaction(function () use ($name, $folderPath): Project {
+            $slug = Str::slug($name);
+            $symlinkPath = "{$this->basePath}/{$slug}";
 
-        File::ensureDirectoryExists($this->basePath);
+            File::ensureDirectoryExists($this->basePath);
 
-        if (File::exists($symlinkPath)) {
-            throw new \RuntimeException("A project already exists at {$symlinkPath}.");
-        }
+            if (File::exists($symlinkPath)) {
+                throw new \RuntimeException("A project already exists at {$symlinkPath}.");
+            }
 
-        symlink($folderPath, $symlinkPath);
+            symlink($folderPath, $symlinkPath);
 
-        $framework = $this->cloneService->detectFramework($folderPath);
-        $port = $this->portAllocator->allocate($framework);
+            $framework = $this->cloneService->detectFramework($folderPath);
+            $port = $this->portAllocator->allocate($framework);
 
-        $project = Project::create([
-            'name' => $name,
-            'slug' => $slug,
-            'framework' => $framework,
-            'status' => ProjectStatus::Created,
-            'path' => $symlinkPath,
-            'port' => $port,
-        ]);
+            $project = Project::create([
+                'name' => $name,
+                'slug' => $slug,
+                'framework' => $framework,
+                'status' => ProjectStatus::Created,
+                'path' => $symlinkPath,
+                'port' => $port,
+            ]);
 
-        ProjectLog::create([
-            'project_id' => $project->id,
-            'type' => 'link',
-            'message' => "Linked existing folder: {$folderPath}",
-        ]);
+            ProjectLog::create([
+                'project_id' => $project->id,
+                'type' => 'link',
+                'message' => "Linked existing folder: {$folderPath}",
+            ]);
 
-        return $project;
+            return $project;
+        });
     }
 }

@@ -18,7 +18,7 @@
 - [x] 2026-03-10 docs: document error handling patterns and retry strategies in CLAUDE.md
 
 ### Priority 4: Code Quality & Refactoring
-- [ ] refactor: add transaction handling to services that update multiple database records
+- [x] 2026-03-10 refactor: add transaction handling to services that update multiple database records
 - [ ] refactor: replace generic \Throwable catches with specific exception types in CloudApiClient
 
 ### Priority 5: Features & Enhancements

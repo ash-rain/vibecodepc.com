@@ -7,6 +7,7 @@ namespace App\Services\Projects;
 use App\Jobs\CloneProjectJob;
 use App\Models\Project;
 use App\Models\ProjectLog;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Str;
@@ -23,28 +24,30 @@ class ProjectCloneService
 
     public function clone(string $name, string $cloneUrl): Project
     {
-        $slug = Str::slug($name);
-        $path = "{$this->basePath}/{$slug}";
-        $port = $this->portAllocator->allocate(ProjectFramework::Custom);
+        return DB::transaction(function () use ($name, $cloneUrl): Project {
+            $slug = Str::slug($name);
+            $path = "{$this->basePath}/{$slug}";
+            $port = $this->portAllocator->allocate(ProjectFramework::Custom);
 
-        // Strip token from clone URL before storing
-        $sanitizedUrl = preg_replace('#://[^@]+@#', '://', $cloneUrl);
+            // Strip token from clone URL before storing
+            $sanitizedUrl = preg_replace('#://[^@]+@#', '://', $cloneUrl);
 
-        $project = Project::create([
-            'name' => $name,
-            'slug' => $slug,
-            'framework' => ProjectFramework::Custom,
-            'status' => ProjectStatus::Cloning,
-            'path' => $path,
-            'port' => $port,
-            'clone_url' => $sanitizedUrl,
-        ]);
+            $project = Project::create([
+                'name' => $name,
+                'slug' => $slug,
+                'framework' => ProjectFramework::Custom,
+                'status' => ProjectStatus::Cloning,
+                'path' => $path,
+                'port' => $port,
+                'clone_url' => $sanitizedUrl,
+            ]);
 
-        $this->log($project, 'clone', 'Cloning repository...');
+            $this->log($project, 'clone', 'Cloning repository...');
 
-        CloneProjectJob::dispatch($project, $cloneUrl);
+            CloneProjectJob::dispatch($project, $cloneUrl);
 
-        return $project;
+            return $project;
+        });
     }
 
     public function runClone(Project $project, string $cloneUrl): void
