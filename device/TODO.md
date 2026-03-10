@@ -28,7 +28,7 @@
 ## Todo
 
 - [x] 2026-03-10 test: add unit tests for GenerateDeviceId command with --force and --path options
-- [ ] test: add unit tests for PollPairingStatus command with paired and unpaired device states
+- [x] 2026-03-10 test: add unit tests for PollPairingStatus command with paired and unpaired device states
 - [ ] test: add unit tests for ProjectScaffoldService scaffolding all framework types (Laravel, Next.js, Astro, FastAPI, Static HTML, Custom)
 - [ ] test: add unit tests for ProjectLinkService project linking and unlinking operations
 - [ ] test: add unit tests for OptionalTunnelAuth middleware with CF-Connecting-IP header scenarios
@@ -44,6 +44,7 @@
 
 ## Done
 
+- [x] 2026-03-10 test: add unit tests for PollPairingStatus command with paired and unpaired device states
 - [x] 2026-03-09 chore: add database seeder for development environments with sample data
 - [x] 2026-03-09 test: add Livewire tests for PairingScreen component pairing state management
 - [x] 2026-03-09 test: add unit tests for QuickTunnelService provision and status methods
