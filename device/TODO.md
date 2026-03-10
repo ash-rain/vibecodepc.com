@@ -36,7 +36,7 @@
 - [x] 2026-03-10 test: add unit tests for ProjectLog model relationships and metadata casting
 - [x] 2026-03-10 test: add unit tests for TunnelConfig model current() scope and token encryption
 - [x] 2026-03-10 test: add unit tests for WizardProgress model step completion and completion percentage
-- [ ] test: add unit tests for User model authentication and factory scenarios
+- [x] 2026-03-10 test: add unit tests for User model authentication and factory scenarios
 - [ ] feat: add ProjectContainerService health check method for monitoring container status
 - [ ] feat: add automatic project cleanup job for abandoned/error projects older than 30 days
 - [ ] docs: add API endpoint documentation with request/response examples for all public routes
@@ -44,6 +44,7 @@
 
 ## Done
 
+- [x] 2026-03-10 test: add unit tests for User model authentication and factory scenarios
 - [x] 2026-03-10 test: add unit tests for OptionalTunnelAuth middleware with CF-Connecting-IP header scenarios
 - [x] 2026-03-10 test: add unit tests for PollPairingStatus command with paired and unpaired device states
 - [x] 2026-03-09 chore: add database seeder for development environments with sample data
