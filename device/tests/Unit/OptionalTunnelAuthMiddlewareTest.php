@@ -170,11 +170,14 @@ it('handles missing intended_url gracefully on subsequent requests', function ()
 
     // First request - should store intended URL
     $this->get('/dashboard', ['CF-Connecting-IP' => '1.2.3.4']);
-    expect(session('tunnel_auth_intended_url'))->not->toBeNull();
+    $firstIntendedUrl = session('tunnel_auth_intended_url');
+    expect($firstIntendedUrl)->not->toBeNull();
+    expect($firstIntendedUrl)->toContain('/dashboard');
 
-    // Second request should update intended URL
-    $this->get('/wizard', ['CF-Connecting-IP' => '1.2.3.4']);
-    expect(session('tunnel_auth_intended_url'))->toContain('/wizard');
+    // Second request should update intended URL (use a route with middleware)
+    $this->withSession(['tunnel_auth_intended_url' => $firstIntendedUrl])
+        ->get('/dashboard/projects', ['CF-Connecting-IP' => '1.2.3.4']);
+    expect(session('tunnel_auth_intended_url'))->toContain('/dashboard/projects');
 });
 
 it('allows requests with valid session to any protected route', function () {
