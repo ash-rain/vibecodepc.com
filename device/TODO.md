@@ -29,8 +29,8 @@
 
 - [x] 2026-03-10 test: add unit tests for GenerateDeviceId command with --force and --path options
 - [x] 2026-03-10 test: add unit tests for PollPairingStatus command with paired and unpaired device states
-- [ ] test: add unit tests for ProjectScaffoldService scaffolding all framework types (Laravel, Next.js, Astro, FastAPI, Static HTML, Custom)
-- [ ] test: add unit tests for ProjectLinkService project linking and unlinking operations
+- [x] 2026-03-10 test: add unit tests for ProjectScaffoldService scaffolding all framework types (Laravel, Next.js, Astro, FastAPI, Static HTML, Custom)
+- [x] 2026-03-10 test: add unit tests for ProjectLinkService project linking and unlinking operations
 - [ ] test: add unit tests for OptionalTunnelAuth middleware with CF-Connecting-IP header scenarios
 - [ ] test: add unit tests for GitHubCredential model token retrieval and current() scope
 - [ ] test: add unit tests for ProjectLog model relationships and metadata casting
