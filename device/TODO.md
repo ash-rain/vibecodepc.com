@@ -15,7 +15,7 @@
 
 ### Priority 3: Documentation
 - [x] 2026-03-10 docs: create CHANGELOG.md following Keep a Changelog format with initial version
-- [ ] docs: document error handling patterns and retry strategies in CLAUDE.md
+- [x] 2026-03-10 docs: document error handling patterns and retry strategies in CLAUDE.md
 
 ### Priority 4: Code Quality & Refactoring
 - [ ] refactor: extract duplicate tunnel detection logic from RequireTunnelAuth and OptionalTunnelAuth into a shared trait
