@@ -35,10 +35,11 @@
 - [x] 2026-03-09 refactor: extract tunnel status polling logic from PollTunnelStatus into TunnelService
 - [x] 2026-03-09 feat: add API rate limiting middleware for public endpoints
 - [x] 2026-03-09 docs: document environment variables and configuration options in README
-- [ ] 2026-03-09 chore: add database seeder for development environments with sample data
+- [x] 2026-03-09 chore: add database seeder for development environments with sample data
 
 ## Done
 
+- [x] 2026-03-09 chore: add database seeder for development environments with sample data
 - [x] 2026-03-09 test: add Livewire tests for PairingScreen component pairing state management
 - [x] 2026-03-09 test: add unit tests for QuickTunnelService provision and status methods
 - [x] 2026-03-09 test: add unit tests for CloudCredential model isPaired relationship
