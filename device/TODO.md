@@ -29,7 +29,7 @@
 - [x] 2026-03-11 - test: Add feature tests for HealthBar Livewire component (poll action, metric display)
 - [x] 2026-03-11 - feat: Implement project soft-delete with restore functionality in Project model
 - [x] 2026-03-11 - test: Add unit tests for AnalyticsService (trackEvent, getAggregatedData, getEventCount)
-- [ ] test: Add feature tests for ContainerMonitor Livewire component (container actions, log viewing)
+- [x] 2026-03-11 - test: Add feature tests for ContainerMonitor Livewire component (container actions, log viewing)
 - [ ] chore: Add scheduled task monitoring to detect missed heartbeat runs
 - [ ] refactor: Optimize ContainerMonitor to use cursor pagination for large project lists
 - [ ] feat: Add analytics dashboard Livewire component to view system events
