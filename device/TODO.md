@@ -24,13 +24,14 @@
 ### Priority 5: Features & Enhancements
 - [x] 2026-03-11 feat: add circuit breaker pattern for CloudApiClient to prevent cascading failures
 - [x] 2026-03-11 feat: add rate limit differentiation between authenticated and unauthenticated users
-- [ ] feat: add middleware for request ID tracking to improve debugging
+- [x] 2026-03-11 feat: add middleware for request ID tracking to improve debugging
 
 ### Priority 6: Chores & Maintenance
-- [ ] chore: add return type declarations to all service methods missing them
+- [x] 2026-03-11 chore: add return type declarations to all service methods missing them
 - [ ] chore: add strict types declaration to all service classes
 - [ ] chore: verify and fix any Pint code style violations across the codebase
 
 ## Done
+- [x] 2026-03-11 chore: add return type declarations to all service methods missing them
 - [x] 2026-03-10 Fix the unit tests
 - [x] 2026-03-10 refactor: extract duplicate tunnel detection logic from RequireTunnelAuth and OptionalTunnelAuth into a shared trait

@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tunnel.auth' => \App\Http\Middleware\RequireTunnelAuth::class,
             'tunnel.auth.optional' => \App\Http\Middleware\OptionalTunnelAuth::class,
             'api.rate_limit' => \App\Http\Middleware\RateLimitMiddleware::class,
+            'request.id' => \App\Http\Middleware\RequestIdMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
