@@ -105,4 +105,21 @@ class AnalyticsService
     {
         return AnalyticsEvent::count();
     }
+
+    /**
+     * Track an event with type and optional properties.
+     * Alias for track() method with clearer naming.
+     */
+    public function trackEvent(string $eventType, array $properties = [], ?string $category = null): void
+    {
+        $this->track($eventType, $properties, $category);
+    }
+
+    /**
+     * Get event count for a specific event type.
+     */
+    public function getEventCount(string $eventType): int
+    {
+        return AnalyticsEvent::type($eventType)->count();
+    }
 }

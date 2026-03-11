@@ -147,3 +147,76 @@ it('handles tracking failures gracefully', function () {
         $this->service->track('test.event', ['key' => 'value']);
     })->not->toThrow(\Throwable::class);
 });
+
+it('tracks event using trackEvent method', function () {
+    $this->service->trackEvent('custom.event', ['user_id' => 123, 'action' => 'click'], 'custom');
+
+    $event = AnalyticsEvent::first();
+
+    expect($event)->not->toBeNull()
+        ->and($event->event_type)->toBe('custom.event')
+        ->and($event->category)->toBe('custom')
+        ->and($event->properties)->toBe(['user_id' => 123, 'action' => 'click']);
+});
+
+it('tracks event using trackEvent without category', function () {
+    $this->service->trackEvent('generic.event', ['data' => 'test']);
+
+    $event = AnalyticsEvent::first();
+
+    expect($event->event_type)->toBe('generic.event')
+        ->and($event->category)->toBeNull()
+        ->and($event->properties)->toBe(['data' => 'test']);
+});
+
+it('returns event count for specific event type', function () {
+    AnalyticsEvent::factory()->tunnelCompleted()->count(3)->create();
+    AnalyticsEvent::factory()->tunnelSkipped()->count(2)->create();
+    AnalyticsEvent::factory()->state(['event_type' => 'other.event'])->count(5)->create();
+
+    $completedCount = $this->service->getEventCount('tunnel.completed');
+    $skippedCount = $this->service->getEventCount('tunnel.skipped');
+    $otherCount = $this->service->getEventCount('other.event');
+    $nonExistentCount = $this->service->getEventCount('nonexistent.event');
+
+    expect($completedCount)->toBe(3)
+        ->and($skippedCount)->toBe(2)
+        ->and($otherCount)->toBe(5)
+        ->and($nonExistentCount)->toBe(0);
+});
+
+it('returns zero for event count when no events exist', function () {
+    expect($this->service->getEventCount('any.event'))->toBe(0);
+});
+
+it('returns accurate aggregated data with multiple event types', function () {
+    AnalyticsEvent::factory()->tunnelCompleted()->count(5)->create();
+    AnalyticsEvent::factory()->tunnelSkipped()->count(3)->create();
+    AnalyticsEvent::factory()->state(['event_type' => 'wizard.started'])->count(2)->create();
+    AnalyticsEvent::factory()->state(['event_type' => 'wizard.completed'])->count(1)->create();
+
+    $data = $this->service->getAggregatedData();
+
+    expect($data)->toHaveCount(4)
+        ->and($data)->toHaveKey('tunnel.completed')
+        ->and($data)->toHaveKey('tunnel.skipped')
+        ->and($data)->toHaveKey('wizard.started')
+        ->and($data)->toHaveKey('wizard.completed')
+        ->and($data['tunnel.completed'])->toBe(5)
+        ->and($data['tunnel.skipped'])->toBe(3)
+        ->and($data['wizard.started'])->toBe(2)
+        ->and($data['wizard.completed'])->toBe(1);
+});
+
+it('returns empty array for aggregated data when no events exist', function () {
+    $data = $this->service->getAggregatedData();
+
+    expect($data)->toBe([]);
+});
+
+it('handles trackEvent failure gracefully', function () {
+    // Should not throw even if database fails
+    expect(function () {
+        $this->service->trackEvent('test.event', ['key' => 'value'], 'test');
+    })->not->toThrow(\Throwable::class);
+});
