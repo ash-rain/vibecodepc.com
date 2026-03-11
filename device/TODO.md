@@ -20,12 +20,13 @@
 [x] 2026-03-11 - Document error handling patterns in CLAUDE.md
 [x] 2026-03-11 - Create CHANGELOG.md following Keep a Changelog format
 [x] 2026-03-11 - Implement rate limiting differentiation between authenticated and unauthenticated users
+[x] 2026-03-11 - feat: Add `device:schedule-status` artisan command to view scheduled task status
+[x] 2026-03-11 - test: Add feature tests for ScheduleStatus command
 
 ## Todo
 
-- [ ] feat: Add `device:export-logs` artisan command to export recent logs for debugging
-- [ ] test: Add feature tests for HealthBar Livewire component (poll action, metric display)
-- [ ] feat: Add `device:schedule-status` artisan command to view scheduled task status
+- [x] 2026-03-11 - feat: Add `device:export-logs` artisan command to export recent logs for debugging
+- [x] 2026-03-11 - test: Add feature tests for HealthBar Livewire component (poll action, metric display)
 - [ ] feat: Implement project soft-delete with restore functionality in Project model
 - [ ] test: Add unit tests for AnalyticsService (trackEvent, getAggregatedData, getEventCount)
 - [ ] test: Add feature tests for ContainerMonitor Livewire component (container actions, log viewing)
