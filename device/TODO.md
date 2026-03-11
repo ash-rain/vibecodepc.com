@@ -28,8 +28,8 @@
 
 ### Priority 6: Chores & Maintenance
 - [x] 2026-03-11 chore: add return type declarations to all service methods missing them
-- [ ] chore: add strict types declaration to all service classes
-- [ ] chore: verify and fix any Pint code style violations across the codebase
+- [x] 2026-03-11 chore: add strict types declaration to all service classes
+- [x] 2026-03-11 chore: verify and fix any Pint code style violations across the codebase
 
 ## Done
 - [x] 2026-03-11 chore: add return type declarations to all service methods missing them
