@@ -5,6 +5,15 @@ declare(strict_types=1);
 beforeEach(function () {
     $this->defaultPath = config('vibecodepc.device_json_path');
     $this->customPath = storage_path('testing/custom-device.json');
+
+    // Clean up before each test to ensure isolation
+    if (file_exists($this->defaultPath)) {
+        @unlink($this->defaultPath);
+    }
+
+    if (file_exists($this->customPath)) {
+        @unlink($this->customPath);
+    }
 });
 
 afterEach(function () {
