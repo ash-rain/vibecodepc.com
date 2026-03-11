@@ -1,5 +1,7 @@
 ## Done
 
+[x] 2026-03-11 - feat: Add `device:health` artisan command to display comprehensive device metrics
+[x] 2026-03-11 - test: Add feature tests for DeviceHealth command
 [x] 2026-03-11 - test: Add unit tests for FactoryReset command (confirmation prompt, force flag, truncation order)
 [x] 2026-03-11 - Fix the tests , run php artisan test
 [x] 2026-03-11 - Add circuit breaker pattern to CloudApiClient with exponential backoff
@@ -21,7 +23,6 @@
 
 ## Todo
 
-- [ ] feat: Add `device:health` artisan command to display comprehensive device metrics
 - [ ] feat: Add `device:export-logs` artisan command to export recent logs for debugging
 - [ ] test: Add feature tests for HealthBar Livewire component (poll action, metric display)
 - [ ] feat: Add `device:schedule-status` artisan command to view scheduled task status
