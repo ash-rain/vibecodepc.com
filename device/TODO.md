@@ -23,7 +23,7 @@
 
 ### Priority 5: Features & Enhancements
 - [x] 2026-03-11 feat: add circuit breaker pattern for CloudApiClient to prevent cascading failures
-- [ ] feat: add rate limit differentiation between authenticated and unauthenticated users
+- [x] 2026-03-11 feat: add rate limit differentiation between authenticated and unauthenticated users
 - [ ] feat: add middleware for request ID tracking to improve debugging
 
 ### Priority 6: Chores & Maintenance

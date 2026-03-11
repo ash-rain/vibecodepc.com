@@ -74,20 +74,11 @@ it('tracks rate limits per user for authenticated requests', function () {
     RateLimiter::clear('ip:127.0.0.1');
     RateLimiter::clear('user:'.$user->id);
 
-    // Authenticated request
+    // Authenticated request gets higher rate limit (120)
     $response = $this->actingAs($user)->get('/api/health');
 
-    $response->assertHeader('X-RateLimit-Limit', '60')
-        ->assertHeader('X-RateLimit-Remaining', '59');
-
-    // Clear rate limits again before unauthenticated request
-    RateLimiter::clear('ip:127.0.0.1');
-    RateLimiter::clear('user:'.$user->id);
-
-    $unauthenticatedResponse = $this->get('/api/health');
-
-    // Unauthenticated request should have its own rate limit starting fresh
-    $unauthenticatedResponse->assertHeader('X-RateLimit-Remaining', '59');
+    $response->assertHeader('X-RateLimit-Limit', '120')
+        ->assertHeader('X-RateLimit-Remaining', '119');
 });
 
 it('resets rate limit after time window expires', function () {
@@ -129,4 +120,63 @@ it('supports custom rate limit parameters via middleware', function () {
     $response = $this->get('/api/health');
 
     $response->assertHeader('X-RateLimit-Limit', '60');
+});
+
+it('applies higher rate limits for authenticated users', function () {
+    $user = User::factory()->create();
+
+    // Clear any existing rate limits
+    RateLimiter::clear('ip:127.0.0.1');
+    RateLimiter::clear('user:'.$user->id);
+
+    // Authenticated request should have higher limit (120)
+    $response = $this->actingAs($user)->get('/api/health');
+
+    $response->assertHeader('X-RateLimit-Limit', '120')
+        ->assertHeader('X-RateLimit-Remaining', '119');
+});
+
+it('applies lower rate limits for unauthenticated users', function () {
+    // Clear any existing rate limits
+    RateLimiter::clear('ip:127.0.0.1');
+
+    // Unauthenticated request should have lower limit (60)
+    $response = $this->get('/api/health');
+
+    $response->assertHeader('X-RateLimit-Limit', '60')
+        ->assertHeader('X-RateLimit-Remaining', '59');
+});
+
+it('allows authenticated users to make more requests than unauthenticated users', function () {
+    $user = User::factory()->create();
+
+    // Clear any existing rate limits
+    RateLimiter::clear('ip:127.0.0.1');
+    RateLimiter::clear('user:'.$user->id);
+
+    // Make 70 requests as authenticated user (should not be rate limited since limit is 120)
+    for ($i = 0; $i < 70; $i++) {
+        $response = $this->actingAs($user)->get('/api/health');
+        $response->assertSuccessful();
+    }
+
+    // 71st request should still succeed for authenticated user
+    $response = $this->actingAs($user)->get('/api/health');
+    $response->assertSuccessful()
+        ->assertHeader('X-RateLimit-Remaining', '49'); // 120 - 71 = 49
+});
+
+it('rate limits unauthenticated users earlier than authenticated users', function () {
+    // Clear any existing rate limits
+    RateLimiter::clear('ip:127.0.0.1');
+
+    // Make 60 requests as unauthenticated user
+    for ($i = 0; $i < 60; $i++) {
+        $this->get('/api/health');
+    }
+
+    // 61st request should be rate limited for unauthenticated user (limit is 60)
+    $response = $this->get('/api/health');
+    $response->assertStatus(429)
+        ->assertHeader('X-RateLimit-Limit', '60');
 });
