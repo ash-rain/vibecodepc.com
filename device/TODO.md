@@ -1,11 +1,12 @@
 ## Done
 
+[x] 2026-03-11 - test: Add unit tests for FactoryReset command (confirmation prompt, force flag, truncation order)
 [x] 2026-03-11 - Fix the tests , run php artisan test
 [x] 2026-03-11 - Add circuit breaker pattern to CloudApiClient with exponential backoff
 [x] 2026-03-11 - Implement port range validation and exhaustion handling in PortAllocatorService
 [x] 2026-03-11 - Add return value checks for file operations in TunnelService
 [x] 2026-03-11 - Add disk space validation before token file operations
-[x] 2026-03-11 - Unit tests for PollTunnelStatus command edge cases
+[x] 2026-03-11 - Unit tests for PollTunnelStatus command edge cases (timeout handling, invalid responses, retry logic)
 [x] 2026-03-11 - Unit tests for PollPairingStatus command
 [x] 2026-03-11 - Unit tests for CloneProjectJob edge cases
 [x] 2026-03-11 - Unit tests for RequireTunnelAuth middleware
@@ -20,8 +21,6 @@
 
 ## Todo
 
-- [ ] test: Add unit tests for PollTunnelStatus command (timeout handling, invalid responses, retry logic)
-- [ ] test: Add unit tests for FactoryReset command (confirmation prompt, force flag, truncation order)
 - [ ] feat: Add `device:health` artisan command to display comprehensive device metrics
 - [ ] feat: Add `device:export-logs` artisan command to export recent logs for debugging
 - [ ] test: Add feature tests for HealthBar Livewire component (poll action, metric display)

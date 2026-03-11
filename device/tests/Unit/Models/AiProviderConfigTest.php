@@ -39,12 +39,16 @@ it('returns decrypted API key', function () {
 });
 
 it('returns different API keys for different configs', function () {
-    $config1 = AiProviderConfig::factory()->create([
-        'api_key_encrypted' => 'sk-key-one',
-    ]);
-    $config2 = AiProviderConfig::factory()->create([
-        'api_key_encrypted' => 'sk-key-two',
-    ]);
+    $config1 = AiProviderConfig::factory()
+        ->forProvider(AiProvider::OpenAI)
+        ->create([
+            'api_key_encrypted' => 'sk-key-one',
+        ]);
+    $config2 = AiProviderConfig::factory()
+        ->forProvider(AiProvider::Anthropic)
+        ->create([
+            'api_key_encrypted' => 'sk-key-two',
+        ]);
 
     expect($config1->getDecryptedKey())->toBe('sk-key-one')
         ->and($config2->getDecryptedKey())->toBe('sk-key-two');

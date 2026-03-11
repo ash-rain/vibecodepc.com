@@ -254,16 +254,16 @@ it('clears error and success before new connection attempt', function () {
 // EDGE CASE TESTS
 // ============================================================================
 
-it('accepts whitespace-only ssid as technically valid', function () {
+it('rejects whitespace-only ssid as empty', function () {
     $this->networkMock->shouldReceive('hasWifi')->andReturn(true);
 
-    // Whitespace-only strings pass Laravel's 'required' validation
-    // (they are not considered "empty" in PHP string context)
+    // Whitespace-only strings fail Laravel's 'required' validation
+    // because empty() considers them empty after trimming
     Livewire::test(NetworkSetup::class)
-        ->set('ssid', '   ')
+        ->set('ssid', ' ')
         ->set('password', 'validpassword123')
         ->call('connect')
-        ->assertHasNoErrors(['ssid']);
+        ->assertHasErrors(['ssid']);
 });
 
 it('handles exact minimum password length', function () {
