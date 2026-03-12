@@ -32,7 +32,7 @@
 - [x] 2026-03-11 - test: Add feature tests for ContainerMonitor Livewire component (container actions, log viewing)
 - [x] 2026-03-12 - chore: Add scheduled task monitoring to detect missed heartbeat runs
 - [x] 2026-03-12 - refactor: Optimize ContainerMonitor to use cursor pagination for large project lists
-- [ ] feat: Add analytics dashboard Livewire component to view system events
+- [x] 2026-03-12 - feat: Add analytics dashboard Livewire component to view system events
 - [ ] test: Add edge case tests for CircuitBreaker (half-open state, threshold edge cases)
 - [ ] docs: Document factory reset safety requirements in README troubleshooting section
 - [ ] feat: Add confirmation code requirement to FactoryReset command for safety
