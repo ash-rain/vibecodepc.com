@@ -30,8 +30,8 @@
 - [x] 2026-03-11 - feat: Implement project soft-delete with restore functionality in Project model
 - [x] 2026-03-11 - test: Add unit tests for AnalyticsService (trackEvent, getAggregatedData, getEventCount)
 - [x] 2026-03-11 - test: Add feature tests for ContainerMonitor Livewire component (container actions, log viewing)
-- [ ] chore: Add scheduled task monitoring to detect missed heartbeat runs
-- [ ] refactor: Optimize ContainerMonitor to use cursor pagination for large project lists
+- [x] 2026-03-12 - chore: Add scheduled task monitoring to detect missed heartbeat runs
+- [x] 2026-03-12 - refactor: Optimize ContainerMonitor to use cursor pagination for large project lists
 - [ ] feat: Add analytics dashboard Livewire component to view system events
 - [ ] test: Add edge case tests for CircuitBreaker (half-open state, threshold edge cases)
 - [ ] docs: Document factory reset safety requirements in README troubleshooting section

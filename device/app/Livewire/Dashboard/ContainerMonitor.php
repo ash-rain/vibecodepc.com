@@ -6,6 +6,7 @@ namespace App\Livewire\Dashboard;
 
 use App\Models\Project;
 use App\Services\Docker\ProjectContainerService;
+use Illuminate\Pagination\Cursor;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -39,6 +40,14 @@ class ContainerMonitor extends Component
 
     public int $totalError = 0;
 
+    public ?string $nextCursor = null;
+
+    public ?string $prevCursor = null;
+
+    public bool $hasMorePages = false;
+
+    public int $perPage = 10;
+
     public function mount(): void
     {
         $this->loadContainers();
@@ -46,7 +55,8 @@ class ContainerMonitor extends Component
 
     public function poll(): void
     {
-        $this->loadContainers();
+        $this->refreshVisibleContainers();
+        $this->refreshTotals();
         $this->refreshOpenLogs();
     }
 
@@ -151,22 +161,24 @@ class ContainerMonitor extends Component
         }
     }
 
-    private function loadContainers(): void
+    public function loadMore(): void
     {
+        if ($this->nextCursor === null) {
+            return;
+        }
+
+        $cursor = Cursor::fromEncoded($this->nextCursor);
+        if ($cursor === null) {
+            return;
+        }
+
         $containerService = app(ProjectContainerService::class);
-        $projects = Project::latest()->get();
+        $paginator = Project::latest()->cursorPaginate($this->perPage, ['*'], 'cursor', $cursor);
 
-        $this->totalRunning = 0;
-        $this->totalStopped = 0;
-        $this->totalError = 0;
+        $this->hasMorePages = $paginator->hasMorePages();
+        $this->nextCursor = $paginator->nextCursor()?->encode();
 
-        $this->containers = $projects->map(function (Project $project) use ($containerService) {
-            match ($project->status) {
-                ProjectStatus::Running => $this->totalRunning++,
-                ProjectStatus::Stopped, ProjectStatus::Created, ProjectStatus::Scaffolding, ProjectStatus::Cloning => $this->totalStopped++,
-                ProjectStatus::Error => $this->totalError++,
-            };
-
+        $newContainers = $paginator->getCollection()->map(function (Project $project) use ($containerService) {
             $usage = $project->isRunning() ? $containerService->getResourceUsage($project) : null;
 
             return [
@@ -181,5 +193,96 @@ class ContainerMonitor extends Component
                 'memory' => $usage['memory'] ?? '-',
             ];
         })->all();
+
+        $this->containers = array_merge($this->containers, $newContainers);
+    }
+
+    public function resetPagination(): void
+    {
+        $this->containers = [];
+        $this->nextCursor = null;
+        $this->hasMorePages = false;
+        $this->loadContainers();
+    }
+
+    private function loadContainers(): void
+    {
+        $containerService = app(ProjectContainerService::class);
+        $paginator = Project::latest()->cursorPaginate($this->perPage);
+
+        $this->hasMorePages = $paginator->hasMorePages();
+        $this->nextCursor = $paginator->nextCursor()?->encode();
+
+        $projects = $paginator->getCollection();
+
+        $this->totalRunning = Project::where('status', ProjectStatus::Running)->count();
+        $this->totalStopped = Project::whereIn('status', [
+            ProjectStatus::Stopped,
+            ProjectStatus::Created,
+            ProjectStatus::Scaffolding,
+            ProjectStatus::Cloning,
+        ])->count();
+        $this->totalError = Project::where('status', ProjectStatus::Error)->count();
+
+        $this->containers = $projects->map(function (Project $project) use ($containerService) {
+            $usage = $project->isRunning() ? $containerService->getResourceUsage($project) : null;
+
+            return [
+                'id' => $project->id,
+                'name' => $project->name,
+                'framework_label' => $project->framework->label(),
+                'status' => $project->status->label(),
+                'status_color' => $project->status->color(),
+                'port' => $project->port,
+                'container_id' => $project->container_id,
+                'cpu' => $usage['cpu'] ?? '-',
+                'memory' => $usage['memory'] ?? '-',
+            ];
+        })->all();
+    }
+
+    private function refreshVisibleContainers(): void
+    {
+        if (empty($this->containers)) {
+            return;
+        }
+
+        $containerService = app(ProjectContainerService::class);
+        $projectIds = array_column($this->containers, 'id');
+        $projects = Project::whereIn('id', $projectIds)->get()->keyBy('id');
+
+        $this->containers = array_map(function (array $container) use ($projects, $containerService) {
+            $project = $projects->get($container['id']);
+
+            if ($project === null) {
+                return $container;
+            }
+
+            $usage = $project->isRunning() ? $containerService->getResourceUsage($project) : null;
+
+            return [
+                'id' => $project->id,
+                'name' => $project->name,
+                'framework_label' => $project->framework->label(),
+                'status' => $project->status->label(),
+                'status_color' => $project->status->color(),
+                'port' => $project->port,
+                'container_id' => $project->container_id,
+                'cpu' => $usage['cpu'] ?? '-',
+                'memory' => $usage['memory'] ?? '-',
+            ];
+        }, $this->containers);
+    }
+
+    private function refreshTotals(): void
+    {
+        $this->totalRunning = Project::where('status', ProjectStatus::Running)->count();
+        $this->totalStopped = Project::whereIn('status', [
+            ProjectStatus::Stopped,
+            ProjectStatus::Created,
+            ProjectStatus::Scaffolding,
+            ProjectStatus::Cloning,
+        ])->count();
+        $this->totalError = Project::where('status', ProjectStatus::Error)->count();
     }
 }
