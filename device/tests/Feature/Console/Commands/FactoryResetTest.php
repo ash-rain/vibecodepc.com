@@ -84,11 +84,11 @@ it('stops the tunnel during reset', function () {
         ->assertSuccessful();
 });
 
-it('prompts for confirmation without --force', function () {
+it('prompts for confirmation code without --force', function () {
     $this->artisan('device:factory-reset')
-        ->expectsConfirmation('This will erase ALL data, projects, and settings. Continue?', 'no')
-        ->assertSuccessful()
-        ->expectsOutputToContain('Cancelled');
+        ->expectsQuestion('Enter confirmation code', 'WRONG')
+        ->assertFailed()
+        ->expectsOutputToContain('Confirmation code mismatch');
 
     // Nothing should be truncated since we cancelled
 });
@@ -140,20 +140,21 @@ it('handles empty database gracefully', function () {
         ->and(Project::count())->toBe(0);
 });
 
-it('confirms before truncating when user answers yes', function () {
+it('displays confirmation code prompt in interactive mode', function () {
     TunnelConfig::factory()->verified()->create();
     $project = Project::factory()->create();
-    ProjectLog::factory()->create(['project_id' => $project->id]);
 
+    // In interactive mode without --force or --confirm-code, it should display the warning
+    // and ask for confirmation code. We'll cancel by providing wrong code.
     $this->artisan('device:factory-reset')
-        ->expectsConfirmation('This will erase ALL data, projects, and settings. Continue?', 'yes')
-        ->assertSuccessful()
-        ->expectsOutputToContain('Factory reset complete');
+        ->expectsOutputToContain('FACTORY RESET')
+        ->expectsQuestion('Enter confirmation code', 'WRONG')
+        ->assertFailed()
+        ->expectsOutputToContain('Confirmation code mismatch');
 
-    // Verify data was actually truncated
-    expect(Project::count())->toBe(0)
-        ->and(ProjectLog::count())->toBe(0)
-        ->and(TunnelConfig::count())->toBe(0);
+    // Verify data was NOT truncated since we provided wrong code
+    expect(Project::count())->toBe(1)
+        ->and(TunnelConfig::count())->toBe(1);
 });
 
 it('outputs progress messages during truncation', function () {
@@ -184,4 +185,74 @@ it('sets device state to wizard mode', function () {
         ->assertSuccessful();
 
     expect(DeviceState::getValue(DeviceStateService::MODE_KEY))->toBe(DeviceStateService::MODE_WIZARD);
+});
+
+it('accepts valid confirmation code via --confirm-code option', function () {
+    TunnelConfig::factory()->verified()->create();
+    $project = Project::factory()->create();
+    ProjectLog::factory()->create(['project_id' => $project->id]);
+
+    $this->artisan('device:factory-reset', ['--confirm-code' => 'ABC234'])
+        ->assertSuccessful()
+        ->expectsOutputToContain('Factory reset complete');
+
+    // Verify data was actually truncated
+    expect(Project::count())->toBe(0)
+        ->and(ProjectLog::count())->toBe(0)
+        ->and(TunnelConfig::count())->toBe(0);
+});
+
+it('rejects invalid confirmation code via --confirm-code option', function () {
+    TunnelConfig::factory()->verified()->create();
+    $project = Project::factory()->create();
+
+    $this->artisan('device:factory-reset', ['--confirm-code' => 'SHORT'])
+        ->assertFailed()
+        ->expectsOutputToContain('Invalid confirmation code');
+
+    // Verify data was NOT truncated
+    expect(Project::count())->toBe(1)
+        ->and(TunnelConfig::count())->toBe(1);
+});
+
+it('rejects confirmation code with invalid characters', function () {
+    $this->artisan('device:factory-reset', ['--confirm-code' => 'ABC@#$'])
+        ->assertFailed()
+        ->expectsOutputToContain('Invalid confirmation code');
+});
+
+it('rejects lowercase confirmation code', function () {
+    $this->artisan('device:factory-reset', ['--confirm-code' => 'abc234'])
+        ->assertFailed()
+        ->expectsOutputToContain('Invalid confirmation code');
+});
+
+it('rejects too short confirmation code', function () {
+    $this->artisan('device:factory-reset', ['--confirm-code' => 'ABC23'])
+        ->assertFailed()
+        ->expectsOutputToContain('Invalid confirmation code');
+});
+
+it('rejects too long confirmation code', function () {
+    $this->artisan('device:factory-reset', ['--confirm-code' => 'ABC2345'])
+        ->assertFailed()
+        ->expectsOutputToContain('Invalid confirmation code');
+});
+
+it('rejects confirmation code that is all numbers', function () {
+    $this->artisan('device:factory-reset', ['--confirm-code' => '123456'])
+        ->assertFailed()
+        ->expectsOutputToContain('Invalid confirmation code');
+});
+
+it('rejects confirmation code with ambiguous characters O and 0', function () {
+    $this->artisan('device:factory-reset', ['--confirm-code' => 'ABC0O2'])
+        ->assertFailed()
+        ->expectsOutputToContain('Invalid confirmation code');
+});
+
+it('rejects confirmation code with I and 1', function () {
+    $this->artisan('device:factory-reset', ['--confirm-code' => 'ABCI12'])
+        ->assertFailed()
+        ->expectsOutputToContain('Invalid confirmation code');
 });

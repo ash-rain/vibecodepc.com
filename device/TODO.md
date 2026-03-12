@@ -35,7 +35,7 @@
 - [x] 2026-03-12 - feat: Add analytics dashboard Livewire component to view system events
 - [x] 2026-03-12 - test: Add edge case tests for CircuitBreaker (half-open state, threshold edge cases)
 - [x] 2026-03-12 - docs: Document factory reset safety requirements in README troubleshooting section
-- [ ] feat: Add confirmation code requirement to FactoryReset command for safety
+- [x] 2026-03-12 - feat: Add confirmation code requirement to FactoryReset command for safety
 
 ## In Progress
 
