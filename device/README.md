@@ -747,6 +747,135 @@ php artisan device:poll-pairing
 
 ⚠️ **Warning:** This will invalidate any existing pairings. The device will need to be paired again with your cloud account.
 
+### Factory Reset
+
+This section covers the `device:factory-reset` command which erases all settings and returns the device to its initial state.
+
+#### Factory Reset Safety Requirements
+
+The factory reset command is **destructive and irreversible**. Before running it, understand these safety requirements:
+
+**What Gets Deleted:**
+- All projects and their data
+- AI provider configurations
+- GitHub OAuth credentials
+- Tunnel configurations
+- Project logs and activity history
+- Wizard progress state
+
+**What Is Preserved:**
+- Device identity (UUID for cloud pairing)
+- Cloud credentials (device remains paired if already paired)
+
+**Safety Mechanisms:**
+1. **Confirmation Prompt** — Without the `--force` flag, the command requires explicit confirmation:
+   ```bash
+   php artisan device:factory-reset
+   # Prompts: "This will erase ALL data, projects, and settings. Continue?"
+   ```
+
+2. **Force Flag Bypass** — The `--force` flag skips confirmation (use with extreme caution):
+   ```bash
+   php artisan device:factory-reset --force
+   ```
+
+3. **Cancellation Support** — You can cancel during the confirmation prompt by answering "no".
+
+4. **Progress Output** — The command shows each step to help you understand what's happening:
+   ```
+   Stopping tunnel...
+   Clearing database...
+   Resetting wizard...
+   Factory reset complete. The setup wizard will appear on next visit.
+   ```
+
+**Pre-Reset Checklist:**
+
+Before running a factory reset, ensure:
+
+- [ ] **Create a backup** if you want to restore settings later:
+  ```bash
+  # Via Dashboard: Settings → System → Download Backup
+  # Or via code if you have a custom backup solution
+  ```
+
+- [ ] **Export important project data** — Projects will be permanently deleted
+
+- [ ] **Note your AI provider API keys** — You'll need to reconfigure them
+
+- [ ] **Document GitHub OAuth settings** — Credentials will be cleared
+
+- [ ] **Verify tunnel status** — The reset will stop any active tunnel
+
+**Reset Scenarios:**
+
+| Scenario | Command |
+|----------|---------|
+| Interactive reset (recommended) | `php artisan device:factory-reset` |
+| Automated/scripted reset | `php artisan device:factory-reset --force` |
+| After reset, device enters | Setup wizard mode |
+
+**Post-Reset State:**
+
+After a successful factory reset:
+- Device is in wizard mode (setup required)
+- Database tables are empty
+- All configuration is cleared
+- Device identity is preserved (re-pairing not required if already paired)
+- On next dashboard visit, the setup wizard will appear
+
+**Troubleshooting Factory Reset:**
+
+**Error: Permission denied during truncation**
+
+**Cause:** Database file permissions prevent table truncation.
+
+**Solution:**
+```bash
+# Fix database permissions (on Raspberry Pi)
+sudo chown -R vibecodepc:vibecodepc /home/vibecodepc/device/
+sudo chmod 664 storage/database.sqlite
+
+# For development environments
+chmod 664 storage/database.sqlite
+```
+
+**Error: Foreign key constraint violation**
+
+**Cause:** Tables are being truncated in an order that violates foreign key constraints.
+
+**Solution:**
+This is handled automatically — the command truncates tables in the correct order (ProjectLog before Project). If you encounter this error, ensure you're using the latest version of the command.
+
+**Reset Interrupted Midway**
+
+**Issue:** Reset process was interrupted (power loss, process killed).
+
+**Solution:**
+```bash
+# Check current state
+php artisan tinker --execute="echo App\Models\DeviceState::getValue('device_mode');"
+
+# If stuck in partial state, complete reset manually:
+php artisan device:factory-reset --force
+
+# Or restart the device and let it reinitialize
+```
+
+**Wizard Not Appearing After Reset**
+
+**Issue:** Device mode wasn't reset to wizard.
+
+**Solution:**
+```bash
+# Force wizard mode manually
+php artisan tinker --execute="App\Models\DeviceState::setValue('device_mode', 'wizard');"
+
+# Clear caches
+php artisan cache:clear
+php artisan view:clear
+```
+
 ### Getting Help
 
 If you encounter issues not covered here:
