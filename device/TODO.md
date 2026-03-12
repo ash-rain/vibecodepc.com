@@ -5,7 +5,6 @@
 - [x] 2026-03-12 test: add unit tests for RequireTunnelAuth middleware (missing tokens, expired tokens, valid requests)
 - [x] 2026-03-12 test: add unit tests for OptionalTunnelAuth middleware (bypass scenarios, token validation)
 - [x] 2026-03-12 test: add unit tests for RequestIdMiddleware (request ID generation, propagation, uniqueness)
-- [~] feat: add circuit breaker integration to GitHubDeviceFlowService for OAuth token exchange resilience
 - [ ] fix: handle race condition in PortAllocatorService when multiple projects request ports simultaneously
 - [ ] docs: document the DeviceHealthService metrics and thresholds in README troubleshooting section
 - [ ] refactor: extract common retry logic from CloudApiClient into a reusable RetryableTrait
@@ -17,11 +16,20 @@
 
 ## Done
 - [x] 2026-03-12 feat: add retry logic with exponential backoff to DeviceRegistry service for cloud API calls
-  - Feature was already implemented in DeviceRegistryService
-  - Fixed test syntax error: `toThrow()` requires at least one argument
-  - All 28 DeviceRegistry tests passing
+- Feature was already implemented in DeviceRegistryService
+- Fixed test syntax error: `toThrow()` requires at least one argument
+- All 28 DeviceRegistry tests passing
 - [x] 2026-03-12 fix: Corrected CircuitBreaker test expectations for reopen behavior
 - Fixed two tests that incorrectly expected `isClosed()` to return `false` after reopening
 - Updated expectations to correctly reflect that circuit transitions to half-open after recovery timeout
 - Tests: `it transitions to open immediately on first failure in half-open state`
 - Tests: `it reopens on single failure after multiple successes in half-open`
+- [x] 2026-03-12 feat: add circuit breaker integration to GitHubDeviceFlowService for OAuth token exchange resilience
+- Added CircuitBreaker instance for 'github_oauth' with 5 failure threshold and 60s recovery timeout
+- Integrated circuit breaker protection into initiateDeviceFlow() and pollForToken() methods
+- Circuit breaker records failures on ConnectionException and RequestException
+- Circuit breaker records success on successful token acquisition
+- Added getCircuitBreakerState() and resetCircuitBreaker() public methods for monitoring and manual reset
+- Non-failure conditions (authorization_pending, slow_down, terminal errors) don't affect circuit state
+- Added 10 new unit tests covering all circuit breaker scenarios
+- All 22 GitHubDeviceFlowService tests passing
