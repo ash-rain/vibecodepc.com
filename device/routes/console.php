@@ -3,9 +3,11 @@
 use App\Models\CloudCredential;
 use App\Models\Project;
 use App\Models\QuickTunnel;
+use App\Services\AnalyticsService;
 use App\Services\CloudApiClient;
 use App\Services\ConfigSyncService;
 use App\Services\DeviceHealthService;
+use App\Services\ScheduledTaskMonitorService;
 use App\Services\Tunnel\TunnelService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -20,15 +22,28 @@ Artisan::command('inspire', function () {
 Schedule::command('device:poll-pairing')
     ->everyFiveSeconds()
     ->withoutOverlapping()
-    ->name('device-pairing-poll');
+    ->name('device-pairing-poll')
+    ->before(function () {
+        app(ScheduledTaskMonitorService::class)->recordTaskStart('device-pairing-poll');
+    })
+    ->after(function () {
+        app(ScheduledTaskMonitorService::class)->recordTaskComplete('device-pairing-poll');
+    });
 
 // Poll for tunnel token file appearance when tunnel was skipped
 Schedule::command('device:poll-tunnel-status')
     ->everyMinute()
     ->withoutOverlapping()
-    ->name('device-tunnel-status-poll');
+    ->name('device-tunnel-status-poll')
+    ->before(function () {
+        app(ScheduledTaskMonitorService::class)->recordTaskStart('device-tunnel-status-poll');
+    })
+    ->after(function () {
+        app(ScheduledTaskMonitorService::class)->recordTaskComplete('device-tunnel-status-poll');
+    });
 
 Schedule::call(function () {
+    $startTime = microtime(true);
     $credential = CloudCredential::current();
 
     if (! $credential || ! $credential->isPaired()) {
@@ -73,11 +88,41 @@ Schedule::call(function () {
     app(CloudApiClient::class)->sendHeartbeat($deviceId, $metrics);
 
     app(ConfigSyncService::class)->syncIfNeeded($deviceId);
-})->everyThreeMinutes()->name('device-heartbeat');
+
+    // Record completion with duration
+    $durationMs = (int) ((microtime(true) - $startTime) * 1000);
+    app(ScheduledTaskMonitorService::class)->recordTaskComplete('device-heartbeat', $durationMs);
+})
+    ->everyThreeMinutes()
+    ->name('device-heartbeat')
+    ->before(function () {
+        app(ScheduledTaskMonitorService::class)->recordTaskStart('device-heartbeat');
+    })
+    ->onFailure(function () {
+        app(ScheduledTaskMonitorService::class)->recordTaskFailure('device-heartbeat', new \RuntimeException('Heartbeat task failed'));
+    });
 
 // Cleanup abandoned and errored projects daily
 Schedule::job(App\Jobs\CleanupAbandonedProjectsJob::class)
     ->daily()
     ->at('02:00')
     ->withoutOverlapping()
-    ->name('cleanup-abandoned-projects');
+    ->name('cleanup-abandoned-projects')
+    ->before(function () {
+        app(ScheduledTaskMonitorService::class)->recordTaskStart('cleanup-abandoned-projects');
+    })
+    ->after(function () {
+        app(ScheduledTaskMonitorService::class)->recordTaskComplete('cleanup-abandoned-projects');
+    });
+
+// Monitor scheduled tasks for missed heartbeat runs
+Schedule::command('device:check-heartbeats --alert')
+    ->everyFiveMinutes()
+    ->withoutOverlapping()
+    ->name('scheduled-task-monitor')
+    ->before(function () {
+        app(ScheduledTaskMonitorService::class)->recordTaskStart('scheduled-task-monitor');
+    })
+    ->after(function () {
+        app(ScheduledTaskMonitorService::class)->recordTaskComplete('scheduled-task-monitor');
+    });

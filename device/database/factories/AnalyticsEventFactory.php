@@ -36,4 +36,13 @@ class AnalyticsEventFactory extends Factory
             'properties' => ['reason' => 'user_choice'],
         ]);
     }
+
+    public function wizardEvent(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'event_type' => 'wizard.completed',
+            'category' => 'wizard',
+            'properties' => ['step' => 'welcome'],
+        ]);
+    }
 }

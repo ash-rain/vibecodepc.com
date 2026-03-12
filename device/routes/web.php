@@ -1,6 +1,7 @@
 <?php
 
 use App\Livewire\Dashboard\AiServicesHub;
+use App\Livewire\Dashboard\AnalyticsDashboard;
 use App\Livewire\Dashboard\CodeEditor;
 use App\Livewire\Dashboard\ContainerMonitor;
 use App\Livewire\Dashboard\Overview;
@@ -45,4 +46,5 @@ Route::middleware('tunnel.auth.optional')->group(function () {
     Route::get('/dashboard/tunnels', TunnelManager::class)->name('dashboard.tunnels');
     Route::get('/dashboard/containers', ContainerMonitor::class)->name('dashboard.containers');
     Route::get('/dashboard/settings', SystemSettings::class)->name('dashboard.settings');
+    Route::get('/dashboard/analytics', AnalyticsDashboard::class)->name('dashboard.analytics');
 });
