@@ -1,10 +1,24 @@
 ## Todo
+- [ ] test: add unit tests for CloneProjectJob edge cases (clone failures, retry logic, partial failures)
+- [ ] test: add unit tests for ScaffoldProjectJob (scaffolding failures, invalid templates, cleanup on failure)
+- [ ] test: add unit tests for CleanupAbandonedProjectsJob (orphan detection, resource cleanup, edge cases)
+- [ ] test: add unit tests for RequireTunnelAuth middleware (missing tokens, expired tokens, valid requests)
+- [ ] test: add unit tests for OptionalTunnelAuth middleware (bypass scenarios, token validation)
+- [ ] test: add unit tests for RequestIdMiddleware (request ID generation, propagation, uniqueness)
+- [ ] feat: add retry logic with exponential backoff to DeviceRegistry service for cloud API calls
+- [ ] feat: add circuit breaker integration to GitHubDeviceFlowService for OAuth token exchange resilience
+- [ ] fix: handle race condition in PortAllocatorService when multiple projects request ports simultaneously
+- [ ] docs: document the DeviceHealthService metrics and thresholds in README troubleshooting section
+- [ ] refactor: extract common retry logic from CloudApiClient into a reusable RetryableTrait
+- [ ] test: add edge case tests for ProjectContainerService (container not found, Docker daemon errors, port conflicts)
+- [ ] chore: add GitHub Actions workflow step to verify CHANGELOG is updated on PRs
+- [ ] test: add integration tests for device backup/restore flow (encryption, integrity checks, full round-trip)
 
 ## In Progress
 
 ## Done
 - [x] 2026-03-12 fix: Corrected CircuitBreaker test expectations for reopen behavior
-  - Fixed two tests that incorrectly expected `isClosed()` to return `false` after reopening
-  - Updated expectations to correctly reflect that circuit transitions to half-open after recovery timeout
-  - Tests: `it transitions to open immediately on first failure in half-open state`
-  - Tests: `it reopens on single failure after multiple successes in half-open`
+- Fixed two tests that incorrectly expected `isClosed()` to return `false` after reopening
+- Updated expectations to correctly reflect that circuit transitions to half-open after recovery timeout
+- Tests: `it transitions to open immediately on first failure in half-open state`
+- Tests: `it reopens on single failure after multiple successes in half-open`
