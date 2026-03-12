@@ -5,7 +5,7 @@
 - [x] 2026-03-12 test: add unit tests for RequireTunnelAuth middleware (missing tokens, expired tokens, valid requests)
 - [x] 2026-03-12 test: add unit tests for OptionalTunnelAuth middleware (bypass scenarios, token validation)
 - [x] 2026-03-12 test: add unit tests for RequestIdMiddleware (request ID generation, propagation, uniqueness)
-- [ ] feat: add circuit breaker integration to GitHubDeviceFlowService for OAuth token exchange resilience
+- [~] feat: add circuit breaker integration to GitHubDeviceFlowService for OAuth token exchange resilience
 - [ ] fix: handle race condition in PortAllocatorService when multiple projects request ports simultaneously
 - [ ] docs: document the DeviceHealthService metrics and thresholds in README troubleshooting section
 - [ ] refactor: extract common retry logic from CloudApiClient into a reusable RetryableTrait
