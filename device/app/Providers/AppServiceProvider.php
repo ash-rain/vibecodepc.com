@@ -9,6 +9,7 @@ use App\Services\CloudApiClient;
 use App\Services\CodeServer\CodeServerService;
 use App\Services\DeviceHealthService;
 use App\Services\DeviceRegistry\DeviceIdentityService;
+use App\Services\DeviceRegistry\DeviceRegistryService;
 use App\Services\DeviceStateService;
 use App\Services\Docker\ProjectContainerService;
 use App\Services\GitHub\GitHubDeviceFlowService;
@@ -31,6 +32,12 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(DeviceIdentityService::class, function () {
             return new DeviceIdentityService(
                 deviceJsonPath: config('vibecodepc.device_json_path'),
+            );
+        });
+
+        $this->app->singleton(DeviceRegistryService::class, function () {
+            return new DeviceRegistryService(
+                cloudApi: app(CloudApiClient::class),
             );
         });
 

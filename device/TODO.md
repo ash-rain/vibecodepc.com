@@ -5,7 +5,6 @@
 - [x] 2026-03-12 test: add unit tests for RequireTunnelAuth middleware (missing tokens, expired tokens, valid requests)
 - [x] 2026-03-12 test: add unit tests for OptionalTunnelAuth middleware (bypass scenarios, token validation)
 - [x] 2026-03-12 test: add unit tests for RequestIdMiddleware (request ID generation, propagation, uniqueness)
-- [ ] feat: add retry logic with exponential backoff to DeviceRegistry service for cloud API calls
 - [ ] feat: add circuit breaker integration to GitHubDeviceFlowService for OAuth token exchange resilience
 - [ ] fix: handle race condition in PortAllocatorService when multiple projects request ports simultaneously
 - [ ] docs: document the DeviceHealthService metrics and thresholds in README troubleshooting section
@@ -17,6 +16,10 @@
 ## In Progress
 
 ## Done
+- [x] 2026-03-12 feat: add retry logic with exponential backoff to DeviceRegistry service for cloud API calls
+  - Feature was already implemented in DeviceRegistryService
+  - Fixed test syntax error: `toThrow()` requires at least one argument
+  - All 28 DeviceRegistry tests passing
 - [x] 2026-03-12 fix: Corrected CircuitBreaker test expectations for reopen behavior
 - Fixed two tests that incorrectly expected `isClosed()` to return `false` after reopening
 - Updated expectations to correctly reflect that circuit transitions to half-open after recovery timeout
