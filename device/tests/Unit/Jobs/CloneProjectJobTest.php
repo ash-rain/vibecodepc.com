@@ -335,3 +335,296 @@ it('handles large repository clone with timeout', function () {
 
     expect($project->fresh()->status)->toBe(ProjectStatus::Error);
 });
+
+it('handles null project gracefully after deletion', function () {
+    $project = Project::factory()->create([
+        'status' => ProjectStatus::Cloning,
+        'framework' => ProjectFramework::Custom,
+    ]);
+
+    $job = new CloneProjectJob($project, 'https://github.com/user/repo.git');
+
+    // Delete project after job is created but before execution
+    $project->delete();
+
+    $mockService = Mockery::mock(ProjectCloneService::class);
+    $mockService->shouldReceive('runClone')
+        ->once()
+        ->andThrow(new \RuntimeException('Project not found'));
+
+    try {
+        $job->handle($mockService);
+    } catch (\RuntimeException $e) {
+        $job->failed($e);
+    }
+
+    // Job should handle gracefully without crashing
+    expect(true)->toBeTrue();
+});
+
+it('handles permission denied errors during clone', function () {
+    $project = Project::factory()->create([
+        'status' => ProjectStatus::Cloning,
+        'framework' => ProjectFramework::Custom,
+    ]);
+
+    $mockService = Mockery::mock(ProjectCloneService::class);
+    $mockService->shouldReceive('runClone')
+        ->once()
+        ->with($project, 'https://github.com/user/repo.git')
+        ->andThrow(new \RuntimeException('Permission denied: cannot create directory'));
+
+    $job = new CloneProjectJob($project, 'https://github.com/user/repo.git');
+
+    try {
+        $job->handle($mockService);
+    } catch (\RuntimeException $e) {
+        $job->failed($e);
+    }
+
+    expect($project->fresh()->status)->toBe(ProjectStatus::Error);
+    expect($project->logs()->where('type', 'error')->first()->message)
+        ->toContain('Permission denied');
+});
+
+it('handles empty repository clone', function () {
+    $project = Project::factory()->create([
+        'status' => ProjectStatus::Cloning,
+        'framework' => ProjectFramework::Custom,
+    ]);
+
+    $mockService = Mockery::mock(ProjectCloneService::class);
+    $mockService->shouldReceive('runClone')
+        ->once()
+        ->andThrow(new \RuntimeException('warning: You appear to have cloned an empty repository'));
+
+    $job = new CloneProjectJob($project, 'https://github.com/user/empty-repo.git');
+
+    try {
+        $job->handle($mockService);
+    } catch (\RuntimeException $e) {
+        $job->failed($e);
+    }
+
+    expect($project->fresh()->status)->toBe(ProjectStatus::Error);
+});
+
+it('handles repository with invalid references', function () {
+    $project = Project::factory()->create([
+        'status' => ProjectStatus::Cloning,
+        'framework' => ProjectFramework::Custom,
+    ]);
+
+    $mockService = Mockery::mock(ProjectCloneService::class);
+    $mockService->shouldReceive('runClone')
+        ->once()
+        ->andThrow(new \RuntimeException('Server does not allow request for unadvertised object'));
+
+    $job = new CloneProjectJob($project, 'https://github.com/user/broken-ref-repo.git');
+
+    try {
+        $job->handle($mockService);
+    } catch (\RuntimeException $e) {
+        $job->failed($e);
+    }
+
+    expect($project->fresh()->status)->toBe(ProjectStatus::Error);
+});
+
+it('handles repository that requires different protocol', function () {
+    $project = Project::factory()->create([
+        'status' => ProjectStatus::Cloning,
+        'framework' => ProjectFramework::Custom,
+    ]);
+
+    $mockService = Mockery::mock(ProjectCloneService::class);
+    $mockService->shouldReceive('runClone')
+        ->once()
+        ->andThrow(new \RuntimeException('The unauthenticated git protocol on port 9418 is no longer supported'));
+
+    $job = new CloneProjectJob($project, 'git://github.com/user/old-repo.git');
+
+    try {
+        $job->handle($mockService);
+    } catch (\RuntimeException $e) {
+        $job->failed($e);
+    }
+
+    expect($project->fresh()->status)->toBe(ProjectStatus::Error);
+    expect($project->logs()->where('type', 'error')->first()->message)
+        ->toContain('unauthenticated git protocol');
+});
+
+it('handles partial clone with submodule failures', function () {
+    $project = Project::factory()->create([
+        'status' => ProjectStatus::Cloning,
+        'framework' => ProjectFramework::Custom,
+    ]);
+
+    $mockService = Mockery::mock(ProjectCloneService::class);
+    $mockService->shouldReceive('runClone')
+        ->once()
+        ->andThrow(new \RuntimeException('Clone succeeded but submodule update failed: repository not found'));
+
+    $job = new CloneProjectJob($project, 'https://github.com/user/repo-with-submodules.git');
+
+    try {
+        $job->handle($mockService);
+    } catch (\RuntimeException $e) {
+        $job->failed($e);
+    }
+
+    expect($project->fresh()->status)->toBe(ProjectStatus::Error);
+    expect($project->logs()->where('type', 'error')->first()->message)
+        ->toContain('submodule update failed');
+});
+
+it('preserves original exception message in error log', function () {
+    $project = Project::factory()->create([
+        'status' => ProjectStatus::Cloning,
+        'framework' => ProjectFramework::Laravel,
+    ]);
+
+    $originalMessage = 'fatal: unable to access: Failed to connect to github.com port 443: Connection refused';
+    $exception = new \RuntimeException($originalMessage);
+
+    $job = new CloneProjectJob($project, 'https://github.com/user/repo.git');
+    $job->failed($exception);
+
+    $log = $project->logs()->where('type', 'error')->first();
+    expect($log)->not->toBeNull();
+    expect($log->message)->toContain($originalMessage);
+});
+
+it('can be serialized and deserialized', function () {
+    $project = Project::factory()->create([
+        'status' => ProjectStatus::Cloning,
+        'framework' => ProjectFramework::Custom,
+    ]);
+
+    $job = new CloneProjectJob($project, 'https://github.com/user/repo.git');
+
+    // Serialize the job
+    $serialized = serialize($job);
+    expect($serialized)->not->toBeNull();
+
+    // Deserialize the job
+    $unserialized = unserialize($serialized);
+    expect($unserialized)->toBeInstanceOf(CloneProjectJob::class);
+    expect($unserialized->cloneUrl)->toBe('https://github.com/user/repo.git');
+});
+
+it('handles rapid successive failure calls', function () {
+    $project = Project::factory()->create([
+        'status' => ProjectStatus::Cloning,
+        'framework' => ProjectFramework::Custom,
+    ]);
+
+    $job = new CloneProjectJob($project, 'https://github.com/user/repo.git');
+
+    $exception1 = new \RuntimeException('First failure');
+    $exception2 = new \RuntimeException('Second failure');
+
+    $job->failed($exception1);
+    $job->failed($exception2);
+
+    // Should have both error logs
+    $logs = $project->logs()->where('type', 'error')->get();
+    expect($logs)->toHaveCount(2);
+    expect($logs->pluck('message'))->toContain('Cloning failed: First failure');
+    expect($logs->pluck('message'))->toContain('Cloning failed: Second failure');
+});
+
+it('handles interrupted clone with incomplete files', function () {
+    $project = Project::factory()->create([
+        'status' => ProjectStatus::Cloning,
+        'framework' => ProjectFramework::Custom,
+    ]);
+
+    $mockService = Mockery::mock(ProjectCloneService::class);
+    $mockService->shouldReceive('runClone')
+        ->once()
+        ->andThrow(new \RuntimeException('error: RPC failed; curl 18 transfer closed with outstanding read data remaining'));
+
+    $job = new CloneProjectJob($project, 'https://github.com/user/large-repo.git');
+
+    try {
+        $job->handle($mockService);
+    } catch (\RuntimeException $e) {
+        $job->failed($e);
+    }
+
+    expect($project->fresh()->status)->toBe(ProjectStatus::Error);
+    expect($project->logs()->where('type', 'error')->first()->message)
+        ->toContain('RPC failed');
+});
+
+it('handles rate limit errors from git provider', function () {
+    $project = Project::factory()->create([
+        'status' => ProjectStatus::Cloning,
+        'framework' => ProjectFramework::Custom,
+    ]);
+
+    $mockService = Mockery::mock(ProjectCloneService::class);
+    $mockService->shouldReceive('runClone')
+        ->once()
+        ->andThrow(new \RuntimeException('error: 429 Too Many Requests - rate limit exceeded'));
+
+    $job = new CloneProjectJob($project, 'https://github.com/user/repo.git');
+
+    try {
+        $job->handle($mockService);
+    } catch (\RuntimeException $e) {
+        $job->failed($e);
+    }
+
+    expect($project->fresh()->status)->toBe(ProjectStatus::Error);
+    expect($project->logs()->where('type', 'error')->first()->message)
+        ->toContain('429');
+});
+
+it('handles repository not found at specific path', function () {
+    $project = Project::factory()->create([
+        'status' => ProjectStatus::Cloning,
+        'framework' => ProjectFramework::Custom,
+    ]);
+
+    $mockService = Mockery::mock(ProjectCloneService::class);
+    $mockService->shouldReceive('runClone')
+        ->once()
+        ->andThrow(new \RuntimeException('remote: Repository not found. fatal: repository not found'));
+
+    $job = new CloneProjectJob($project, 'https://github.com/user/nonexistent-repo.git');
+
+    try {
+        $job->handle($mockService);
+    } catch (\RuntimeException $e) {
+        $job->failed($e);
+    }
+
+    expect($project->fresh()->status)->toBe(ProjectStatus::Error);
+});
+
+it('handles DNS resolution failures', function () {
+    $project = Project::factory()->create([
+        'status' => ProjectStatus::Cloning,
+        'framework' => ProjectFramework::Custom,
+    ]);
+
+    $mockService = Mockery::mock(ProjectCloneService::class);
+    $mockService->shouldReceive('runClone')
+        ->once()
+        ->andThrow(new \RuntimeException('Could not resolve host: github.com'));
+
+    $job = new CloneProjectJob($project, 'https://github.com/user/repo.git');
+
+    try {
+        $job->handle($mockService);
+    } catch (\RuntimeException $e) {
+        $job->failed($e);
+    }
+
+    expect($project->fresh()->status)->toBe(ProjectStatus::Error);
+    expect($project->logs()->where('type', 'error')->first()->message)
+        ->toContain('Could not resolve host');
+});

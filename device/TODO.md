@@ -1,5 +1,5 @@
 ## Todo
-- [ ] test: add unit tests for CloneProjectJob edge cases (clone failures, retry logic, partial failures)
+- [x] 2026-03-12 test: add unit tests for CloneProjectJob edge cases (clone failures, retry logic, partial failures)
 - [ ] test: add unit tests for ScaffoldProjectJob (scaffolding failures, invalid templates, cleanup on failure)
 - [ ] test: add unit tests for CleanupAbandonedProjectsJob (orphan detection, resource cleanup, edge cases)
 - [ ] test: add unit tests for RequireTunnelAuth middleware (missing tokens, expired tokens, valid requests)
