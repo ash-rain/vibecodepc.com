@@ -2,8 +2,8 @@
 - [x] 2026-03-12 test: add unit tests for CloneProjectJob edge cases (clone failures, retry logic, partial failures)
 - [x] 2026-03-12 test: add unit tests for ScaffoldProjectJob (scaffolding failures, invalid templates, cleanup on failure)
 - [x] 2026-03-12 test: add unit tests for CleanupAbandonedProjectsJob (orphan detection, resource cleanup, edge cases)
-- [ ] test: add unit tests for RequireTunnelAuth middleware (missing tokens, expired tokens, valid requests)
-- [ ] test: add unit tests for OptionalTunnelAuth middleware (bypass scenarios, token validation)
+- [x] 2026-03-12 test: add unit tests for RequireTunnelAuth middleware (missing tokens, expired tokens, valid requests)
+- [x] 2026-03-12 test: add unit tests for OptionalTunnelAuth middleware (bypass scenarios, token validation)
 - [ ] test: add unit tests for RequestIdMiddleware (request ID generation, propagation, uniqueness)
 - [ ] feat: add retry logic with exponential backoff to DeviceRegistry service for cloud API calls
 - [ ] feat: add circuit breaker integration to GitHubDeviceFlowService for OAuth token exchange resilience
