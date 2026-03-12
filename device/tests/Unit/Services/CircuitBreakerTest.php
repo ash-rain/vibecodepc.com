@@ -240,6 +240,9 @@ it('resets success count on transition to half-open', function () {
     // Open circuit
     $circuitBreaker->recordFailure();
 
+    // Wait for recovery timeout (minimum 1 second)
+    sleep(1);
+
     // Transition to half-open
     $circuitBreaker->isClosed();
 
@@ -278,15 +281,24 @@ it('transitions to open immediately on first failure in half-open state', functi
     $circuitBreaker->recordFailure();
     expect($circuitBreaker->getCurrentState())->toBe('open');
 
+    // Wait for recovery timeout (minimum 1 second)
+    sleep(1);
+
     // Trigger half-open
     $circuitBreaker->isClosed();
     expect($circuitBreaker->getCurrentState())->toBe('half_open');
 
     // First failure should reopen circuit immediately
     $circuitBreaker->recordFailure();
+    expect($circuitBreaker->getCurrentState())->toBe('open');
 
-    expect($circuitBreaker->getCurrentState())->toBe('open')
-        ->and($circuitBreaker->isClosed())->toBeFalse()
+    // Wait for recovery timeout (minimum 1 second)
+    sleep(1);
+
+    // After reopening, circuit is still eligible for recovery
+    // isClosed() transitions to half-open and returns true
+    expect($circuitBreaker->isClosed())->toBeTrue()
+        ->and($circuitBreaker->getCurrentState())->toBe('half_open')
         ->and($circuitBreaker->getSuccessCount())->toBe(0);
 });
 
@@ -300,6 +312,10 @@ it('stays in half-open when successes are below threshold', function () {
 
     // Open circuit
     $circuitBreaker->recordFailure();
+
+    // Wait for recovery timeout (minimum 1 second)
+    sleep(1);
+
     $circuitBreaker->isClosed(); // Transition to half-open
 
     expect($circuitBreaker->getCurrentState())->toBe('half_open');
@@ -331,6 +347,10 @@ it('resets success count when transitioning back to half-open after failure', fu
 
     // First cycle: Open, half-open, failure, back to half-open
     $circuitBreaker->recordFailure();
+
+    // Wait for recovery timeout (minimum 1 second)
+    sleep(1);
+
     $circuitBreaker->isClosed();
     expect($circuitBreaker->getCurrentState())->toBe('half_open');
 
@@ -341,6 +361,9 @@ it('resets success count when transitioning back to half-open after failure', fu
     // Failure reopens circuit
     $circuitBreaker->recordFailure();
     expect($circuitBreaker->getCurrentState())->toBe('open');
+
+    // Wait for recovery timeout (minimum 1 second)
+    sleep(1);
 
     // Transition to half-open again
     $circuitBreaker->isClosed();
@@ -358,6 +381,10 @@ it('allows isClosed check without modifying state in half-open', function () {
 
     // Open and transition to half-open
     $circuitBreaker->recordFailure();
+
+    // Wait for recovery timeout (minimum 1 second)
+    sleep(1);
+
     $circuitBreaker->isClosed();
 
     expect($circuitBreaker->getCurrentState())->toBe('half_open');
@@ -389,6 +416,9 @@ it('handles concurrent half-open transitions from multiple instances', function 
         successThreshold: 2
     );
 
+    // Wait for recovery timeout (minimum 1 second)
+    sleep(1);
+
     // Both instances transition to half-open independently
     expect($cb1->isClosed())->toBeTrue();
     expect($cb2->isClosed())->toBeTrue();
@@ -415,6 +445,10 @@ it('maintains half-open state across multiple isClosed calls', function () {
     );
 
     $circuitBreaker->recordFailure();
+
+    // Wait for recovery timeout (minimum 1 second)
+    sleep(1);
+
     $circuitBreaker->isClosed(); // Transition to half-open
 
     // Record one success
@@ -467,6 +501,10 @@ it('closes circuit exactly at success threshold from half-open', function () {
 
     // Open and transition to half-open
     $circuitBreaker->recordFailure();
+
+    // Wait for recovery timeout (minimum 1 second)
+    sleep(1);
+
     $circuitBreaker->isClosed();
 
     expect($circuitBreaker->getCurrentState())->toBe('half_open');
@@ -574,8 +612,14 @@ it('reopens on single failure after multiple successes in half-open', function (
 
     // Single failure should reopen immediately
     $circuitBreaker->recordFailure();
+    expect($circuitBreaker->getCurrentState())->toBe('open');
 
-    expect($circuitBreaker->getCurrentState())->toBe('open')
-        ->and($circuitBreaker->isClosed())->toBeFalse()
+    // Wait for recovery timeout (minimum 1 second)
+    sleep(1);
+
+    // After reopening, circuit is still eligible for recovery
+    // isClosed() transitions to half-open and returns true
+    expect($circuitBreaker->isClosed())->toBeTrue()
+        ->and($circuitBreaker->getCurrentState())->toBe('half_open')
         ->and($circuitBreaker->getSuccessCount())->toBe(0);
 });
