@@ -5,7 +5,7 @@
 - [x] 2026-03-13 test: add unit tests for DeviceState model (key-value storage, default values, type casting)
 - [x] 2026-03-13 test: add edge case tests for DeviceStateService (invalid state transitions, missing keys, cache interactions)
 - [x] 2026-03-13 test: add unit tests for WizardProgress model state transitions (completed steps, percentage calculation)
-- [ ] test: add edge case tests for ProjectLog model (relationships with Project, filtering by type, ordering)
+- [x] 2026-03-13 test: add edge case tests for ProjectLog model (relationships with Project, filtering by type, ordering)
 - [ ] test: add unit tests for ConfigSyncService (sync failures, partial updates, validation errors)
 - [ ] test: add integration tests for rate limiting middleware (burst scenarios, header assertions, boundary conditions)
 - [ ] test: add edge case tests for BackupService (corrupted backup files, disk full scenarios, large file handling)
