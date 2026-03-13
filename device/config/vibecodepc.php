@@ -47,6 +47,10 @@ return [
         'logs' => [
             'default_lines' => (int) env('CONTAINER_LOGS_DEFAULT_LINES', 50),
         ],
+        'defaults' => [
+            'cpu' => env('CONTAINER_DEFAULT_CPU', '0%'),
+            'memory' => env('CONTAINER_DEFAULT_MEMORY', '0B'),
+        ],
     ],
 
     'backup' => [

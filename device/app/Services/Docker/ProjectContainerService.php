@@ -140,8 +140,8 @@ class ProjectContainerService
         $parts = explode('|', trim($result->output()));
 
         return [
-            'cpu' => $parts[0] ?? '0%',
-            'memory' => $parts[1] ?? '0B',
+            'cpu' => $parts[0] ?? config('vibecodepc.container.defaults.cpu'),
+            'memory' => $parts[1] ?? config('vibecodepc.container.defaults.memory'),
         ];
     }
 
