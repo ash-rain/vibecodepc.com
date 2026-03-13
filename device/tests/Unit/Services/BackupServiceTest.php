@@ -542,3 +542,338 @@ describe('backup zip validation', function () {
         expect($restoredTunnel->tunnel_id)->toBe('tunnel-123');
     });
 });
+
+describe('edge cases - corrupted backup files', function () {
+    it('throws exception when zip file is not a valid zip archive', function () {
+        $zipPath = storage_path('app/private/not-a-zip.zip');
+        file_put_contents($zipPath, 'this is not a valid zip file content');
+
+        try {
+            $service = new BackupService;
+
+            expect(fn () => $service->restoreBackup($zipPath))
+                ->toThrow(\RuntimeException::class, 'Failed to open backup file');
+        } finally {
+            if (file_exists($zipPath)) {
+                unlink($zipPath);
+            }
+        }
+    });
+
+    it('throws exception when backup.enc contains malformed JSON', function () {
+        $zipPath = storage_path('app/private/malformed-json.zip');
+        $zip = new ZipArchive;
+        $zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+        $zip->addFromString('backup.enc', Crypt::encryptString('not-valid-json'));
+        $zip->close();
+
+        try {
+            $service = new BackupService;
+
+            expect(fn () => $service->restoreBackup($zipPath))
+                ->toThrow(\JsonException::class);
+        } finally {
+            if (file_exists($zipPath)) {
+                unlink($zipPath);
+            }
+        }
+    });
+
+    it('throws exception when tables data is not an array', function () {
+        $zipPath = storage_path('app/private/tables-not-array.zip');
+        $zip = new ZipArchive;
+        $zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+        $json = json_encode(['tables' => 'not-an-array']);
+        $zip->addFromString('backup.enc', Crypt::encryptString($json));
+        $zip->close();
+
+        try {
+            $service = new BackupService;
+
+            // PHP throws TypeError when trying to iterate over a non-array
+            // Laravel wraps this in ErrorException
+            expect(fn () => $service->restoreBackup($zipPath))
+                ->toThrow(\ErrorException::class);
+        } finally {
+            if (file_exists($zipPath)) {
+                unlink($zipPath);
+            }
+        }
+    });
+
+    it('throws exception when checksum is present but data is truncated', function () {
+        $zipPath = storage_path('app/private/truncated-data.zip');
+        $zip = new ZipArchive;
+        $zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+
+        $data = ['tables' => [], 'created_at' => now()->toIso8601String(), 'version' => 1];
+        $data['checksum'] = hash('sha256', json_encode($data, JSON_UNESCAPED_UNICODE));
+
+        // Modify tables after checksum calculation to corrupt it
+        $data['tables'] = ['corrupted' => 'data'];
+
+        $zip->addFromString('backup.enc', Crypt::encryptString(json_encode($data)));
+        $zip->close();
+
+        try {
+            $service = new BackupService;
+
+            expect(fn () => $service->restoreBackup($zipPath))
+                ->toThrow(\RuntimeException::class, 'Backup file integrity check failed');
+        } finally {
+            if (file_exists($zipPath)) {
+                unlink($zipPath);
+            }
+        }
+    });
+});
+
+describe('edge cases - disk full scenarios', function () {
+    it('throws exception when backup file cannot be written', function () {
+        // Skip if running as root (root can write to read-only directories)
+        if (function_exists('posix_getuid') && posix_getuid() === 0) {
+            $this->markTestSkipped('Skipping disk full test when running as root');
+        }
+
+        // Test if we can actually prevent writes by making storage/private read-only
+        $privateDir = storage_path('app/private');
+        $originalPerms = fileperms($privateDir);
+
+        // Make directory read-only
+        chmod($privateDir, 0555);
+
+        // Test if we can actually prevent writes (some environments ignore permissions)
+        $testFile = $privateDir.'/write-test-'.uniqid().'.txt';
+        $writePrevented = @file_put_contents($testFile, 'test') === false;
+
+        // Restore permissions before deciding whether to skip
+        chmod($privateDir, $originalPerms);
+        if (file_exists($testFile)) {
+            unlink($testFile);
+        }
+
+        if (! $writePrevented) {
+            $this->markTestSkipped('Environment does not support permission-based write prevention');
+        }
+
+        // Now actually run the test
+        chmod($privateDir, 0555);
+
+        try {
+            $service = new BackupService;
+
+            // This should fail because the directory is read-only
+            expect(fn () => $service->createBackup())
+                ->toThrow(\Exception::class);
+        } finally {
+            // Restore permissions for cleanup
+            chmod($privateDir, $originalPerms);
+        }
+    });
+
+    it('handles restore when env file cannot be written', function () {
+        DB::table('ai_providers')->insert([
+            'provider' => 'test',
+            'api_key_encrypted' => encrypt('key'),
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $service = new BackupService;
+        $zipPath = $service->createBackup();
+
+        // Make the base path read-only for .env
+        $basePath = base_path();
+        chmod($basePath, 0555);
+
+        try {
+            // Should not throw - env file restoration failure is non-critical
+            $service->restoreBackup($zipPath);
+
+            // Database should still be restored
+            expect(DB::table('ai_providers')->count())->toBe(1);
+        } finally {
+            chmod($basePath, 0755);
+        }
+    });
+
+    it('throws exception when backup file is not readable', function () {
+        $zipPath = storage_path('app/private/unreadable-backup.zip');
+        $zip = new ZipArchive;
+        $zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+        $zip->addFromString('backup.enc', Crypt::encryptString(json_encode(['tables' => []])));
+        $zip->close();
+
+        // Make file unreadable
+        chmod($zipPath, 0000);
+
+        try {
+            $service = new BackupService;
+
+            expect(fn () => $service->restoreBackup($zipPath))
+                ->toThrow(\RuntimeException::class, 'Backup file is not readable');
+        } finally {
+            chmod($zipPath, 0644);
+            if (file_exists($zipPath)) {
+                unlink($zipPath);
+            }
+        }
+    });
+});
+
+describe('edge cases - large file handling', function () {
+    it('handles large dataset backup and restore', function () {
+        $largeData = [];
+        for ($i = 0; $i < 1000; $i++) {
+            $largeData[] = [
+                'provider' => "provider-{$i}",
+                'api_key_encrypted' => encrypt("key-{$i}"),
+                'display_name' => "Provider {$i} with a very long name that contains lots of data",
+                'status' => $i % 2 === 0 ? 'active' : 'pending',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        DB::table('ai_providers')->insert($largeData);
+
+        $service = new BackupService;
+        $zipPath = $service->createBackup();
+
+        DB::table('ai_providers')->truncate();
+
+        $service->restoreBackup($zipPath);
+
+        expect(DB::table('ai_providers')->count())->toBe(1000);
+        expect(DB::table('ai_providers')->where('provider', 'provider-0')->exists())->toBeTrue();
+        expect(DB::table('ai_providers')->where('provider', 'provider-999')->exists())->toBeTrue();
+    });
+
+    it('handles large env file in backup', function () {
+        $envContent = str_repeat('LARGE_ENV_VAR=value_', 5000);
+        $envPath = base_path('.env');
+        $envBackupPath = base_path('.env.backup-test');
+
+        if (file_exists($envPath)) {
+            rename($envPath, $envBackupPath);
+        }
+
+        file_put_contents($envPath, $envContent);
+
+        try {
+            $service = new BackupService;
+            $zipPath = $service->createBackup();
+
+            file_put_contents($envPath, 'different-content');
+
+            $service->restoreBackup($zipPath);
+
+            $restoredContent = file_get_contents($envPath);
+            expect($restoredContent)->toBe($envContent);
+        } finally {
+            if (file_exists($envPath)) {
+                unlink($envPath);
+            }
+            if (file_exists($envBackupPath)) {
+                rename($envBackupPath, $envPath);
+            }
+        }
+    });
+
+    it('handles records with large field values', function () {
+        $largeValue = str_repeat('x', 10000);
+        DB::table('device_state')->insert([
+            'key' => 'large_key',
+            'value' => $largeValue,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $service = new BackupService;
+        $zipPath = $service->createBackup();
+
+        DB::table('device_state')->truncate();
+
+        $service->restoreBackup($zipPath);
+
+        $restored = DB::table('device_state')->where('key', 'large_key')->first();
+        expect($restored)->not->toBeNull()
+            ->and($restored->value)->toBe($largeValue);
+    });
+
+    it('handles backup with many tables containing data', function () {
+        // Clear wizard_progress table of seed data to ensure clean test state
+        DB::table('wizard_progress')->truncate();
+
+        // Insert data into all backup tables
+        DB::table('ai_providers')->insert([
+            'provider' => 'ai-test',
+            'api_key_encrypted' => encrypt('key'),
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('tunnel_configs')->insert([
+            'subdomain' => 'test-sub',
+            'tunnel_token_encrypted' => encrypt('token'),
+            'tunnel_id' => 'tunnel-123',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('github_credentials')->insert([
+            'github_username' => 'testuser',
+            'access_token_encrypted' => encrypt('github-token'),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('device_state')->insert([
+            ['key' => 'key1', 'value' => 'value1', 'created_at' => now(), 'updated_at' => now()],
+            ['key' => 'key2', 'value' => 'value2', 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        DB::table('wizard_progress')->insert([
+            'step' => 'backup-test-'.uniqid(),
+            'status' => 'completed',
+            'data_json' => json_encode(['completed_steps' => [1, 2, 3]]),
+            'completed_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('cloud_credentials')->insert([
+            'pairing_token_encrypted' => encrypt('token'),
+            'cloud_username' => 'testuser',
+            'cloud_email' => 'test@example.com',
+            'cloud_url' => 'https://cloud.example.com',
+            'is_paired' => true,
+            'paired_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $service = new BackupService;
+        $zipPath = $service->createBackup();
+
+        // Truncate all tables
+        DB::table('ai_providers')->truncate();
+        DB::table('tunnel_configs')->truncate();
+        DB::table('github_credentials')->truncate();
+        DB::table('device_state')->truncate();
+        DB::table('wizard_progress')->truncate();
+        DB::table('cloud_credentials')->truncate();
+
+        $service->restoreBackup($zipPath);
+
+        expect(DB::table('ai_providers')->count())->toBe(1);
+        expect(DB::table('tunnel_configs')->count())->toBe(1);
+        expect(DB::table('github_credentials')->count())->toBe(1);
+        expect(DB::table('device_state')->count())->toBe(2);
+        expect(DB::table('wizard_progress')->count())->toBe(1);
+        expect(DB::table('cloud_credentials')->count())->toBe(1);
+    });
+});

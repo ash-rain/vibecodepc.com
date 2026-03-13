@@ -8,7 +8,7 @@
 - [x] 2026-03-13 test: add edge case tests for ProjectLog model (relationships with Project, filtering by type, ordering)
 - [x] 2026-03-13 test: add unit tests for ConfigSyncService (sync failures, partial updates, validation errors)
 - [x] 2026-03-13 test: add integration tests for rate limiting middleware (burst scenarios, header assertions, boundary conditions)
-- [ ] test: add edge case tests for BackupService (corrupted backup files, disk full scenarios, large file handling)
+- [x] 2026-03-13 test: add edge case tests for BackupService (corrupted backup files, disk full scenarios, large file handling)
 - [ ] fix: handle edge case where tunnel token file exists but is empty or malformed
 - [ ] test: add unit tests for NetworkService (IP detection failures, interface changes, timeout handling)
 - [ ] test: add edge case tests for CodeServerService (config write failures, port conflicts, permission errors)
