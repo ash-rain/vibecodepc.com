@@ -6,7 +6,9 @@
 - [x] 2026-03-12 test: add unit tests for OptionalTunnelAuth middleware (bypass scenarios, token validation)
 - [x] 2026-03-12 test: add unit tests for RequestIdMiddleware (request ID generation, propagation, uniqueness)
 - [x] 2026-03-13 fix: handle race condition in PortAllocatorService when multiple projects request ports simultaneously
-- [ ] docs: document the DeviceHealthService metrics and thresholds in README troubleshooting section
+- [x] 2026-03-13 docs: document the DeviceHealthService metrics and thresholds in README troubleshooting section
+  - Added `ram_used_percent` and `disk_used_percent` to Available Metrics table
+  - Added comprehensive "Extended Metrics (Console Command)" section documenting network, device state, system, and application metrics
 - [ ] refactor: extract common retry logic from CloudApiClient into a reusable RetryableTrait
 - [ ] test: add edge case tests for ProjectContainerService (container not found, Docker daemon errors, port conflicts)
 - [ ] chore: add GitHub Actions workflow step to verify CHANGELOG is updated on PRs

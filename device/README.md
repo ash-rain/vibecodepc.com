@@ -887,9 +887,49 @@ The device continuously monitors system resources through the `DeviceHealthServi
 | `cpu_percent` | float | CPU usage percentage (0-100%) |
 | `ram_used_mb` | int | Used RAM in megabytes |
 | `ram_total_mb` | int | Total system RAM in megabytes |
+| `ram_used_percent` | float | Calculated RAM usage percentage (0-100%) |
 | `disk_used_gb` | float | Used disk space in gigabytes |
 | `disk_total_gb` | float | Total disk space in gigabytes |
+| `disk_used_percent` | float | Calculated disk usage percentage (0-100%) |
 | `temperature_c` | float\|null | CPU temperature in Celsius (null on systems without thermal sensors) |
+
+**Note:** The `ram_used_percent` and `disk_used_percent` fields are calculated values (e.g., `ram_used_mb / ram_total_mb * 100`) and are not directly returned by `DeviceHealthService::getMetrics()`. They are computed by the `device:health` command for convenience.
+
+#### Extended Metrics (Console Command)
+
+The `device:health` command provides additional system and application metrics beyond the core `DeviceHealthService` metrics:
+
+**Network Status:**
+| Metric | Type | Description |
+|--------|------|-------------|
+| `local_ip` | string\|null | Local IP address of the device |
+| `has_ethernet` | bool | Whether Ethernet connection is detected |
+| `has_wifi` | bool | Whether WiFi is available |
+| `has_internet` | bool | Whether internet connectivity is available |
+
+**Device State:**
+| Metric | Type | Description |
+|--------|------|-------------|
+| `mode` | string | Current device mode: `wizard`, `dashboard`, etc. |
+| `is_paired` | bool | Whether the device is paired with the cloud |
+| `device_id` | string\|null | Device UUID from `device.json` |
+| `firmware_version` | string | Firmware version or `unknown` |
+| `cloud_username` | string\|null | Cloud account username if paired |
+
+**System Information:**
+| Metric | Type | Description |
+|--------|------|-------------|
+| `timezone` | string | Current system timezone |
+| `uptime` | string\|null | System uptime (e.g., "2 days, 5 hours, 30 minutes") |
+
+**Application State:**
+| Metric | Type | Description |
+|--------|------|-------------|
+| `running_projects` | int | Number of currently running projects |
+| `total_projects` | int | Total number of projects |
+| `tunnel_active` | bool | Whether the Cloudflare tunnel is active |
+| `quick_tunnels_active` | int | Number of active quick tunnels |
+| `checked_at` | string | ISO 8601 timestamp when metrics were collected |
 
 #### Dashboard Health Bar Thresholds
 
