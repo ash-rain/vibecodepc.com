@@ -82,12 +82,43 @@ jobs:
       - name: Run Pint
         run: vendor/bin/pint --test --format=github
 
-  changelog:
-    name: Verify CHANGELOG Updated
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+phpstan:
+  name: Static Analysis (PHPStan)
+  runs-on: ubuntu-latest
 
-    steps:
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo
+
+    - name: Get composer cache directory
+      id: composer-cache
+      run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+    - name: Cache composer dependencies
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: ${{ runner.os }}-composer-
+
+    - name: Install composer dependencies
+      run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+    - name: Run PHPStan
+      run: vendor/bin/phpstan analyse --no-progress --memory-limit=2G
+
+changelog:
+  name: Verify CHANGELOG Updated
+  runs-on: ubuntu-latest
+  if: github.event_name == 'pull_request'
+
+  steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
