@@ -43,6 +43,47 @@ it('reports not running when token file is empty', function () {
     File::deleteDirectory(dirname($tokenFile));
 });
 
+it('reports not running when token file contains only whitespace', function () {
+    $tokenFile = storage_path('app/test-tunnel-whitespace/token');
+    @mkdir(dirname($tokenFile), 0755, true);
+    file_put_contents($tokenFile, "   \n\t  \n   ");
+
+    $service = new TunnelService(tokenFilePath: $tokenFile);
+
+    expect($service->isRunning())->toBeFalse();
+
+    File::deleteDirectory(dirname($tokenFile));
+});
+
+it('reports not running when token file is not readable', function () {
+    $tokenFile = storage_path('app/test-tunnel-unreadable/token');
+    @mkdir(dirname($tokenFile), 0755, true);
+    file_put_contents($tokenFile, 'test-token-value');
+    chmod($tokenFile, 0000);
+
+    $service = new TunnelService(tokenFilePath: $tokenFile);
+
+    expect($service->isRunning())->toBeFalse();
+
+    // Restore permissions for cleanup
+    chmod($tokenFile, 0644);
+    File::deleteDirectory(dirname($tokenFile));
+});
+
+it('handles malformed token file with only newlines and tabs gracefully', function () {
+    $tokenFile = storage_path('app/test-tunnel-malformed/token');
+    @mkdir(dirname($tokenFile), 0755, true);
+    // Create file with only whitespace characters
+    file_put_contents($tokenFile, "\n\r\t\n\r\t");
+
+    $service = new TunnelService(tokenFilePath: $tokenFile);
+
+    // Whitespace-only content should be considered invalid
+    expect($service->isRunning())->toBeFalse();
+
+    File::deleteDirectory(dirname($tokenFile));
+});
+
 it('reports not running when token file does not exist', function () {
     $tokenFile = storage_path('app/test-tunnel-token-missing/token');
 

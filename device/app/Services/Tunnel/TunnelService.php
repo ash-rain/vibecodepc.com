@@ -27,7 +27,25 @@ class TunnelService
 
     public function isRunning(): bool
     {
-        return file_exists($this->tokenFilePath) && filesize($this->tokenFilePath) > 0;
+        if (! file_exists($this->tokenFilePath)) {
+            return false;
+        }
+
+        if (! is_readable($this->tokenFilePath)) {
+            return false;
+        }
+
+        $content = @file_get_contents($this->tokenFilePath);
+
+        // Handle file read failures
+        if ($content === false) {
+            return false;
+        }
+
+        // Content must be non-empty after trimming whitespace
+        $trimmed = trim($content);
+
+        return $trimmed !== '';
     }
 
     /**
