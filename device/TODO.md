@@ -7,9 +7,13 @@
 - [x] 2026-03-12 test: add unit tests for RequestIdMiddleware (request ID generation, propagation, uniqueness)
 - [x] 2026-03-13 fix: handle race condition in PortAllocatorService when multiple projects request ports simultaneously
 - [x] 2026-03-13 docs: document the DeviceHealthService metrics and thresholds in README troubleshooting section
-  - Added `ram_used_percent` and `disk_used_percent` to Available Metrics table
-  - Added comprehensive "Extended Metrics (Console Command)" section documenting network, device state, system, and application metrics
-- [ ] refactor: extract common retry logic from CloudApiClient into a reusable RetryableTrait
+- [x] 2026-03-13 refactor: extract common retry logic from CloudApiClient into a reusable RetryableTrait
+  - Created `app/Services/Traits/RetryableTrait.php` with retry configuration and methods
+  - Extracted `shouldRetry()`, `calculateBackoffDelay()`, and `getRetryConfig()` methods
+  - Refactored `CloudApiClient` to use the trait
+  - Added 28 unit tests covering retry logic, backoff calculations, and configuration
+  - All CloudApiClient tests continue to pass (no regressions)
+- [ ] test: add edge case tests for ProjectContainerService (container not found, Docker daemon errors, port conflicts)
 - [ ] test: add edge case tests for ProjectContainerService (container not found, Docker daemon errors, port conflicts)
 - [ ] chore: add GitHub Actions workflow step to verify CHANGELOG is updated on PRs
 - [ ] test: add integration tests for device backup/restore flow (encryption, integrity checks, full round-trip)

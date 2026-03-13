@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\CloudCredential;
 use App\Models\TunnelConfig;
+use App\Services\Traits\RetryableTrait;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
@@ -16,11 +17,7 @@ use VibecodePC\Common\DTOs\DeviceStatusResult;
 
 class CloudApiClient
 {
-    private const int MAX_RETRIES = 4;
-
-    private const int BASE_DELAY_MS = 100;
-
-    private const int MAX_DELAY_MS = 5000;
+    use RetryableTrait;
 
     private const int FAILURE_THRESHOLD = 5;
 
@@ -379,52 +376,17 @@ class CloudApiClient
         return null;
     }
 
-    /**
-     * Determine if an exception represents a transient failure that should be retried.
-     */
-    private function shouldRetry(\Throwable $exception): bool
-    {
-        // Connection errors (network issues, timeouts)
-        if ($exception instanceof ConnectionException) {
-            return true;
-        }
-
-        // HTTP status codes that indicate transient failures
-        $retryableStatuses = [408, 429, 500, 502, 503, 504];
-
-        // Request exceptions with retryable status codes
-        if ($exception instanceof RequestException && $exception->response !== null) {
-            return in_array($exception->response->status(), $retryableStatuses, true);
-        }
-
-        return false;
-    }
-
-    /**
-     * Calculate exponential backoff delay in milliseconds.
-     * Uses exponential backoff with jitter: min(maxDelay, baseDelay * 2^attempt)
-     */
-    private function calculateBackoffDelay(int $attempt): int
-    {
-        $exponentialDelay = self::BASE_DELAY_MS * (2 ** ($attempt - 1));
-        $cappedDelay = min($exponentialDelay, self::MAX_DELAY_MS);
-
-        // Add random jitter (±20%) to prevent thundering herd
-        $jitter = (int) ($cappedDelay * 0.2 * (mt_rand() / mt_getrandmax() * 2 - 1));
-
-        return max(0, $cappedDelay + $jitter);
-    }
-
     private function http(): PendingRequest
     {
+        $retryConfig = $this->getRetryConfig();
         $request = Http::baseUrl($this->cloudUrl)
             ->acceptJson()
             ->timeout(10)
             ->retry(
-                times: self::MAX_RETRIES,
-                sleepMilliseconds: fn (int $attempt, \Throwable $exception) => $this->calculateBackoffDelay($attempt),
-                when: fn (\Throwable $exception) => $this->shouldRetry($exception),
-                throw: false
+                times: $retryConfig['times'],
+                sleepMilliseconds: $retryConfig['sleepMilliseconds'],
+                when: $retryConfig['when'],
+                throw: $retryConfig['throw']
             );
 
         if (config('app.env') === 'local') {
