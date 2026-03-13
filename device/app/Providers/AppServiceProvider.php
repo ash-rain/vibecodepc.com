@@ -132,7 +132,8 @@ class AppServiceProvider extends ServiceProvider
     {
         $tokenFilePath = config('vibecodepc.tunnel.token_file_path');
 
-        if (file_exists($tokenFilePath) && filesize($tokenFilePath) > 0) {
+        $size = @filesize($tokenFilePath);
+        if ($size !== false && $size > 0) {
             return;
         }
 

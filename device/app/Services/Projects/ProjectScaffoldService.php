@@ -154,6 +154,8 @@ HTML;
 
     public function generateDockerCompose(Project $project): void
     {
+        File::ensureDirectoryExists($project->path);
+
         $compose = match ($project->framework) {
             ProjectFramework::Laravel => $this->laravelCompose($project),
             ProjectFramework::NextJs => $this->nextJsCompose($project),

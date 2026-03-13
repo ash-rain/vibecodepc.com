@@ -23,7 +23,7 @@ beforeEach(function () {
 afterEach(function () {
     $basePath = config('vibecodepc.projects.base_path');
     if (File::isDirectory($basePath)) {
-        File::deleteDirectory($basePath);
+        File::deleteDirectory($basePath, true);
     }
 });
 
