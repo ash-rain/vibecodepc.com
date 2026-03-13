@@ -10,7 +10,7 @@
 - [x] 2026-03-13 test: add integration tests for rate limiting middleware (burst scenarios, header assertions, boundary conditions)
 - [x] 2026-03-13 test: add edge case tests for BackupService (corrupted backup files, disk full scenarios, large file handling)
 - [x] 2026-03-13 fix: handle edge case where tunnel token file exists but is empty or malformed
-- [ ] test: add unit tests for NetworkService (IP detection failures, interface changes, timeout handling)
+- [x] 2026-03-13 test: add unit tests for NetworkService (IP detection failures, interface changes, timeout handling)
 - [ ] test: add edge case tests for CodeServerService (config write failures, port conflicts, permission errors)
 - [ ] docs: document error handling patterns and retry strategies in Services
 - [ ] refactor: extract magic numbers in ProjectContainerService to configurable constants
