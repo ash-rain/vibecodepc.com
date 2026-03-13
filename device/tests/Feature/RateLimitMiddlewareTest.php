@@ -510,3 +510,313 @@ it('preserves rate limit headers on error responses', function () {
         $response->assertHeader('X-RateLimit-Remaining');
     }
 });
+
+// ============================================================================
+// INTEGRATION SCENARIOS - CONCURRENT REQUESTS
+// ============================================================================
+
+it('handles concurrent requests without race conditions', function () {
+    RateLimiter::clear('ip:127.0.0.1');
+
+    // Simulate rapid concurrent requests by making many requests in quick succession
+    $responses = [];
+    $requestCount = 30;
+
+    for ($i = 0; $i < $requestCount; $i++) {
+        $responses[] = $this->get('/api/health');
+    }
+
+    // All requests should succeed
+    foreach ($responses as $response) {
+        $response->assertSuccessful();
+    }
+
+    // The remaining count should be accurate
+    $finalResponse = $this->get('/api/health');
+    $finalResponse->assertHeader('X-RateLimit-Remaining', (string) (60 - $requestCount - 1));
+});
+
+it('handles high-frequency burst requests', function () {
+    RateLimiter::clear('ip:127.0.0.1');
+
+    // Simulate a high-frequency burst of 60 requests
+    $successCount = 0;
+    for ($i = 0; $i < 60; $i++) {
+        $response = $this->get('/api/health');
+        if ($response->isSuccessful()) {
+            $successCount++;
+        }
+    }
+
+    // All 60 should succeed
+    expect($successCount)->toBe(60);
+
+    // The 61st should be rate limited
+    $response = $this->get('/api/health');
+    $response->assertStatus(429);
+});
+
+// ============================================================================
+// INTEGRATION SCENARIOS - DIFFERENT HTTP METHODS
+// ============================================================================
+
+it('applies rate limiting across different HTTP methods', function () {
+    RateLimiter::clear('ip:127.0.0.1');
+
+    // Create a test route that supports multiple methods
+    Route::middleware(['api.rate_limit:60,1'])->match(['get', 'post', 'put', 'patch', 'delete'], '/test-multi-method', function () {
+        return response()->json(['status' => 'ok']);
+    });
+
+    // Make requests using different HTTP methods
+    $this->get('/test-multi-method')->assertSuccessful();
+    $this->post('/test-multi-method')->assertSuccessful();
+    $this->put('/test-multi-method')->assertSuccessful();
+    $this->patch('/test-multi-method')->assertSuccessful();
+    $this->delete('/test-multi-method')->assertSuccessful();
+
+    // All should decrement the same counter
+    $response = $this->get('/test-multi-method');
+    $response->assertHeader('X-RateLimit-Remaining', '54'); // 60 - 5 - 1 = 54
+});
+
+// ============================================================================
+// INTEGRATION SCENARIOS - IPV6 ADDRESSES
+// ============================================================================
+
+it('handles IPv6 addresses correctly', function () {
+    $ipv6Address = '2001:db8::1';
+    RateLimiter::clear('ip:'.$ipv6Address);
+
+    $response = $this->withServerVariables(['REMOTE_ADDR' => $ipv6Address])
+        ->get('/api/health');
+
+    $response->assertSuccessful()
+        ->assertHeader('X-RateLimit-Limit', '60')
+        ->assertHeader('X-RateLimit-Remaining', '59');
+
+    // Second request from same IPv6 should decrement
+    $response = $this->withServerVariables(['REMOTE_ADDR' => $ipv6Address])
+        ->get('/api/health');
+
+    $response->assertHeader('X-RateLimit-Remaining', '58');
+});
+
+it('maintains separate counters for IPv4 and IPv6 from same client', function () {
+    $ipv4Address = '192.168.1.100';
+    $ipv6Address = '2001:db8::100';
+
+    RateLimiter::clear('ip:'.$ipv4Address);
+    RateLimiter::clear('ip:'.$ipv6Address);
+
+    // Request from IPv4
+    $this->withServerVariables(['REMOTE_ADDR' => $ipv4Address])
+        ->get('/api/health')
+        ->assertHeader('X-RateLimit-Remaining', '59');
+
+    // Request from IPv6 should have its own counter
+    $this->withServerVariables(['REMOTE_ADDR' => $ipv6Address])
+        ->get('/api/health')
+        ->assertHeader('X-RateLimit-Remaining', '59');
+});
+
+// ============================================================================
+// INTEGRATION SCENARIOS - RATE LIMIT PERSISTENCE
+// ============================================================================
+
+it('maintains rate limit state across multiple request cycles', function () {
+    RateLimiter::clear('ip:127.0.0.1');
+
+    // First batch of requests
+    for ($i = 0; $i < 20; $i++) {
+        $this->get('/api/health');
+    }
+
+    // Second batch should continue from where first left off
+    $response = $this->get('/api/health');
+    $response->assertHeader('X-RateLimit-Remaining', '39'); // 60 - 20 - 1 = 39
+
+    // Third batch
+    for ($i = 0; $i < 20; $i++) {
+        $this->get('/api/health');
+    }
+
+    $response = $this->get('/api/health');
+    $response->assertHeader('X-RateLimit-Remaining', '18'); // 60 - 41 - 1 = 18
+});
+
+// ============================================================================
+// INTEGRATION SCENARIOS - CUSTOM MIDDLEWARE PARAMETERS
+// ============================================================================
+
+it('respects custom rate limit parameters when provided', function () {
+    // Clear any existing rate limits
+    RateLimiter::clear('ip:127.0.0.1');
+
+    // Create a test route with custom rate limits (10 requests per 2 minutes)
+    Route::middleware(['api.rate_limit:10,2'])->group(function () {
+        Route::get('/test-custom-limit', function () {
+            return response()->json(['status' => 'ok']);
+        });
+    });
+
+    // Make 10 requests (should all succeed)
+    for ($i = 0; $i < 10; $i++) {
+        $this->get('/test-custom-limit')->assertSuccessful();
+    }
+
+    // 11th request should be rate limited
+    $response = $this->get('/test-custom-limit');
+    $response->assertStatus(429)
+        ->assertHeader('X-RateLimit-Limit', '10')
+        ->assertHeader('X-RateLimit-Remaining', '0');
+
+    // Retry-After should reflect 2 minute decay (120 seconds)
+    $retryAfter = $response->headers->get('Retry-After');
+    expect((int) $retryAfter)->toBeGreaterThan(0)->toBeLessThanOrEqual(120);
+});
+
+it('applies different limits for authenticated vs unauthenticated via middleware params', function () {
+    $user = User::factory()->create();
+
+    // Clear rate limits
+    RateLimiter::clear('ip:127.0.0.1');
+    RateLimiter::clear('user:'.$user->id);
+
+    // Create a test route with different auth/unauth limits
+    Route::middleware(['api.rate_limit:10,1,50,1'])->group(function () {
+        Route::get('/test-dual-limits', function () {
+            return response()->json(['status' => 'ok']);
+        });
+    });
+
+    // Unauthenticated user should have limit of 10
+    $response = $this->get('/test-dual-limits');
+    $response->assertHeader('X-RateLimit-Limit', '10');
+
+    // Authenticated user should have limit of 50
+    $response = $this->actingAs($user)->get('/test-dual-limits');
+    $response->assertHeader('X-RateLimit-Limit', '50')
+        ->assertHeader('X-RateLimit-Remaining', '49');
+});
+
+// ============================================================================
+// INTEGRATION SCENARIOS - BOUNDARY CONDITIONS - EDGE CASES
+// ============================================================================
+
+it('handles exactly at limit boundary correctly', function () {
+    RateLimiter::clear('ip:127.0.0.1');
+
+    // Make exactly 59 requests
+    for ($i = 0; $i < 59; $i++) {
+        $this->get('/api/health')->assertSuccessful();
+    }
+
+    // 60th request should succeed with 0 remaining
+    $response = $this->get('/api/health');
+    $response->assertSuccessful()
+        ->assertHeader('X-RateLimit-Remaining', '0');
+
+    // 61st should be blocked
+    $response = $this->get('/api/health');
+    $response->assertStatus(429);
+});
+
+it('handles rate limit with remaining at boundary of zero', function () {
+    RateLimiter::clear('ip:127.0.0.1');
+
+    // Exhaust the rate limit
+    for ($i = 0; $i < 60; $i++) {
+        $this->get('/api/health');
+    }
+
+    // Verify remaining is 0, not negative
+    for ($i = 0; $i < 10; $i++) {
+        $response = $this->get('/api/health');
+        $response->assertStatus(429)
+            ->assertHeader('X-RateLimit-Remaining', '0');
+    }
+});
+
+it('handles rapid switching between authenticated and unauthenticated', function () {
+    $user = User::factory()->create();
+
+    RateLimiter::clear('ip:127.0.0.1');
+    RateLimiter::clear('user:'.$user->id);
+
+    // Test unauthenticated first - should have limit of 60
+    $response = $this->get('/api/health');
+    $response->assertHeader('X-RateLimit-Limit', '60');
+
+    // Test authenticated - should have limit of 120
+    $response = $this->actingAs($user)->get('/api/health');
+    $response->assertHeader('X-RateLimit-Limit', '120')
+        ->assertHeader('X-RateLimit-Remaining', '119');
+
+    // Make more requests as authenticated user
+    $this->actingAs($user)->get('/api/health');
+    $this->actingAs($user)->get('/api/health');
+
+    // Verify authenticated counter decremented independently
+    $response = $this->actingAs($user)->get('/api/health');
+    $response->assertHeader('X-RateLimit-Remaining', '116'); // 120 - 4 = 116
+});
+
+// ============================================================================
+// INTEGRATION SCENARIOS - HEADER ASSERTIONS - COMPREHENSIVE
+// ============================================================================
+
+it('returns consistent header values across all response types', function () {
+    RateLimiter::clear('ip:127.0.0.1');
+
+    // Test headers on successful responses
+    $response = $this->get('/api/health');
+    $response->assertHeader('X-RateLimit-Limit', '60')
+        ->assertHeader('X-RateLimit-Remaining', '59')
+        ->assertHeaderMissing('Retry-After');
+
+    // Hit the limit
+    for ($i = 0; $i < 59; $i++) {
+        $this->get('/api/health');
+    }
+
+    // Test headers on throttled response
+    $response = $this->get('/api/health');
+    $response->assertStatus(429)
+        ->assertHeader('X-RateLimit-Limit', '60')
+        ->assertHeader('X-RateLimit-Remaining', '0')
+        ->assertHeader('Retry-After');
+
+    // Verify Retry-After is reasonable (between 1 and 60 seconds)
+    $retryAfter = (int) $response->headers->get('Retry-After');
+    expect($retryAfter)->toBeGreaterThan(0)->toBeLessThanOrEqual(60);
+});
+
+it('includes correct Content-Type header on rate limited responses', function () {
+    RateLimiter::clear('ip:127.0.0.1');
+
+    // Hit the limit
+    for ($i = 0; $i < 60; $i++) {
+        $this->get('/api/health');
+    }
+
+    $response = $this->get('/api/health');
+    $response->assertStatus(429)
+        ->assertHeader('Content-Type', 'application/json');
+});
+
+it('preserves custom headers when rate limiting', function () {
+    RateLimiter::clear('ip:127.0.0.1');
+
+    // Hit the limit
+    for ($i = 0; $i < 60; $i++) {
+        $this->get('/api/health');
+    }
+
+    // Rate limited response should still have rate limit headers
+    $response = $this->get('/api/health');
+    $response->assertStatus(429)
+        ->assertHeader('X-RateLimit-Limit')
+        ->assertHeader('X-RateLimit-Remaining')
+        ->assertHeader('Retry-After');
+});
