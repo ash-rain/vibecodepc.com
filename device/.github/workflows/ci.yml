@@ -81,3 +81,50 @@ jobs:
 
       - name: Run Pint
         run: vendor/bin/pint --test --format=github
+
+  changelog:
+    name: Verify CHANGELOG Updated
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check CHANGELOG has been updated
+        run: |
+          # Get the list of files changed in this PR
+          changed_files=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+
+          # Check if CHANGELOG.md is in the changed files
+          if echo "$changed_files" | grep -q "^CHANGELOG.md$"; then
+            echo "✓ CHANGELOG.md has been updated in this PR"
+            exit 0
+          fi
+
+          # Check the PR title for exempt prefixes (chore, docs, test, etc.)
+          pr_title="${{ github.event.pull_request.title }}"
+          if [[ "$pr_title" =~ ^(chore|docs|test|style|refactor|ci|build)(\(|:) ]]; then
+            echo "✓ PR title indicates this change is exempt from CHANGELOG updates"
+            echo "  Title: $pr_title"
+            exit 0
+          fi
+
+          # If we get here, CHANGELOG was not updated and PR is not exempt
+          echo "✗ ERROR: CHANGELOG.md has not been updated in this PR"
+          echo ""
+          echo "This PR modifies code that should be documented in the CHANGELOG."
+          echo "Please update CHANGELOG.md with details of your changes under the [Unreleased] section."
+          echo ""
+          echo "If this PR does not require a CHANGELOG entry, use one of these prefixes in your PR title:"
+          echo "  - chore:  (maintenance tasks)"
+          echo "  - docs:   (documentation only changes)"
+          echo "  - test:   (adding or updating tests)"
+          echo "  - style:  (formatting changes)"
+          echo "  - refactor: (code restructuring)"
+          echo "  - ci:     (CI/CD changes)"
+          echo "  - build:  (build system changes)"
+          echo ""
+          exit 1

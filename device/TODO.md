@@ -8,7 +8,7 @@
 - [x] 2026-03-13 fix: handle race condition in PortAllocatorService when multiple projects request ports simultaneously
 - [x] 2026-03-13 docs: document the DeviceHealthService metrics and thresholds in README troubleshooting section
 - [x] 2026-03-13 refactor: extract common retry logic from CloudApiClient into a reusable RetryableTrait
-- [ ] chore: add GitHub Actions workflow step to verify CHANGELOG is updated on PRs
+- [x] 2026-03-13 chore: add GitHub Actions workflow step to verify CHANGELOG is updated on PRs
 - [ ] test: add integration tests for device backup/restore flow (encryption, integrity checks, full round-trip)
 
 ## In Progress
