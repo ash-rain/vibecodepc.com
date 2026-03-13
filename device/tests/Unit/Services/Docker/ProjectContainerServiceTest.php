@@ -451,3 +451,244 @@ it('handles image pull errors during start', function () {
     expect($result)->toContain('pull access denied');
     expect($project->fresh()->status)->toBe(ProjectStatus::Error);
 });
+
+it('returns null resources when docker stats returns malformed output', function () {
+    Process::fake([
+        'docker stats *' => Process::result(output: 'malformed|output|with|extra|pipes'),
+    ]);
+
+    $project = Project::factory()->running()->create(['container_id' => 'abc123']);
+    $service = new ProjectContainerService;
+
+    $resources = $service->getResourceUsage($project);
+
+    expect($resources)->toBe(['cpu' => 'malformed', 'memory' => 'output']);
+});
+
+it('returns default values when docker stats returns empty output', function () {
+    Process::fake([
+        'docker stats *' => Process::result(output: '|'),
+    ]);
+
+    $project = Project::factory()->running()->create(['container_id' => 'abc123']);
+    $service = new ProjectContainerService;
+
+    $resources = $service->getResourceUsage($project);
+
+    expect($resources)->toBe(['cpu' => '', 'memory' => '']);
+});
+
+it('handles container in exited state', function () {
+    Process::fake([
+        'docker compose ps --format json' => Process::result(output: '{"State":"exited"}'),
+    ]);
+
+    $project = Project::factory()->create();
+    $service = new ProjectContainerService;
+
+    expect($service->isRunning($project))->toBeFalse();
+});
+
+it('handles container in dead state', function () {
+    Process::fake([
+        'docker compose ps --format json' => Process::result(output: '{"State":"dead"}'),
+    ]);
+
+    $project = Project::factory()->create();
+    $service = new ProjectContainerService;
+
+    expect($service->isRunning($project))->toBeFalse();
+});
+
+it('handles container in restarting state', function () {
+    Process::fake([
+        'docker compose ps --format json' => Process::result(output: '{"State":"restarting"}'),
+    ]);
+
+    $project = Project::factory()->create();
+    $service = new ProjectContainerService;
+
+    expect($service->isRunning($project))->toBeFalse();
+});
+
+it('handles container in paused state', function () {
+    Process::fake([
+        'docker compose ps --format json' => Process::result(output: '{"State":"paused"}'),
+    ]);
+
+    $project = Project::factory()->create();
+    $service = new ProjectContainerService;
+
+    expect($service->isRunning($project))->toBeFalse();
+});
+
+it('returns empty logs when output is just whitespace', function () {
+    Process::fake([
+        'docker compose logs --tail=50 --no-color' => Process::result(output: "   \n\n   "),
+    ]);
+
+    $project = Project::factory()->running()->create();
+    $service = new ProjectContainerService;
+
+    $logs = $service->getLogs($project);
+
+    expect($logs)->toBe([]);
+});
+
+it('handles stop on already stopped container gracefully', function () {
+    Process::fake([
+        'docker compose down' => Process::result(output: 'Container myproject-app-1  Removed', exitCode: 0),
+    ]);
+
+    $project = Project::factory()->stopped()->create();
+    $service = new ProjectContainerService;
+
+    $result = $service->stop($project);
+
+    expect($result)->toBeNull();
+    expect($project->fresh()->status)->toBe(ProjectStatus::Stopped);
+});
+
+it('handles container removal when container already gone', function () {
+    Process::fake([
+        'docker compose down -v --rmi local' => Process::result(
+            errorOutput: 'Error response from daemon: No such container: myproject-app-1',
+            exitCode: 1
+        ),
+    ]);
+
+    $project = Project::factory()->create();
+    $service = new ProjectContainerService;
+
+    $result = $service->remove($project);
+
+    expect($result)->toBeFalse();
+});
+
+it('handles docker compose ps returning multiple container IDs', function () {
+    Process::fake([
+        'docker compose up -d' => Process::result(output: 'Started'),
+        'docker compose ps -q' => Process::result(output: "abc123\ndef456\nghi789"),
+    ]);
+
+    $project = Project::factory()->create();
+    $service = new ProjectContainerService;
+
+    $result = $service->start($project);
+
+    expect($result)->toBeNull();
+    expect($project->fresh()->container_id)->toBe('abc123');
+});
+
+it('handles docker compose ps returning empty output', function () {
+    Process::fake([
+        'docker compose up -d' => Process::result(output: 'Started'),
+        'docker compose ps -q' => Process::result(output: ''),
+    ]);
+
+    $project = Project::factory()->create();
+    $service = new ProjectContainerService;
+
+    $result = $service->start($project);
+
+    expect($result)->toBeNull();
+    expect($project->fresh()->container_id)->toBeNull();
+});
+
+it('handles network not found errors during start', function () {
+    Process::fake([
+        'docker compose up -d' => Process::result(
+            errorOutput: 'Error response from daemon: network myproject_default not found',
+            exitCode: 1
+        ),
+    ]);
+
+    $project = Project::factory()->create();
+    $service = new ProjectContainerService;
+
+    $result = $service->start($project);
+
+    expect($result)->toContain('network myproject_default not found');
+    expect($project->fresh()->status)->toBe(ProjectStatus::Error);
+});
+
+it('handles volume mount errors during start', function () {
+    Process::fake([
+        'docker compose up -d' => Process::result(
+            errorOutput: 'Error response from daemon: Mounts denied: path /host/path is not shared from OS X',
+            exitCode: 1
+        ),
+    ]);
+
+    $project = Project::factory()->create();
+    $service = new ProjectContainerService;
+
+    $result = $service->start($project);
+
+    expect($result)->toContain('Mounts denied');
+    expect($project->fresh()->status)->toBe(ProjectStatus::Error);
+});
+
+it('handles out of memory errors during start', function () {
+    Process::fake([
+        'docker compose up -d' => Process::result(
+            errorOutput: 'Error response from daemon: OCI runtime create failed: container_linux.go:380: starting container process caused: applying cgroup configuration for process caused: Cannot allocate memory',
+            exitCode: 1
+        ),
+    ]);
+
+    $project = Project::factory()->create();
+    $service = new ProjectContainerService;
+
+    $result = $service->start($project);
+
+    expect($result)->toContain('Cannot allocate memory');
+    expect($project->fresh()->status)->toBe(ProjectStatus::Error);
+});
+
+it('handles docker compose build failures during start', function () {
+    Process::fake([
+        'docker compose up -d' => Process::result(
+            errorOutput: 'failed to solve: executor failed running [/bin/sh -c npm install]: exit code: 1',
+            exitCode: 1
+        ),
+    ]);
+
+    $project = Project::factory()->create();
+    $service = new ProjectContainerService;
+
+    $result = $service->start($project);
+
+    expect($result)->toContain('failed to solve');
+    expect($project->fresh()->status)->toBe(ProjectStatus::Error);
+});
+
+it('handles health check when container status is starting', function () {
+    Process::fake([
+        'docker compose ps --format json' => Process::result(output: '{"State":"running"}'),
+        'docker stats *' => Process::result(output: '5.00%|128MiB / 256MiB'),
+        'docker inspect --format "{{.State.Health.Status}}" *' => Process::result(output: 'starting'),
+    ]);
+
+    $project = Project::factory()->running()->create(['container_id' => 'abc123']);
+    $service = new ProjectContainerService;
+
+    $health = $service->healthCheck($project);
+
+    expect($health['healthStatus'])->toBe('starting');
+});
+
+it('handles health check when container status is unhealthy', function () {
+    Process::fake([
+        'docker compose ps --format json' => Process::result(output: '{"State":"running"}'),
+        'docker stats *' => Process::result(output: '5.00%|128MiB / 256MiB'),
+        'docker inspect --format "{{.State.Health.Status}}" *' => Process::result(output: 'unhealthy'),
+    ]);
+
+    $project = Project::factory()->running()->create(['container_id' => 'abc123']);
+    $service = new ProjectContainerService;
+
+    $health = $service->healthCheck($project);
+
+    expect($health['healthStatus'])->toBe('unhealthy');
+});

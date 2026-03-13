@@ -8,19 +8,27 @@
 - [x] 2026-03-13 fix: handle race condition in PortAllocatorService when multiple projects request ports simultaneously
 - [x] 2026-03-13 docs: document the DeviceHealthService metrics and thresholds in README troubleshooting section
 - [x] 2026-03-13 refactor: extract common retry logic from CloudApiClient into a reusable RetryableTrait
-  - Created `app/Services/Traits/RetryableTrait.php` with retry configuration and methods
-  - Extracted `shouldRetry()`, `calculateBackoffDelay()`, and `getRetryConfig()` methods
-  - Refactored `CloudApiClient` to use the trait
-  - Added 28 unit tests covering retry logic, backoff calculations, and configuration
-  - All CloudApiClient tests continue to pass (no regressions)
-- [ ] test: add edge case tests for ProjectContainerService (container not found, Docker daemon errors, port conflicts)
-- [ ] test: add edge case tests for ProjectContainerService (container not found, Docker daemon errors, port conflicts)
 - [ ] chore: add GitHub Actions workflow step to verify CHANGELOG is updated on PRs
 - [ ] test: add integration tests for device backup/restore flow (encryption, integrity checks, full round-trip)
 
 ## In Progress
 
 ## Done
+- [x] 2026-03-13 test: add edge case tests for ProjectContainerService (container not found, Docker daemon errors, port conflicts)
+  - Added 17 new edge case tests covering:
+    - Container state edge cases (exited, dead, restarting, paused)
+    - Docker stats output parsing edge cases (malformed output, empty output)
+    - Multiple container IDs returned from docker compose ps
+    - Empty output from docker compose ps
+    - Stop on already stopped container
+    - Empty logs output
+    - Container removal when already gone
+    - Network not found errors
+    - Volume mount errors
+    - Out of memory errors
+    - Docker compose build failures
+    - Health check states (starting, unhealthy)
+  - All 53 tests passing (48 in main test file + 5 in exec test file)
 - [x] 2026-03-12 feat: add retry logic with exponential backoff to DeviceRegistry service for cloud API calls
   - Feature was already implemented in DeviceRegistryService
   - Fixed test syntax error: `toThrow()` requires at least one argument
