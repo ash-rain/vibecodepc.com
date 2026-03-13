@@ -876,6 +876,151 @@ php artisan cache:clear
 php artisan view:clear
 ```
 
+### Device Health Monitoring
+
+The device continuously monitors system resources through the `DeviceHealthService`. These metrics are displayed in the dashboard health bar and can be queried via the `device:health` command.
+
+#### Available Metrics
+
+| Metric | Type | Description |
+|--------|------|-------------|
+| `cpu_percent` | float | CPU usage percentage (0-100%) |
+| `ram_used_mb` | int | Used RAM in megabytes |
+| `ram_total_mb` | int | Total system RAM in megabytes |
+| `disk_used_gb` | float | Used disk space in gigabytes |
+| `disk_total_gb` | float | Total disk space in gigabytes |
+| `temperature_c` | float\|null | CPU temperature in Celsius (null on systems without thermal sensors) |
+
+#### Dashboard Health Bar Thresholds
+
+The dashboard health bar uses color-coded indicators to show resource status:
+
+**CPU Usage:**
+| Range | Color | Meaning |
+|-------|-------|---------|
+| < 60% | Green | Normal operation |
+| 60-84% | Amber | Elevated usage |
+| >= 85% | Red | High usage — consider closing unused projects |
+
+**RAM Usage:**
+| Range | Color | Meaning |
+|-------|-------|---------|
+| < 60% | Green | Normal operation |
+| 60-84% | Amber | Elevated usage |
+| >= 85% | Red | High usage — may cause performance issues |
+
+**Disk Usage:**
+| Range | Color | Meaning |
+|-------|-------|---------|
+| < 70% | Green | Normal operation |
+| 70-89% | Amber | Elevated usage — consider cleanup |
+| >= 90% | Red | Critical — immediate cleanup required |
+
+**Temperature:**
+| Range | Color | Meaning |
+|-------|-------|---------|
+| < 60°C | Green | Normal operating temperature |
+| 60-74°C | Amber | Elevated temperature — ensure adequate ventilation |
+| >= 75°C | Red | High temperature — check cooling system |
+
+#### Console Command Thresholds
+
+The `device:health` command uses different thresholds for status indicators:
+
+**CPU:**
+- Warning: >= 70%
+- Critical: >= 90%
+
+**RAM:**
+- Warning: >= 80%
+- Critical: >= 95%
+
+**Disk:**
+- Warning: >= 80%
+- Critical: >= 95%
+
+#### Querying Health Metrics
+
+**Via Command Line:**
+```bash
+# Display comprehensive health report
+php artisan device:health
+
+# Output as JSON for scripting
+php artisan device:health --json
+```
+
+**Via Code:**
+```php
+use App\Services\DeviceHealthService;
+
+$healthService = app(DeviceHealthService::class);
+$metrics = $healthService->getMetrics();
+
+// Access individual metrics
+$cpuUsage = $metrics['cpu_percent'];
+$ramPercent = ($metrics['ram_used_mb'] / $metrics['ram_total_mb']) * 100;
+$temperature = $metrics['temperature_c']; // null if unavailable
+```
+
+#### Temperature Not Available
+
+**Issue:** Temperature shows as "N/A" or null
+
+**Cause:** The device is running on non-Raspberry Pi hardware, or the thermal zone file is not accessible.
+
+**Solutions:**
+1. On Raspberry Pi, ensure thermal zone is readable:
+   ```bash
+   cat /sys/class/thermal/thermal_zone0/temp
+   # Should return a value like 52000 (52.0°C * 1000)
+   ```
+
+2. On development machines (Mac/Windows), temperature monitoring is not available — this is expected behavior.
+
+3. Temperature monitoring is informational only and does not affect core functionality.
+
+#### High Resource Usage
+
+**Issue:** Dashboard shows red indicators for CPU, RAM, or disk
+
+**Causes and Solutions:**
+
+1. **High CPU Usage:**
+   - Check running projects: `php artisan project:list`
+   - Stop unused projects via the dashboard or: `php artisan project:stop <id>`
+   - High CPU during project operations (clone, build) is normal
+
+2. **High RAM Usage:**
+   - Each running project container uses memory
+   - Consider stopping inactive projects
+   - Check for memory leaks: `docker stats`
+
+3. **High Disk Usage:**
+   - Clean up old projects and their data
+   - Remove Docker images: `docker system prune`
+   - Clear logs: `php artisan log:clear` or manually truncate `storage/logs/laravel.log`
+
+#### Metrics Collection Fails
+
+**Issue:** All metrics show 0 or health bar doesn't update
+
+**Cause:** The system commands used to collect metrics are not available.
+
+**Solutions:**
+1. Ensure standard Unix utilities are available:
+   ```bash
+   which top free df awk
+   # All should return paths
+   ```
+
+2. On macOS development, some metrics have fallbacks but may be less accurate.
+
+3. Check process execution permissions:
+   ```bash
+   php artisan tinker --execute="echo Illuminate\Support\Facades\Process::run('whoami')->output();"
+   ```
+
 ### Getting Help
 
 If you encounter issues not covered here:
