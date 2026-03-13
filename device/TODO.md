@@ -1,7 +1,7 @@
 ## Todo
 
 - [x] 2026-03-13 test: add unit tests for AnalyticsEvent model (event creation, aggregation queries, property storage)
-- [ ] test: add edge case tests for AnalyticsService (database failures, large dataset aggregation, concurrent writes)
+- [x] 2026-03-13 test: add edge case tests for AnalyticsService (database failures, large dataset aggregation, concurrent writes)
 - [ ] test: add unit tests for DeviceState model (key-value storage, default values, type casting)
 - [ ] test: add edge case tests for DeviceStateService (invalid state transitions, missing keys, cache interactions)
 - [ ] test: add unit tests for WizardProgress model state transitions (completed steps, percentage calculation)
