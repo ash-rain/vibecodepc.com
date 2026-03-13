@@ -213,3 +213,241 @@ it('returns null health status when docker inspect fails', function () {
 
     expect($health['healthStatus'])->toBeNull();
 });
+
+it('returns error when container start fails', function () {
+    Process::fake([
+        'docker compose up -d' => Process::result(errorOutput: 'Error starting container', exitCode: 1),
+    ]);
+
+    $project = Project::factory()->create();
+    $service = new ProjectContainerService;
+
+    $result = $service->start($project);
+
+    expect($result)->toBe('Error starting container');
+    expect($project->fresh()->status)->toBe(ProjectStatus::Error);
+});
+
+it('returns generic error when start fails with no output', function () {
+    Process::fake([
+        'docker compose up -d' => Process::result(output: '', exitCode: 1),
+    ]);
+
+    $project = Project::factory()->create();
+    $service = new ProjectContainerService;
+
+    $result = $service->start($project);
+
+    expect($result)->toBe('Failed to start container (no output).');
+});
+
+it('handles port conflict errors when starting container', function () {
+    Process::fake([
+        'docker compose up -d' => Process::result(
+            errorOutput: 'Bind for 0.0.0.0:8080 failed: port is already allocated',
+            exitCode: 1
+        ),
+    ]);
+
+    $project = Project::factory()->create();
+    $service = new ProjectContainerService;
+
+    $result = $service->start($project);
+
+    expect($result)->toContain('port is already allocated');
+    expect($project->fresh()->status)->toBe(ProjectStatus::Error);
+});
+
+it('handles Docker daemon not running error', function () {
+    Process::fake([
+        'docker compose up -d' => Process::result(
+            errorOutput: 'Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?',
+            exitCode: 1
+        ),
+    ]);
+
+    $project = Project::factory()->create();
+    $service = new ProjectContainerService;
+
+    $result = $service->start($project);
+
+    expect($result)->toContain('Cannot connect to the Docker daemon');
+    expect($project->fresh()->status)->toBe(ProjectStatus::Error);
+});
+
+it('returns error when container stop fails', function () {
+    Process::fake([
+        'docker compose down' => Process::result(errorOutput: 'Container not found', exitCode: 1),
+    ]);
+
+    $project = Project::factory()->running()->create();
+    $service = new ProjectContainerService;
+
+    $result = $service->stop($project);
+
+    expect($result)->toBe('Container not found');
+});
+
+it('returns generic error when stop fails with no output', function () {
+    Process::fake([
+        'docker compose down' => Process::result(output: '', exitCode: 1),
+    ]);
+
+    $project = Project::factory()->running()->create();
+    $service = new ProjectContainerService;
+
+    $result = $service->stop($project);
+
+    expect($result)->toBe('Failed to stop container (no output).');
+});
+
+it('returns error when restart stop phase fails', function () {
+    Process::fake([
+        'docker compose down' => Process::result(errorOutput: 'Stop failed: container locked', exitCode: 1),
+    ]);
+
+    $project = Project::factory()->running()->create();
+    $service = new ProjectContainerService;
+
+    $result = $service->restart($project);
+
+    expect($result)->toBe('Stop failed: Stop failed: container locked');
+});
+
+it('returns false when container not found during isRunning check', function () {
+    Process::fake([
+        'docker compose ps --format json' => Process::result(errorOutput: 'No such container', exitCode: 1),
+    ]);
+
+    $project = Project::factory()->create();
+    $service = new ProjectContainerService;
+
+    expect($service->isRunning($project))->toBeFalse();
+});
+
+it('returns empty logs when docker compose logs fails', function () {
+    Process::fake([
+        'docker compose logs --tail=50 --no-color' => Process::result(errorOutput: 'Container not running', exitCode: 1),
+    ]);
+
+    $project = Project::factory()->create();
+    $service = new ProjectContainerService;
+
+    $logs = $service->getLogs($project);
+
+    expect($logs)->toBe([]);
+});
+
+it('returns null resources when container_id is null', function () {
+    $project = Project::factory()->create(['container_id' => null]);
+    $service = new ProjectContainerService;
+
+    $resources = $service->getResourceUsage($project);
+
+    expect($resources)->toBeNull();
+});
+
+it('returns null resources when docker stats fails', function () {
+    Process::fake([
+        'docker stats *' => Process::result(errorOutput: 'Error: No such container: xyz789', exitCode: 1),
+    ]);
+
+    $project = Project::factory()->running()->create(['container_id' => 'xyz789']);
+    $service = new ProjectContainerService;
+
+    $resources = $service->getResourceUsage($project);
+
+    expect($resources)->toBeNull();
+});
+
+it('returns null container ID when ps command fails', function () {
+    Process::fake([
+        'docker compose up -d' => Process::result(output: 'Started'),
+        'docker compose ps -q' => Process::result(errorOutput: 'Docker daemon error', exitCode: 1),
+    ]);
+
+    $project = Project::factory()->create();
+    $service = new ProjectContainerService;
+
+    $service->start($project);
+
+    expect($project->fresh()->container_id)->toBeNull();
+    expect($project->fresh()->status)->toBe(ProjectStatus::Running);
+});
+
+it('handles container removal failure', function () {
+    Process::fake([
+        'docker compose down -v --rmi local' => Process::result(errorOutput: 'Failed to remove volumes', exitCode: 1),
+    ]);
+
+    $project = Project::factory()->create();
+    $service = new ProjectContainerService;
+
+    $result = $service->remove($project);
+
+    expect($result)->toBeFalse();
+});
+
+it('handles container removal when command times out', function () {
+    Process::fake([
+        'docker compose down -v --rmi local' => function () {
+            throw new RuntimeException('Process timed out after 60 seconds');
+        },
+    ]);
+
+    $project = Project::factory()->create();
+    $service = new ProjectContainerService;
+
+    expect(fn () => $service->remove($project))->toThrow(RuntimeException::class, 'Process timed out');
+});
+
+it('handles complex Docker error messages with multiple lines', function () {
+    Process::fake([
+        'docker compose up -d' => Process::result(
+            errorOutput: "Error response from daemon: driver failed programming external connectivity on endpoint\nError starting userland proxy: listen tcp 0.0.0.0:8080: bind: address already in use",
+            exitCode: 1
+        ),
+    ]);
+
+    $project = Project::factory()->create();
+    $service = new ProjectContainerService;
+
+    $result = $service->start($project);
+
+    expect($result)->toContain('address already in use');
+    expect($project->fresh()->status)->toBe(ProjectStatus::Error);
+});
+
+it('handles permission denied errors from Docker daemon', function () {
+    Process::fake([
+        'docker compose up -d' => Process::result(
+            errorOutput: 'permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock: Get "http://%2Fvar%2Frun%2Fdocker.sock/v1.24/containers/json": dial unix /var/run/docker.sock: connect: permission denied',
+            exitCode: 1
+        ),
+    ]);
+
+    $project = Project::factory()->create();
+    $service = new ProjectContainerService;
+
+    $result = $service->start($project);
+
+    expect($result)->toContain('permission denied');
+    expect($project->fresh()->status)->toBe(ProjectStatus::Error);
+});
+
+it('handles image pull errors during start', function () {
+    Process::fake([
+        'docker compose up -d' => Process::result(
+            errorOutput: 'Error response from daemon: pull access denied for myimage, repository does not exist or may require docker login',
+            exitCode: 1
+        ),
+    ]);
+
+    $project = Project::factory()->create();
+    $service = new ProjectContainerService;
+
+    $result = $service->start($project);
+
+    expect($result)->toContain('pull access denied');
+    expect($project->fresh()->status)->toBe(ProjectStatus::Error);
+});
