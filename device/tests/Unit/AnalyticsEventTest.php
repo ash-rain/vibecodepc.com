@@ -165,3 +165,365 @@ it('scopes preserve existing query builder constraints', function () {
     expect($result)->toHaveCount(1)
         ->and($result->first()->properties['subdomain'])->toBe('test1');
 });
+
+// Event Creation Tests
+it('creates event with required fields', function () {
+    $event = AnalyticsEvent::create([
+        'event_type' => 'test.event',
+        'category' => 'test',
+        'occurred_at' => now(),
+    ]);
+
+    expect($event->id)->toBeInt()
+        ->and($event->event_type)->toBe('test.event')
+        ->and($event->category)->toBe('test')
+        ->and($event->properties)->toBeNull()
+        ->and($event->occurred_at)->toBeInstanceOf(\Carbon\Carbon::class);
+});
+
+it('creates event with all fields', function () {
+    $now = now();
+    $event = AnalyticsEvent::create([
+        'event_type' => 'wizard.completed',
+        'category' => 'wizard',
+        'properties' => ['step' => 'welcome', 'user_id' => 123],
+        'occurred_at' => $now,
+    ]);
+
+    expect($event->event_type)->toBe('wizard.completed')
+        ->and($event->category)->toBe('wizard')
+        ->and($event->properties)->toBe(['step' => 'welcome', 'user_id' => 123])
+        ->and($event->occurred_at)->toBeInstanceOf(\Carbon\Carbon::class);
+});
+
+it('creates event using factory', function () {
+    $event = AnalyticsEvent::factory()->create();
+
+    expect($event->id)->toBeInt()
+        ->and($event->event_type)->not->toBeEmpty()
+        ->and($event->occurred_at)->toBeInstanceOf(\Carbon\Carbon::class);
+});
+
+it('persists event to database', function () {
+    $event = AnalyticsEvent::create([
+        'event_type' => 'persist.test',
+        'occurred_at' => now(),
+    ]);
+
+    $retrieved = AnalyticsEvent::find($event->id);
+
+    expect($retrieved)->not->toBeNull()
+        ->and($retrieved->event_type)->toBe('persist.test');
+});
+
+it('allows null properties', function () {
+    $event = AnalyticsEvent::create([
+        'event_type' => 'no.properties',
+        'properties' => null,
+        'occurred_at' => now(),
+    ]);
+
+    expect($event->properties)->toBeNull();
+});
+
+it('allows empty array properties', function () {
+    $event = AnalyticsEvent::create([
+        'event_type' => 'empty.properties',
+        'properties' => [],
+        'occurred_at' => now(),
+    ]);
+
+    expect($event->properties)->toBe([]);
+});
+
+it('handles event type with special characters', function () {
+    $event = AnalyticsEvent::create([
+        'event_type' => 'test:event@v1.0',
+        'occurred_at' => now(),
+    ]);
+
+    expect($event->event_type)->toBe('test:event@v1.0');
+});
+
+it('sets timestamps automatically', function () {
+    $event = AnalyticsEvent::create([
+        'event_type' => 'timestamp.test',
+        'occurred_at' => now(),
+    ]);
+
+    expect($event->created_at)->toBeInstanceOf(\Carbon\Carbon::class)
+        ->and($event->updated_at)->toBeInstanceOf(\Carbon\Carbon::class);
+});
+
+// Aggregation Query Tests
+it('counts events by type', function () {
+    AnalyticsEvent::factory()->tunnelCompleted()->create();
+    AnalyticsEvent::factory()->tunnelCompleted()->create();
+    AnalyticsEvent::factory()->tunnelSkipped()->create();
+    AnalyticsEvent::factory()->wizardEvent()->create();
+
+    $count = AnalyticsEvent::type('tunnel.completed')->count();
+
+    expect($count)->toBe(2);
+});
+
+it('counts total events', function () {
+    AnalyticsEvent::factory()->count(5)->create();
+
+    $count = AnalyticsEvent::count();
+
+    expect($count)->toBe(5);
+});
+
+it('aggregates events by event_type', function () {
+    AnalyticsEvent::factory()->tunnelCompleted()->create();
+    AnalyticsEvent::factory()->tunnelCompleted()->create();
+    AnalyticsEvent::factory()->tunnelSkipped()->create();
+    AnalyticsEvent::factory()->wizardEvent()->create();
+
+    $aggregated = AnalyticsEvent::selectRaw('event_type, COUNT(*) as count')
+        ->groupBy('event_type')
+        ->pluck('count', 'event_type')
+        ->toArray();
+
+    expect($aggregated)->toBe([
+        'tunnel.completed' => 2,
+        'tunnel.skipped' => 1,
+        'wizard.completed' => 1,
+    ]);
+});
+
+it('aggregates events by category', function () {
+    AnalyticsEvent::factory()->tunnelCompleted()->create();
+    AnalyticsEvent::factory()->tunnelSkipped()->create();
+    AnalyticsEvent::factory()->wizardEvent()->create();
+
+    $aggregated = AnalyticsEvent::selectRaw('category, COUNT(*) as count')
+        ->groupBy('category')
+        ->pluck('count', 'category')
+        ->toArray();
+
+    expect($aggregated['tunnel'])->toBe(2)
+        ->and($aggregated['wizard'])->toBe(1);
+});
+
+it('gets min and max occurred_at dates', function () {
+    AnalyticsEvent::factory()->create(['occurred_at' => now()->subDays(10)]);
+    AnalyticsEvent::factory()->create(['occurred_at' => now()->subDays(5)]);
+    AnalyticsEvent::factory()->create(['occurred_at' => now()]);
+
+    $minDate = AnalyticsEvent::min('occurred_at');
+    $maxDate = AnalyticsEvent::max('occurred_at');
+
+    expect($minDate)->not->toBeNull()
+        ->and($maxDate)->not->toBeNull()
+        ->and((int) \Carbon\Carbon::parse($minDate)->diffInDays(\Carbon\Carbon::parse($maxDate)))->toBe(10);
+});
+
+it('aggregates with date grouping', function () {
+    AnalyticsEvent::factory()->create(['occurred_at' => now()->subDays(2)]);
+    AnalyticsEvent::factory()->create(['occurred_at' => now()->subDays(2)]);
+    AnalyticsEvent::factory()->create(['occurred_at' => now()->subDays(1)]);
+    AnalyticsEvent::factory()->create(['occurred_at' => now()]);
+
+    $daily = AnalyticsEvent::selectRaw('DATE(occurred_at) as date, COUNT(*) as count')
+        ->groupBy('date')
+        ->orderBy('date')
+        ->pluck('count', 'date')
+        ->toArray();
+
+    expect($daily)->toHaveCount(3);
+});
+
+it('returns zero count for empty results', function () {
+    $count = AnalyticsEvent::type('nonexistent')->count();
+
+    expect($count)->toBe(0);
+});
+
+it('aggregates with having clause', function () {
+    AnalyticsEvent::factory()->tunnelCompleted()->create();
+    AnalyticsEvent::factory()->tunnelCompleted()->create();
+    AnalyticsEvent::factory()->tunnelSkipped()->create();
+
+    $result = AnalyticsEvent::selectRaw('event_type, COUNT(*) as count')
+        ->groupBy('event_type')
+        ->havingRaw('COUNT(*) > 1')
+        ->pluck('count', 'event_type')
+        ->toArray();
+
+    expect($result)->toHaveCount(1)
+        ->and($result['tunnel.completed'])->toBe(2);
+});
+
+// Property Storage Tests
+it('stores properties as array', function () {
+    $properties = ['key1' => 'value1', 'key2' => 'value2'];
+
+    $event = AnalyticsEvent::create([
+        'event_type' => 'properties.test',
+        'properties' => $properties,
+        'occurred_at' => now(),
+    ]);
+
+    expect($event->properties)->toBeArray()
+        ->and($event->properties)->toBe($properties);
+});
+
+it('retrieves properties from database', function () {
+    $properties = ['nested' => ['deep' => 'value'], 'simple' => 'test'];
+
+    $event = AnalyticsEvent::create([
+        'event_type' => 'properties.retrieve',
+        'properties' => $properties,
+        'occurred_at' => now(),
+    ]);
+
+    $retrieved = AnalyticsEvent::find($event->id);
+
+    expect($retrieved->properties)->toBe($properties);
+});
+
+it('stores nested properties', function () {
+    $properties = [
+        'user' => ['id' => 123, 'name' => 'Test User'],
+        'context' => ['page' => '/dashboard', 'referrer' => '/login'],
+    ];
+
+    $event = AnalyticsEvent::create([
+        'event_type' => 'nested.properties',
+        'properties' => $properties,
+        'occurred_at' => now(),
+    ]);
+
+    expect($event->properties['user']['id'])->toBe(123)
+        ->and($event->properties['user']['name'])->toBe('Test User')
+        ->and($event->properties['context']['page'])->toBe('/dashboard');
+});
+
+it('handles unicode in properties', function () {
+    $properties = ['message' => 'Hello 世界', 'emoji' => '🎉🚀'];
+
+    $event = AnalyticsEvent::create([
+        'event_type' => 'unicode.test',
+        'properties' => $properties,
+        'occurred_at' => now(),
+    ]);
+
+    $retrieved = AnalyticsEvent::find($event->id);
+
+    expect($retrieved->properties['message'])->toBe('Hello 世界')
+        ->and($retrieved->properties['emoji'])->toBe('🎉🚀');
+});
+
+it('queries by nested property value', function () {
+    AnalyticsEvent::factory()->create([
+        'event_type' => 'query.nested',
+        'properties' => ['user' => ['id' => 123, 'role' => 'admin']],
+    ]);
+    AnalyticsEvent::factory()->create([
+        'event_type' => 'query.nested',
+        'properties' => ['user' => ['id' => 456, 'role' => 'user']],
+    ]);
+
+    $result = AnalyticsEvent::whereJsonContains('properties->user->role', 'admin')->get();
+
+    expect($result)->toHaveCount(1)
+        ->and($result->first()->properties['user']['id'])->toBe(123);
+});
+
+it('updates properties', function () {
+    $event = AnalyticsEvent::create([
+        'event_type' => 'update.properties',
+        'properties' => ['status' => 'pending'],
+        'occurred_at' => now(),
+    ]);
+
+    $event->update(['properties' => ['status' => 'completed', 'duration' => 120]]);
+
+    $retrieved = AnalyticsEvent::find($event->id);
+
+    expect($retrieved->properties['status'])->toBe('completed')
+        ->and($retrieved->properties['duration'])->toBe(120);
+});
+
+it('handles large property values', function () {
+    $largeValue = str_repeat('x', 10000);
+    $properties = ['large_data' => $largeValue];
+
+    $event = AnalyticsEvent::create([
+        'event_type' => 'large.properties',
+        'properties' => $properties,
+        'occurred_at' => now(),
+    ]);
+
+    $retrieved = AnalyticsEvent::find($event->id);
+
+    expect($retrieved->properties['large_data'])->toBe($largeValue);
+});
+
+it('stores numeric values in properties', function () {
+    $properties = ['int' => 42, 'float' => 3.14, 'zero' => 0, 'negative' => -10];
+
+    $event = AnalyticsEvent::create([
+        'event_type' => 'numeric.properties',
+        'properties' => $properties,
+        'occurred_at' => now(),
+    ]);
+
+    expect($event->properties['int'])->toBe(42)
+        ->and($event->properties['float'])->toBe(3.14)
+        ->and($event->properties['zero'])->toBe(0)
+        ->and($event->properties['negative'])->toBe(-10);
+});
+
+it('stores boolean values in properties', function () {
+    $properties = ['active' => true, 'verified' => false];
+
+    $event = AnalyticsEvent::create([
+        'event_type' => 'boolean.properties',
+        'properties' => $properties,
+        'occurred_at' => now(),
+    ]);
+
+    expect($event->properties['active'])->toBeTrue()
+        ->and($event->properties['verified'])->toBeFalse();
+});
+
+it('returns null when accessing missing property key', function () {
+    $event = AnalyticsEvent::create([
+        'event_type' => 'missing.property',
+        'properties' => ['exists' => 'yes'],
+        'occurred_at' => now(),
+    ]);
+
+    expect($event->properties['nonexistent'] ?? null)->toBeNull();
+});
+
+it('handles properties with special characters in keys', function () {
+    $properties = ['key.with.dots' => 'value', 'key-with-dashes' => 'value2', 'key_with_underscores' => 'value3'];
+
+    $event = AnalyticsEvent::create([
+        'event_type' => 'special.keys',
+        'properties' => $properties,
+        'occurred_at' => now(),
+    ]);
+
+    expect($event->properties['key.with.dots'])->toBe('value')
+        ->and($event->properties['key-with-dashes'])->toBe('value2')
+        ->and($event->properties['key_with_underscores'])->toBe('value3');
+});
+
+it('handles properties updated to null', function () {
+    $event = AnalyticsEvent::create([
+        'event_type' => 'nullify.properties',
+        'properties' => ['data' => 'present'],
+        'occurred_at' => now(),
+    ]);
+
+    $event->update(['properties' => null]);
+
+    $retrieved = AnalyticsEvent::find($event->id);
+
+    expect($retrieved->properties)->toBeNull();
+});
