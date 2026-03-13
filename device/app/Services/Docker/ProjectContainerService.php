@@ -24,7 +24,7 @@ class ProjectContainerService
     public function start(Project $project): ?string
     {
         $result = Process::path($project->path)
-            ->timeout(120)
+            ->timeout(config('vibecodepc.container.timeout.start'))
             ->run($this->composeCommand($project, 'up -d'));
 
         if ($result->successful()) {
@@ -55,7 +55,7 @@ class ProjectContainerService
     public function stop(Project $project): ?string
     {
         $result = Process::path($project->path)
-            ->timeout(60)
+            ->timeout(config('vibecodepc.container.timeout.stop'))
             ->run($this->composeCommand($project, 'down'));
 
         if ($result->successful()) {
@@ -107,8 +107,9 @@ class ProjectContainerService
     /**
      * @return array<int, string>
      */
-    public function getLogs(Project $project, int $lines = 50): array
+    public function getLogs(Project $project, ?int $lines = null): array
     {
+        $lines = $lines ?? config('vibecodepc.container.logs.default_lines');
         $result = Process::path($project->path)
             ->run($this->composeCommand($project, sprintf('logs --tail=%d --no-color', $lines)));
 
@@ -160,7 +161,7 @@ class ProjectContainerService
         }
 
         $result = Process::path($project->path)
-            ->timeout(30)
+            ->timeout(config('vibecodepc.container.timeout.exec'))
             ->run($this->composeCommand($project, sprintf('exec -T app %s', $command)));
 
         $output = trim($result->output() ?: $result->errorOutput());
@@ -176,7 +177,7 @@ class ProjectContainerService
     public function remove(Project $project): bool
     {
         $result = Process::path($project->path)
-            ->timeout(60)
+            ->timeout(config('vibecodepc.container.timeout.remove'))
             ->run($this->composeCommand($project, 'down -v --rmi local'));
 
         $this->log($project, 'docker', "Remove: {$result->output()}");
