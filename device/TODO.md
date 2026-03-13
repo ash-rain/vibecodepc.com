@@ -9,25 +9,37 @@
 - [x] 2026-03-13 docs: document the DeviceHealthService metrics and thresholds in README troubleshooting section
 - [x] 2026-03-13 refactor: extract common retry logic from CloudApiClient into a reusable RetryableTrait
 - [x] 2026-03-13 chore: add GitHub Actions workflow step to verify CHANGELOG is updated on PRs
-- [ ] test: add integration tests for device backup/restore flow (encryption, integrity checks, full round-trip)
 
 ## In Progress
 
 ## Done
+- [x] 2026-03-13 test: add integration tests for device backup/restore flow (encryption, integrity checks, full round-trip)
+  - Added 9 new integration tests in SystemSettingsTest.php covering:
+  - Backup creation with encryption verification
+  - Backup restore functionality
+  - File type validation before restore
+  - Corrupted backup file handling
+  - Full round-trip backup/restore with comprehensive data
+  - Checksum integrity validation and tampering detection
+  - Encryption verification (sensitive data not visible in raw zip)
+  - Empty table restore handling
+  - Environment file preservation through backup/restore
+  - All 14 SystemSettings tests passing (53 assertions)
+  - Combined with existing BackupService unit tests: 28 total backup tests passing
 - [x] 2026-03-13 test: add edge case tests for ProjectContainerService (container not found, Docker daemon errors, port conflicts)
   - Added 17 new edge case tests covering:
-    - Container state edge cases (exited, dead, restarting, paused)
-    - Docker stats output parsing edge cases (malformed output, empty output)
-    - Multiple container IDs returned from docker compose ps
-    - Empty output from docker compose ps
-    - Stop on already stopped container
-    - Empty logs output
-    - Container removal when already gone
-    - Network not found errors
-    - Volume mount errors
-    - Out of memory errors
-    - Docker compose build failures
-    - Health check states (starting, unhealthy)
+  - Container state edge cases (exited, dead, restarting, paused)
+  - Docker stats output parsing edge cases (malformed output, empty output)
+  - Multiple container IDs returned from docker compose ps
+  - Empty output from docker compose ps
+  - Stop on already stopped container
+  - Empty logs output
+  - Container removal when already gone
+  - Network not found errors
+  - Volume mount errors
+  - Out of memory errors
+  - Docker compose build failures
+  - Health check states (starting, unhealthy)
   - All 53 tests passing (48 in main test file + 5 in exec test file)
 - [x] 2026-03-12 feat: add retry logic with exponential backoff to DeviceRegistry service for cloud API calls
   - Feature was already implemented in DeviceRegistryService
