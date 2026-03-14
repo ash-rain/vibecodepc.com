@@ -24,7 +24,7 @@ class ProjectContainerService
     public function start(Project $project): ?string
     {
         $result = Process::path($project->path)
-            ->timeout(120)
+            ->timeout(config('vibecodepc.container.timeout.start'))
             ->run($this->composeCommand($project, 'up -d'));
 
         if ($result->successful()) {
@@ -55,7 +55,7 @@ class ProjectContainerService
     public function stop(Project $project): ?string
     {
         $result = Process::path($project->path)
-            ->timeout(60)
+            ->timeout(config('vibecodepc.container.timeout.stop'))
             ->run($this->composeCommand($project, 'down'));
 
         if ($result->successful()) {
@@ -107,8 +107,9 @@ class ProjectContainerService
     /**
      * @return array<int, string>
      */
-    public function getLogs(Project $project, int $lines = 50): array
+    public function getLogs(Project $project, ?int $lines = null): array
     {
+        $lines = $lines ?? config('vibecodepc.container.logs.default_lines');
         $result = Process::path($project->path)
             ->run($this->composeCommand($project, sprintf('logs --tail=%d --no-color', $lines)));
 
@@ -139,8 +140,8 @@ class ProjectContainerService
         $parts = explode('|', trim($result->output()));
 
         return [
-            'cpu' => $parts[0] ?? '0%',
-            'memory' => $parts[1] ?? '0B',
+            'cpu' => $parts[0] ?? config('vibecodepc.container.defaults.cpu'),
+            'memory' => $parts[1] ?? config('vibecodepc.container.defaults.memory'),
         ];
     }
 
@@ -160,7 +161,7 @@ class ProjectContainerService
         }
 
         $result = Process::path($project->path)
-            ->timeout(30)
+            ->timeout(config('vibecodepc.container.timeout.exec'))
             ->run($this->composeCommand($project, sprintf('exec -T app %s', $command)));
 
         $output = trim($result->output() ?: $result->errorOutput());
@@ -176,7 +177,7 @@ class ProjectContainerService
     public function remove(Project $project): bool
     {
         $result = Process::path($project->path)
-            ->timeout(60)
+            ->timeout(config('vibecodepc.container.timeout.remove'))
             ->run($this->composeCommand($project, 'down -v --rmi local'));
 
         $this->log($project, 'docker', "Remove: {$result->output()}");
@@ -247,5 +248,61 @@ class ProjectContainerService
             'type' => $type,
             'message' => $message,
         ]);
+    }
+
+    /**
+     * Perform a comprehensive health check on a project container.
+     *
+     * @return array{
+     *     status: string,
+     *     isRunning: bool,
+     *     healthStatus: string|null,
+     *     resources: array{cpu: string, memory: string}|null,
+     *     containerId: string|null,
+     *     lastStartedAt: string|null,
+     *     lastStoppedAt: string|null,
+     *     error: string|null,
+     * }
+     */
+    public function healthCheck(Project $project): array
+    {
+        $isRunning = $this->isRunning($project);
+        $resources = $isRunning ? $this->getResourceUsage($project) : null;
+        $healthStatus = $this->getDockerHealthStatus($project);
+
+        return [
+            'status' => $project->status->value,
+            'isRunning' => $isRunning,
+            'healthStatus' => $healthStatus,
+            'resources' => $resources,
+            'containerId' => $project->container_id,
+            'lastStartedAt' => $project->last_started_at?->toISOString(),
+            'lastStoppedAt' => $project->last_stopped_at?->toISOString(),
+            'error' => null,
+        ];
+    }
+
+    /**
+     * Get the Docker health check status for a container.
+     *
+     * @return string|null 'healthy', 'unhealthy', 'starting', or null if no health check configured
+     */
+    private function getDockerHealthStatus(Project $project): ?string
+    {
+        if (! $project->container_id) {
+            return null;
+        }
+
+        $result = Process::run(
+            sprintf('docker inspect --format "{{.State.Health.Status}}" %s', escapeshellarg($project->container_id)),
+        );
+
+        if (! $result->successful()) {
+            return null;
+        }
+
+        $status = trim($result->output());
+
+        return $status === '' ? null : $status;
     }
 }

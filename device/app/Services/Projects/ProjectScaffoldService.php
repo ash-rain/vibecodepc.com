@@ -8,6 +8,7 @@ use App\Jobs\ScaffoldProjectJob;
 use App\Models\AiProviderConfig;
 use App\Models\Project;
 use App\Models\ProjectLog;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Str;
@@ -23,26 +24,28 @@ class ProjectScaffoldService
 
     public function scaffold(string $name, ProjectFramework $framework): Project
     {
-        $slug = Str::slug($name);
-        $path = "{$this->basePath}/{$slug}";
-        $port = $this->portAllocator->allocate($framework);
+        return DB::transaction(function () use ($name, $framework): Project {
+            $slug = Str::slug($name);
+            $path = "{$this->basePath}/{$slug}";
+            $port = $this->portAllocator->allocate($framework);
 
-        File::ensureDirectoryExists($path);
+            File::ensureDirectoryExists($path);
 
-        $project = Project::create([
-            'name' => $name,
-            'slug' => $slug,
-            'framework' => $framework,
-            'status' => ProjectStatus::Scaffolding,
-            'path' => $path,
-            'port' => $port,
-        ]);
+            $project = Project::create([
+                'name' => $name,
+                'slug' => $slug,
+                'framework' => $framework,
+                'status' => ProjectStatus::Scaffolding,
+                'path' => $path,
+                'port' => $port,
+            ]);
 
-        $this->log($project, 'scaffold', "Scaffolding {$framework->label()} project...");
+            $this->log($project, 'scaffold', "Scaffolding {$framework->label()} project...");
 
-        ScaffoldProjectJob::dispatch($project, $framework);
+            ScaffoldProjectJob::dispatch($project, $framework);
 
-        return $project;
+            return $project;
+        });
     }
 
     public function runScaffold(Project $project, ProjectFramework $framework): void
@@ -151,6 +154,8 @@ HTML;
 
     public function generateDockerCompose(Project $project): void
     {
+        File::ensureDirectoryExists($project->path);
+
         $compose = match ($project->framework) {
             ProjectFramework::Laravel => $this->laravelCompose($project),
             ProjectFramework::NextJs => $this->nextJsCompose($project),

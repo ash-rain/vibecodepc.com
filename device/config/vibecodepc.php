@@ -36,4 +36,31 @@ return [
         'socket' => env('DOCKER_HOST', 'unix:///var/run/docker.sock'),
         'host_projects_path' => env('DOCKER_HOST_PROJECTS_PATH'),
     ],
+
+    'container' => [
+        'timeout' => [
+            'start' => (int) env('CONTAINER_TIMEOUT_START', 120),
+            'stop' => (int) env('CONTAINER_TIMEOUT_STOP', 60),
+            'exec' => (int) env('CONTAINER_TIMEOUT_EXEC', 30),
+            'remove' => (int) env('CONTAINER_TIMEOUT_REMOVE', 60),
+        ],
+        'logs' => [
+            'default_lines' => (int) env('CONTAINER_LOGS_DEFAULT_LINES', 50),
+        ],
+        'defaults' => [
+            'cpu' => env('CONTAINER_DEFAULT_CPU', '0%'),
+            'memory' => env('CONTAINER_DEFAULT_MEMORY', '0B'),
+        ],
+    ],
+
+    'backup' => [
+        'tables' => [
+            'ai_providers',
+            'tunnel_configs',
+            'github_credentials',
+            'device_state',
+            'wizard_progress',
+            'cloud_credentials',
+        ],
+    ],
 ];

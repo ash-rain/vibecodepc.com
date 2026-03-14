@@ -6,16 +6,132 @@ namespace App\Services;
 
 use App\Models\CloudCredential;
 use App\Models\TunnelConfig;
+use App\Services\Traits\RetryableTrait;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use VibecodePC\Common\DTOs\DeviceStatusResult;
 
 class CloudApiClient
 {
+    use RetryableTrait;
+
+    private const int FAILURE_THRESHOLD = 5;
+
+    private const int CIRCUIT_TIMEOUT_MINUTES = 1;
+
+    private const string CIRCUIT_CACHE_KEY = 'cloud_api_circuit_state';
+
     public function __construct(
         private readonly string $cloudUrl,
-    ) {}
+    ) {
+        $this->initCircuitBreaker();
+    }
+
+    /**
+     * Initialize circuit breaker state if not exists.
+     */
+    private function initCircuitBreaker(): void
+    {
+        if (! Cache::has(self::CIRCUIT_CACHE_KEY)) {
+            $this->resetCircuitBreaker();
+        }
+    }
+
+    /**
+     * Get the current circuit breaker state.
+     *
+     * @return array{state: string, failure_count: int, success_count: int, is_closed: bool, last_failure_time: ?int}
+     */
+    public function getCircuitBreakerState(): array
+    {
+        $this->initCircuitBreaker();
+
+        return Cache::get(self::CIRCUIT_CACHE_KEY);
+    }
+
+    /**
+     * Reset the circuit breaker to closed state.
+     */
+    public function resetCircuitBreaker(): void
+    {
+        Cache::put(self::CIRCUIT_CACHE_KEY, [
+            'state' => 'closed',
+            'failure_count' => 0,
+            'success_count' => 0,
+            'is_closed' => true,
+            'last_failure_time' => null,
+        ], now()->addMinutes(self::CIRCUIT_TIMEOUT_MINUTES + 1));
+    }
+
+    /**
+     * Record a failure and potentially open the circuit.
+     */
+    private function recordFailure(): void
+    {
+        $state = $this->getCircuitBreakerState();
+        $state['failure_count']++;
+        $state['last_failure_time'] = time();
+
+        if ($state['failure_count'] >= self::FAILURE_THRESHOLD) {
+            $state['state'] = 'open';
+            $state['is_closed'] = false;
+        }
+
+        Cache::put(self::CIRCUIT_CACHE_KEY, $state, now()->addMinutes(self::CIRCUIT_TIMEOUT_MINUTES + 1));
+    }
+
+    /**
+     * Record a success and reset failure count.
+     */
+    private function recordSuccess(): void
+    {
+        $state = $this->getCircuitBreakerState();
+        $state['success_count']++;
+
+        // Reset failure count on success
+        if ($state['failure_count'] > 0) {
+            $state['failure_count'] = 0;
+        }
+
+        // If circuit was open, close it
+        if ($state['state'] === 'open') {
+            $state['state'] = 'closed';
+            $state['is_closed'] = true;
+        }
+
+        Cache::put(self::CIRCUIT_CACHE_KEY, $state, now()->addMinutes(self::CIRCUIT_TIMEOUT_MINUTES + 1));
+    }
+
+    /**
+     * Check if the circuit is open and should fail fast.
+     *
+     * @throws \RuntimeException
+     */
+    private function checkCircuit(): void
+    {
+        $state = $this->getCircuitBreakerState();
+
+        if ($state['state'] === 'open') {
+            // Check if timeout has passed to half-open
+            if ($state['last_failure_time'] !== null) {
+                $elapsed = time() - $state['last_failure_time'];
+                if ($elapsed >= self::CIRCUIT_TIMEOUT_MINUTES * 60) {
+                    // Transition to half-open and allow one request
+                    $state['state'] = 'half-open';
+                    $state['is_closed'] = false;
+                    Cache::put(self::CIRCUIT_CACHE_KEY, $state, now()->addMinutes(self::CIRCUIT_TIMEOUT_MINUTES + 1));
+
+                    return;
+                }
+            }
+
+            throw new \RuntimeException('Circuit breaker is OPEN: too many failures');
+        }
+    }
 
     /**
      * Check if Cloud API calls should be made.
@@ -35,30 +151,54 @@ class CloudApiClient
 
     public function getDeviceStatus(string $deviceId): DeviceStatusResult
     {
-        $response = $this->http()
-            ->get("/api/devices/{$deviceId}/status");
+        $this->checkCircuit();
 
-        $response->throw();
+        try {
+            $response = $this->http()
+                ->get("/api/devices/{$deviceId}/status");
 
-        return DeviceStatusResult::fromArray($response->json());
+            $response->throw();
+            $this->recordSuccess();
+
+            return DeviceStatusResult::fromArray($response->json());
+        } catch (ConnectionException|RequestException $e) {
+            $this->recordFailure();
+            throw $e;
+        }
     }
 
     public function registerDevice(array $deviceInfo): void
     {
-        $response = $this->http()
-            ->post('/api/devices/register', $deviceInfo);
+        $this->checkCircuit();
 
-        $response->throw();
+        try {
+            $response = $this->http()
+                ->post('/api/devices/register', $deviceInfo);
+
+            $response->throw();
+            $this->recordSuccess();
+        } catch (ConnectionException|RequestException $e) {
+            $this->recordFailure();
+            throw $e;
+        }
     }
 
     public function checkSubdomainAvailability(string $subdomain): bool
     {
-        $response = $this->http()
-            ->get("/api/subdomains/{$subdomain}/availability");
+        $this->checkCircuit();
 
-        $response->throw();
+        try {
+            $response = $this->http()
+                ->get("/api/subdomains/{$subdomain}/availability");
 
-        return $response->json('available', false);
+            $response->throw();
+            $this->recordSuccess();
+
+            return $response->json('available', false);
+        } catch (ConnectionException|RequestException $e) {
+            $this->recordFailure();
+            throw $e;
+        }
     }
 
     /**
@@ -150,6 +290,14 @@ class CloudApiClient
             return;
         }
 
+        // Check circuit breaker - skip silently if open
+        $state = $this->getCircuitBreakerState();
+        if ($state['state'] === 'open') {
+            Log::debug('Skipped sending heartbeat: circuit breaker is open');
+
+            return;
+        }
+
         try {
             $payload = [
                 'cpu_percent' => $metrics['cpu_percent'],
@@ -174,7 +322,10 @@ class CloudApiClient
             $this->authenticatedHttp()
                 ->post("/api/devices/{$deviceId}/heartbeat", $payload)
                 ->throw();
-        } catch (\Throwable $e) {
+
+            $this->recordSuccess();
+        } catch (ConnectionException|RequestException $e) {
+            $this->recordFailure();
             Log::warning('Heartbeat failed: '.$e->getMessage());
         }
     }
@@ -195,7 +346,7 @@ class CloudApiClient
             if ($response->successful()) {
                 return $response->json();
             }
-        } catch (\Throwable $e) {
+        } catch (ConnectionException|RequestException $e) {
             Log::warning('Failed to fetch traffic stats: '.$e->getMessage());
         }
 
@@ -218,7 +369,7 @@ class CloudApiClient
             if ($response->successful()) {
                 return $response->json('config');
             }
-        } catch (\Throwable $e) {
+        } catch (ConnectionException|RequestException $e) {
             Log::warning('Failed to fetch device config: '.$e->getMessage());
         }
 
@@ -227,9 +378,16 @@ class CloudApiClient
 
     private function http(): PendingRequest
     {
+        $retryConfig = $this->getRetryConfig();
         $request = Http::baseUrl($this->cloudUrl)
             ->acceptJson()
-            ->timeout(10);
+            ->timeout(10)
+            ->retry(
+                times: $retryConfig['times'],
+                sleepMilliseconds: $retryConfig['sleepMilliseconds'],
+                when: $retryConfig['when'],
+                throw: $retryConfig['throw']
+            );
 
         if (config('app.env') === 'local') {
             $request->withoutVerifying();

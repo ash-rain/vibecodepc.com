@@ -9,6 +9,7 @@ return Application::configure(basePath: dirname(__DIR__))
         web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
+        api: __DIR__.'/../routes/api.php',
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // Trust all proxies — cloudflared terminates TLS and forwards
@@ -19,6 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'tunnel.auth' => \App\Http\Middleware\RequireTunnelAuth::class,
             'tunnel.auth.optional' => \App\Http\Middleware\OptionalTunnelAuth::class,
+            'api.rate_limit' => \App\Http\Middleware\RateLimitMiddleware::class,
+            'request.id' => \App\Http\Middleware\RequestIdMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

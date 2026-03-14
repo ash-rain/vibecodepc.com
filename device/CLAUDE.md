@@ -262,4 +262,197 @@ protected function isAccessible(User $user, ?string $path = null): bool
 - IMPORTANT: Always use `search-docs` tool for version-specific Tailwind CSS documentation and updated code examples. Never rely on training data.
 - IMPORTANT: Activate `tailwindcss-development` every time you're working with a Tailwind CSS or styling-related task.
 
+=== error-handling/core rules ===
+
+# Error Handling Patterns and Retry Strategies
+
+This project implements robust error handling and retry mechanisms for external API calls, file operations, and background jobs.
+
+## Retry Strategy (CloudApiClient)
+
+All HTTP requests through `CloudApiClient` implement exponential backoff with jitter for transient failures.
+
+### Configuration
+- **Max Retries:** 4 attempts (initial + 3 retries)
+- **Base Delay:** 100ms
+- **Max Delay:** 5000ms
+- **Jitter:** ±20% randomization to prevent thundering herd
+
+### Retryable Conditions
+The client retries on the following transient failures:
+- Connection exceptions (network issues, timeouts)
+- HTTP status codes: 408 (Request Timeout), 429 (Too Many Requests), 500 (Internal Server Error), 502 (Bad Gateway), 503 (Service Unavailable), 504 (Gateway Timeout)
+
+Non-retryable errors (fail immediately):
+- Client errors 400-499 (except 408, 429)
+- Validation errors
+- Authentication errors
+
+### Implementation Pattern
+```php
+private function shouldRetry(Throwable $exception): bool
+{
+    if ($exception instanceof ConnectionException) {
+        return true;
+    }
+
+    $retryableStatuses = [408, 429, 500, 502, 503, 504];
+
+    if ($exception instanceof RequestException && $exception->response !== null) {
+        return in_array($exception->response->status(), $retryableStatuses, true);
+    }
+
+    return false;
+}
+
+private function calculateBackoffDelay(int $attempt): int
+{
+    $exponentialDelay = self::BASE_DELAY_MS * (2 ** ($attempt - 1));
+    $cappedDelay = min($exponentialDelay, self::MAX_DELAY_MS);
+    $jitter = (int) ($cappedDelay * 0.2 * (mt_rand() / mt_getrandmax() * 2 - 1));
+
+    return max(0, $cappedDelay + $jitter);
+}
+```
+
+## Job Retry Configuration
+
+Queue jobs implement specific retry strategies based on operation criticality:
+
+| Job | Tries | Timeout | Notes |
+|-----|-------|---------|-------|
+| CloneProjectJob | 1 | 540s | No retries - fails fast on clone errors |
+| ProvisionQuickTunnelJob | 3 | 120s | Retries on transient tunnel provisioning failures |
+| CleanupAbandonedProjectsJob | 1 | 300s | No retries - best effort cleanup |
+
+## File Operation Error Handling
+
+File operations (especially critical token file operations) implement disk space validation and explicit error checking:
+
+### Pattern (TunnelService)
+```php
+protected function hasSufficientDiskSpace(int $requiredBytes = 1024): bool
+{
+    $dir = dirname($this->tokenFilePath);
+    $freeSpace = disk_free_space($dir);
+
+    return $freeSpace !== false && $freeSpace >= $requiredBytes;
+}
+
+public function start(): ?string
+{
+    if (! $this->hasSufficientDiskSpace(strlen($token) + 1024)) {
+        Log::error('Insufficient disk space for tunnel token file', [
+            'path' => $this->tokenFilePath,
+            'required' => strlen($token) + 1024,
+            'available' => disk_free_space($dir),
+        ]);
+
+        return 'Failed to write tunnel token file: insufficient disk space';
+    }
+
+    $result = file_put_contents($this->tokenFilePath, $token);
+
+    if ($result === false) {
+        Log::error('Failed to write tunnel token file', [
+            'path' => $this->tokenFilePath,
+            'error' => error_get_last()['message'] ?? 'Unknown error',
+        ]);
+
+        return "Failed to write tunnel token file: {$this->tokenFilePath}";
+    }
+
+    return null; // Success
+}
+```
+
+## Validation with Explicit Failures
+
+Services that validate input should throw specific exceptions with clear messages:
+
+### Pattern (PortAllocatorService)
+```php
+public function allocate(ProjectFramework $framework): int
+{
+    $port = $framework->defaultPort();
+
+    if ($port > self::MAX_PORT) {
+        throw new RuntimeException(
+            "Framework default port {$port} exceeds maximum allowed port ".self::MAX_PORT
+        );
+    }
+
+    while (in_array($port, $usedPorts, true)) {
+        $port++;
+
+        if ($port > self::MAX_PORT) {
+            throw new RuntimeException(
+                'No available ports in range '.self::MIN_PORT.'-'.self::MAX_PORT
+            );
+        }
+    }
+
+    return $port;
+}
+```
+
+## Exception Handling in Commands
+
+Console commands should catch exceptions and provide user-friendly output:
+
+### Pattern (PollPairingStatus)
+```php
+try {
+    $status = $client->getDeviceStatus($deviceInfo->id);
+    // Process status...
+} catch (Throwable $e) {
+    $this->warn("Poll failed: {$e->getMessage()}");
+}
+
+return self::SUCCESS; // Always return success to prevent unnecessary retries
+```
+
+## Error State Management
+
+Jobs that fail should update relevant models to reflect error states:
+
+### Pattern (CloneProjectJob)
+```php
+public function failed(\Throwable $exception): void
+{
+    $this->project->update(['status' => ProjectStatus::Error]);
+
+    ProjectLog::create([
+        'project_id' => $this->project->id,
+        'type' => 'error',
+        'message' => "Cloning failed: {$exception->getMessage()}",
+    ]);
+}
+```
+
+## Non-Critical Operation Handling
+
+For operations that are not critical to core functionality, catch and log exceptions without failing:
+
+### Pattern (CloudApiClient::sendHeartbeat)
+```php
+try {
+    $this->authenticatedHttp()
+        ->post("/api/devices/{$deviceId}/heartbeat", $payload)
+        ->throw();
+} catch (Exception $e) {
+    Log::warning('Heartbeat failed: '.$e->getMessage());
+    // Don't re-throw - heartbeat is non-critical
+}
+```
+
+## Testing Error Scenarios
+
+When testing error handling, verify:
+1. Correct exception types are thrown for specific errors
+2. Retry logic executes the expected number of attempts
+3. Non-retryable errors fail immediately
+4. Error states are properly persisted to models
+5. Logs contain appropriate context for debugging
+
 </laravel-boost-guidelines>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Http\Traits\DetectsTunnel;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -17,6 +18,8 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class RequireTunnelAuth
 {
+    use DetectsTunnel;
+
     public function handle(Request $request, Closure $next): Response
     {
         if (! $this->isTunnelRequest($request)) {
@@ -35,16 +38,5 @@ class RequireTunnelAuth
         $request->session()->put('tunnel_auth_intended_url', $request->fullUrl());
 
         return redirect()->route('tunnel.login');
-    }
-
-    /**
-     * Detect whether the request came through a Cloudflare tunnel.
-     *
-     * Cloudflare always sets CF-Connecting-IP on proxied requests.
-     * In local development this header is absent.
-     */
-    private function isTunnelRequest(Request $request): bool
-    {
-        return $request->hasHeader('CF-Connecting-IP');
     }
 }

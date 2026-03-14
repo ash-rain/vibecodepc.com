@@ -1,0 +1,1285 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Console/Commands/CheckHeartbeats.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>cloud_username" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Console/Commands/DeviceHealth.php
+
+		-
+			message: '#^Property App\\Http\\Middleware\\RateLimitMiddleware\:\:\$limiter is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Http/Middleware/RateLimitMiddleware.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: app/Livewire/Dashboard/AiServicesHub.php
+
+		-
+			message: '#^Cannot call method label\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Livewire/Dashboard/AiServicesHub.php
+
+		-
+			message: '#^Parameter \#1 \$provider of method App\\Services\\AiProviders\\AiProviderResolverService\:\:resolve\(\) expects VibecodePC\\Common\\Enums\\AiProvider, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/Dashboard/AiServicesHub.php
+
+		-
+			message: '#^Method App\\Livewire\\Dashboard\\AnalyticsDashboard\:\:getEventTypeCounts\(\) should return array\<string, int\> but returns array\<string, array\<string, int\>\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Livewire/Dashboard/AnalyticsDashboard.php
+
+		-
+			message: '#^Method App\\Livewire\\Dashboard\\AnalyticsDashboard\:\:getFilteredEvents\(\) should return Illuminate\\Support\\Collection\<int, App\\Models\\AnalyticsEvent\> but returns Illuminate\\Support\\Collection\<int, stdClass\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Livewire/Dashboard/AnalyticsDashboard.php
+
+		-
+			message: '#^Parameter \#1 \$query of method App\\Livewire\\Dashboard\\AnalyticsDashboard\:\:applyDateRangeFilter\(\) expects Illuminate\\Database\\Query\\Builder, Illuminate\\Database\\Eloquent\\Builder\<App\\Models\\AnalyticsEvent\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/Dashboard/AnalyticsDashboard.php
+
+		-
+			message: '#^Cannot call method color\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 3
+			path: app/Livewire/Dashboard/ContainerMonitor.php
+
+		-
+			message: '#^Cannot call method label\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 6
+			path: app/Livewire/Dashboard/ContainerMonitor.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,App\\Models\\Project\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 2
+			path: app/Livewire/Dashboard/ContainerMonitor.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>cloud_username" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Livewire/Dashboard/Overview.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Livewire/Dashboard/Overview.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: app/Livewire/Wizard/AiServices.php
+
+		-
+			message: '#^Parameter \$provider of method App\\Services\\CodeServer\\CodeServerService\:\:configureCline\(\) expects VibecodePC\\Common\\Enums\\AiProvider, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/Wizard/CodeServer.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 4
+			path: app/Livewire/Wizard/Complete.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Livewire/Wizard/WizardController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>status" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Livewire/Wizard/WizardController.php
+
+		-
+			message: '#^If condition is always false\.$#'
+			identifier: if.alwaysFalse
+			count: 1
+			path: app/Services/CodeServer/CodeServerService.php
+
+		-
+			message: '#^Ternary operator condition is always false\.$#'
+			identifier: ternary.alwaysFalse
+			count: 1
+			path: app/Services/CodeServer/CodeServerService.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Throwable\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 4
+			path: app/Services/DeviceRegistry/DeviceRegistryService.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Services/Docker/ProjectContainerService.php
+
+		-
+			message: '#^Cannot call method toISOString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Services/Docker/ProjectContainerService.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Http\\Client\\Response\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Services/GitHub/GitHubDeviceFlowService.php
+
+		-
+			message: '#^Match expression does not handle remaining value\: string$#'
+			identifier: match.unhandled
+			count: 1
+			path: app/Services/Projects/ProjectCloneService.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Services/Projects/ProjectScaffoldService.php
+
+		-
+			message: '#^Match expression does not handle remaining value\: string$#'
+			identifier: match.unhandled
+			count: 1
+			path: app/Services/Projects/ProjectScaffoldService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: database/factories/QuickTunnelFactory.php
+
+		-
+			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: routes/console.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\QuickTunnel\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: routes/console.php
+
+		-
+			message: '#^Parameter \#2 \$metrics of method App\\Services\\CloudApiClient\:\:sendHeartbeat\(\) expects array\{cpu_percent\: float, ram_used_mb\: int, ram_total_mb\: int, disk_used_gb\: float, disk_total_gb\: float, temperature_c\: float\|null, running_projects\: int, tunnel_active\: bool, \.\.\.\}, array\{cpu_percent\: float, ram_used_mb\: int, ram_total_mb\: int, disk_used_gb\: float, disk_total_gb\: float, temperature_c\: float\|null, running_projects\: int\<0, max\>, tunnel_active\: bool, \.\.\.\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: routes/console.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:artisan\(\)\.$#'
+			identifier: method.notFound
+			count: 11
+			path: tests/Feature/Console/Commands/CheckHeartbeatsTest.php
+
+		-
+			message: '#^Access to an undefined property PHPUnit\\Framework\\TestCase\:\:\$app\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Console/Commands/DeviceHealthTest.php
+
+		-
+			message: '#^Access to an undefined property PHPUnit\\Framework\\TestCase\:\:\$tunnelMock\.$#'
+			identifier: property.notFound
+			count: 2
+			path: tests/Feature/Console/Commands/DeviceHealthTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\:\:byDefault\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/Console/Commands/DeviceHealthTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:artisan\(\)\.$#'
+			identifier: method.notFound
+			count: 14
+			path: tests/Feature/Console/Commands/DeviceHealthTest.php
+
+		-
+			message: '#^Access to an undefined property Pest\\Mixins\\Expectation\<string\|false\|null\>\:\:\$not\.$#'
+			identifier: property.notFound
+			count: 3
+			path: tests/Feature/Console/Commands/ExportLogsTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:artisan\(\)\.$#'
+			identifier: method.notFound
+			count: 24
+			path: tests/Feature/Console/Commands/ExportLogsTest.php
+
+		-
+			message: '#^Access to an undefined property PHPUnit\\Framework\\TestCase\:\:\$app\.$#'
+			identifier: property.notFound
+			count: 2
+			path: tests/Feature/Console/Commands/FactoryResetTest.php
+
+		-
+			message: '#^Access to an undefined property PHPUnit\\Framework\\TestCase\:\:\$tunnelMock\.$#'
+			identifier: property.notFound
+			count: 2
+			path: tests/Feature/Console/Commands/FactoryResetTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\:\:byDefault\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/Console/Commands/FactoryResetTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:once\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/Console/Commands/FactoryResetTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:artisan\(\)\.$#'
+			identifier: method.notFound
+			count: 21
+			path: tests/Feature/Console/Commands/FactoryResetTest.php
+
+		-
+			message: '#^Access to an undefined property PHPUnit\\Framework\\TestCase\:\:\$customPath\.$#'
+			identifier: property.notFound
+			count: 12
+			path: tests/Feature/Console/Commands/GenerateDeviceIdTest.php
+
+		-
+			message: '#^Access to an undefined property PHPUnit\\Framework\\TestCase\:\:\$defaultPath\.$#'
+			identifier: property.notFound
+			count: 23
+			path: tests/Feature/Console/Commands/GenerateDeviceIdTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:artisan\(\)\.$#'
+			identifier: method.notFound
+			count: 14
+			path: tests/Feature/Console/Commands/GenerateDeviceIdTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:artisan\(\)\.$#'
+			identifier: method.notFound
+			count: 11
+			path: tests/Feature/Console/Commands/ScheduleStatusTest.php
+
+		-
+			message: '#^Access to an undefined property PHPUnit\\Framework\\TestCase\:\:\$devicePath\.$#'
+			identifier: property.notFound
+			count: 19
+			path: tests/Feature/Console/Commands/ShowDeviceQrTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:artisan\(\)\.$#'
+			identifier: method.notFound
+			count: 9
+			path: tests/Feature/Console/Commands/ShowDeviceQrTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:get\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/ExampleTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:get\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: tests/Feature/HealthCheckTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:once\(\)\.$#'
+			identifier: method.notFound
+			count: 5
+			path: tests/Feature/Jobs/ProvisionQuickTunnelJobTest.php
+
+		-
+			message: '#^Access to an undefined property Livewire\\Features\\SupportTesting\\Testable\:\:\$eventsPerPage\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Livewire/Dashboard/AnalyticsDashboardTest.php
+
+		-
+			message: '#^Call to an undefined method Livewire\\Component\:\:getCategories\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/Livewire/Dashboard/AnalyticsDashboardTest.php
+
+		-
+			message: '#^Call to an undefined method Livewire\\Component\:\:getDateRanges\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/Livewire/Dashboard/AnalyticsDashboardTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:once\(\)\.$#'
+			identifier: method.notFound
+			count: 3
+			path: tests/Feature/Livewire/Dashboard/CodeEditorTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:get\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/Livewire/Dashboard/ContainerMonitorTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:mock\(\)\.$#'
+			identifier: method.notFound
+			count: 20
+			path: tests/Feature/Livewire/Dashboard/HealthBarTest.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Testing\\TestResponse\:\:assertSet\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/Livewire/Dashboard/ProjectCreateTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:once\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: tests/Feature/Livewire/Dashboard/ProjectCreateTest.php
+
+		-
+			message: '#^Access to an undefined property PHPUnit\\Framework\\TestCase\:\:\$cloudApiFake\.$#'
+			identifier: property.notFound
+			count: 13
+			path: tests/Feature/Livewire/Dashboard/TunnelManagerTest.php
+
+		-
+			message: '#^Access to an undefined property PHPUnit\\Framework\\TestCase\:\:\$tunnelMock\.$#'
+			identifier: property.notFound
+			count: 16
+			path: tests/Feature/Livewire/Dashboard/TunnelManagerTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:assertCloudApiCalled\(\)\.$#'
+			identifier: method.notFound
+			count: 4
+			path: tests/Feature/Livewire/Dashboard/TunnelManagerTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:assertCloudApiNotCalled\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/Livewire/Dashboard/TunnelManagerTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:configureProvisionResponse\(\)\.$#'
+			identifier: method.notFound
+			count: 4
+			path: tests/Feature/Livewire/Dashboard/TunnelManagerTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:configureSkippedState\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/Livewire/Dashboard/TunnelManagerTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:configureUnconfiguredState\(\)\.$#'
+			identifier: method.notFound
+			count: 19
+			path: tests/Feature/Livewire/Dashboard/TunnelManagerTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:setUpTunnelFakes\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/Livewire/Dashboard/TunnelManagerTest.php
+
+		-
+			message: '#^Access to an undefined property Livewire\\Component\:\:\$localIp\.$#'
+			identifier: property.notFound
+			count: 2
+			path: tests/Feature/Livewire/NetworkSetupTest.php
+
+		-
+			message: '#^Access to an undefined property PHPUnit\\Framework\\TestCase\:\:\$networkMock\.$#'
+			identifier: property.notFound
+			count: 68
+			path: tests/Feature/Livewire/NetworkSetupTest.php
+
+		-
+			message: '#^Call to an undefined method Livewire\\Component\:\:isLoopbackIp\(\)\.$#'
+			identifier: method.notFound
+			count: 5
+			path: tests/Feature/Livewire/NetworkSetupTest.php
+
+		-
+			message: '#^Call to an undefined method Livewire\\Component\:\:isPrivateIp\(\)\.$#'
+			identifier: method.notFound
+			count: 16
+			path: tests/Feature/Livewire/NetworkSetupTest.php
+
+		-
+			message: '#^Call to an undefined method Livewire\\Component\:\:validateIp\(\)\.$#'
+			identifier: method.notFound
+			count: 14
+			path: tests/Feature/Livewire/NetworkSetupTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\:\:byDefault\(\)\.$#'
+			identifier: method.notFound
+			count: 3
+			path: tests/Feature/Livewire/NetworkSetupTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:andReturnUsing\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/Livewire/PairingScreenTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:once\(\)\.$#'
+			identifier: method.notFound
+			count: 3
+			path: tests/Feature/Livewire/Wizard/CodeServerTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:with\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/Livewire/Wizard/CodeServerTest.php
+
+		-
+			message: '#^Offset ''reason'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Feature/Livewire/Wizard/TunnelAnalyticsTest.php
+
+		-
+			message: '#^Offset ''subdomain'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Feature/Livewire/Wizard/TunnelAnalyticsTest.php
+
+		-
+			message: '#^Access to an undefined property PHPUnit\\Framework\\TestCase\:\:\$cloudApiFake\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Livewire/Wizard/TunnelTest.php
+
+		-
+			message: '#^Access to an undefined property PHPUnit\\Framework\\TestCase\:\:\$tunnelMock\.$#'
+			identifier: property.notFound
+			count: 8
+			path: tests/Feature/Livewire/Wizard/TunnelTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:assertCloudApiCalled\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/Livewire/Wizard/TunnelTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:assertCloudApiNotCalled\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: tests/Feature/Livewire/Wizard/TunnelTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:configureApiFailure\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: tests/Feature/Livewire/Wizard/TunnelTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:configureProvisionResponse\(\)\.$#'
+			identifier: method.notFound
+			count: 3
+			path: tests/Feature/Livewire/Wizard/TunnelTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:configureSubdomainAvailability\(\)\.$#'
+			identifier: method.notFound
+			count: 10
+			path: tests/Feature/Livewire/Wizard/TunnelTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:configureUnconfiguredState\(\)\.$#'
+			identifier: method.notFound
+			count: 25
+			path: tests/Feature/Livewire/Wizard/TunnelTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:setUpTunnelFakes\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/Livewire/Wizard/TunnelTest.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: tests/Feature/Livewire/Wizard/TunnelTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:once\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: tests/Feature/Livewire/Wizard/WelcomeTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:artisan\(\)\.$#'
+			identifier: method.notFound
+			count: 34
+			path: tests/Feature/PollPairingStatusTest.php
+
+		-
+			message: '#^Access to an undefined property PHPUnit\\Framework\\TestCase\:\:\$app\.$#'
+			identifier: property.notFound
+			count: 10
+			path: tests/Feature/PollTunnelStatusTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:once\(\)\.$#'
+			identifier: method.notFound
+			count: 10
+			path: tests/Feature/PollTunnelStatusTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:artisan\(\)\.$#'
+			identifier: method.notFound
+			count: 19
+			path: tests/Feature/PollTunnelStatusTest.php
+
+		-
+			message: '#^Call to protected method expectException\(\) of class PHPUnit\\Framework\\TestCase\.$#'
+			identifier: method.protected
+			count: 1
+			path: tests/Feature/PollTunnelStatusTest.php
+
+		-
+			message: '#^Call to protected method expectExceptionMessage\(\) of class PHPUnit\\Framework\\TestCase\.$#'
+			identifier: method.protected
+			count: 1
+			path: tests/Feature/PollTunnelStatusTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:actingAs\(\)\.$#'
+			identifier: method.notFound
+			count: 13
+			path: tests/Feature/RateLimitMiddlewareTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:delete\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/RateLimitMiddlewareTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:get\(\)\.$#'
+			identifier: method.notFound
+			count: 70
+			path: tests/Feature/RateLimitMiddlewareTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:patch\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/RateLimitMiddlewareTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:post\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/RateLimitMiddlewareTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:put\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/RateLimitMiddlewareTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:withServerVariables\(\)\.$#'
+			identifier: method.notFound
+			count: 10
+			path: tests/Feature/RateLimitMiddlewareTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:get\(\)\.$#'
+			identifier: method.notFound
+			count: 6
+			path: tests/Feature/TunnelAuthTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:withSession\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/TunnelAuthTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:get\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/WizardFlowTest.php
+
+		-
+			message: '#^Parameter \#1 \$data of static method VibecodePC\\Common\\DTOs\\DeviceStatusResult\:\:fromArray\(\) expects array\{device_id\: string, status\: string, pairing\?\: array\|null\}, array\{status\: ''active'', tunnel_active\: true\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Support/Fakes/CloudApiClientFake.php
+
+		-
+			message: '#^Property Tests\\Support\\Fakes\\CloudApiClientFake\:\:\$shouldFail is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: tests/Support/Fakes/CloudApiClientFake.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\:\:byDefault\(\)\.$#'
+			identifier: method.notFound
+			count: 8
+			path: tests/TestCase.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:byDefault\(\)\.$#'
+			identifier: method.notFound
+			count: 5
+			path: tests/TestCase.php
+
+		-
+			message: '#^Offset ''action'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/AnalyticsEventModelTest.php
+
+		-
+			message: '#^Offset ''level_1'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 4
+			path: tests/Unit/AnalyticsEventModelTest.php
+
+		-
+			message: '#^Offset ''metadata'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 2
+			path: tests/Unit/AnalyticsEventModelTest.php
+
+		-
+			message: '#^Offset ''user_id'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/AnalyticsEventModelTest.php
+
+		-
+			message: '#^Offset ''active'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/AnalyticsEventTest.php
+
+		-
+			message: '#^Offset ''context'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/AnalyticsEventTest.php
+
+		-
+			message: '#^Offset ''duration'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/AnalyticsEventTest.php
+
+		-
+			message: '#^Offset ''emoji'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/AnalyticsEventTest.php
+
+		-
+			message: '#^Offset ''float'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/AnalyticsEventTest.php
+
+		-
+			message: '#^Offset ''int'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/AnalyticsEventTest.php
+
+		-
+			message: '#^Offset ''key\-with\-dashes'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/AnalyticsEventTest.php
+
+		-
+			message: '#^Offset ''key\.with\.dots'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/AnalyticsEventTest.php
+
+		-
+			message: '#^Offset ''key_with_underscores'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/AnalyticsEventTest.php
+
+		-
+			message: '#^Offset ''large_data'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/AnalyticsEventTest.php
+
+		-
+			message: '#^Offset ''message'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/AnalyticsEventTest.php
+
+		-
+			message: '#^Offset ''negative'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/AnalyticsEventTest.php
+
+		-
+			message: '#^Offset ''status'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/AnalyticsEventTest.php
+
+		-
+			message: '#^Offset ''subdomain'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/AnalyticsEventTest.php
+
+		-
+			message: '#^Offset ''user'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 3
+			path: tests/Unit/AnalyticsEventTest.php
+
+		-
+			message: '#^Offset ''verified'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/AnalyticsEventTest.php
+
+		-
+			message: '#^Offset ''zero'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/AnalyticsEventTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:andReturnUsing\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: tests/Unit/Jobs/CleanupAbandonedProjectsJobTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:never\(\)\.$#'
+			identifier: method.notFound
+			count: 3
+			path: tests/Unit/Jobs/CleanupAbandonedProjectsJobTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:once\(\)\.$#'
+			identifier: method.notFound
+			count: 3
+			path: tests/Unit/Jobs/CleanupAbandonedProjectsJobTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:with\(\)\.$#'
+			identifier: method.notFound
+			count: 8
+			path: tests/Unit/Jobs/CleanupAbandonedProjectsJobTest.php
+
+		-
+			message: '#^Parameter \#1 \$containerService of method App\\Jobs\\CleanupAbandonedProjectsJob\:\:handle\(\) expects App\\Services\\Docker\\ProjectContainerService, Mockery\\MockInterface given\.$#'
+			identifier: argument.type
+			count: 34
+			path: tests/Unit/Jobs/CleanupAbandonedProjectsJobTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:once\(\)\.$#'
+			identifier: method.notFound
+			count: 22
+			path: tests/Unit/Jobs/CloneProjectJobTest.php
+
+		-
+			message: '#^Parameter \#1 \$cloneService of method App\\Jobs\\CloneProjectJob\:\:handle\(\) expects App\\Services\\Projects\\ProjectCloneService, Mockery\\MockInterface given\.$#'
+			identifier: argument.type
+			count: 22
+			path: tests/Unit/Jobs/CloneProjectJobTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:once\(\)\.$#'
+			identifier: method.notFound
+			count: 20
+			path: tests/Unit/Jobs/ScaffoldProjectJobTest.php
+
+		-
+			message: '#^Parameter \#1 \$scaffoldService of method App\\Jobs\\ScaffoldProjectJob\:\:handle\(\) expects App\\Services\\Projects\\ProjectScaffoldService, Mockery\\MockInterface given\.$#'
+			identifier: argument.type
+			count: 20
+			path: tests/Unit/Jobs/ScaffoldProjectJobTest.php
+
+		-
+			message: '#^Offset ''key'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 2
+			path: tests/Unit/Models/ProjectLogTest.php
+
+		-
+			message: '#^Offset ''nested'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 2
+			path: tests/Unit/Models/ProjectLogTest.php
+
+		-
+			message: '#^Offset ''new_key'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/Models/ProjectLogTest.php
+
+		-
+			message: '#^Offset ''number'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 2
+			path: tests/Unit/Models/ProjectLogTest.php
+
+		-
+			message: '#^Offset ''updated'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/Models/ProjectLogTest.php
+
+		-
+			message: '#^Offset ''timezone'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 2
+			path: tests/Unit/Models/WizardProgressTest.php
+
+		-
+			message: '#^Offset ''username'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 2
+			path: tests/Unit/Models/WizardProgressTest.php
+
+		-
+			message: '#^Access to an undefined property PHPUnit\\Framework\\TestCase\:\:\$middleware\.$#'
+			identifier: property.notFound
+			count: 25
+			path: tests/Unit/OptionalTunnelAuthMiddlewareTest.php
+
+		-
+			message: '#^Access to an undefined property PHPUnit\\Framework\\TestCase\:\:\$request\.$#'
+			identifier: property.notFound
+			count: 61
+			path: tests/Unit/OptionalTunnelAuthMiddlewareTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:get\(\)\.$#'
+			identifier: method.notFound
+			count: 11
+			path: tests/Unit/OptionalTunnelAuthMiddlewareTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:withSession\(\)\.$#'
+			identifier: method.notFound
+			count: 4
+			path: tests/Unit/OptionalTunnelAuthMiddlewareTest.php
+
+		-
+			message: '#^Offset ''KEY1'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/ProjectModelTest.php
+
+		-
+			message: '#^Offset ''KEY2'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/ProjectModelTest.php
+
+		-
+			message: '#^Access to an undefined property PHPUnit\\Framework\\TestCase\:\:\$middleware\.$#'
+			identifier: property.notFound
+			count: 21
+			path: tests/Unit/RequestIdMiddlewareTest.php
+
+		-
+			message: '#^Access to an undefined property PHPUnit\\Framework\\TestCase\:\:\$request\.$#'
+			identifier: property.notFound
+			count: 30
+			path: tests/Unit/RequestIdMiddlewareTest.php
+
+		-
+			message: '#^Call to an undefined static method Illuminate\\Support\\Facades\\Log\:\:shouldHaveReceived\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 3
+			path: tests/Unit/RequestIdMiddlewareTest.php
+
+		-
+			message: '#^Access to an undefined property PHPUnit\\Framework\\TestCase\:\:\$middleware\.$#'
+			identifier: property.notFound
+			count: 24
+			path: tests/Unit/RequireTunnelAuthMiddlewareTest.php
+
+		-
+			message: '#^Access to an undefined property PHPUnit\\Framework\\TestCase\:\:\$request\.$#'
+			identifier: property.notFound
+			count: 58
+			path: tests/Unit/RequireTunnelAuthMiddlewareTest.php
+
+		-
+			message: '#^Access to an undefined property PHPUnit\\Framework\\TestCase\:\:\$service\.$#'
+			identifier: property.notFound
+			count: 52
+			path: tests/Unit/Services/AnalyticsServiceTest.php
+
+		-
+			message: '#^Offset ''emoji'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/Services/AnalyticsServiceTest.php
+
+		-
+			message: '#^Offset ''empty'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/Services/AnalyticsServiceTest.php
+
+		-
+			message: '#^Offset ''items'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/Services/AnalyticsServiceTest.php
+
+		-
+			message: '#^Offset ''key'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/Services/AnalyticsServiceTest.php
+
+		-
+			message: '#^Offset ''level1'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/Services/AnalyticsServiceTest.php
+
+		-
+			message: '#^Offset ''newlines'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/Services/AnalyticsServiceTest.php
+
+		-
+			message: '#^Offset ''reason'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/Services/AnalyticsServiceTest.php
+
+		-
+			message: '#^Offset ''spaces'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/Services/AnalyticsServiceTest.php
+
+		-
+			message: '#^Offset ''step'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/Services/AnalyticsServiceTest.php
+
+		-
+			message: '#^Offset ''subdomain'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/Services/AnalyticsServiceTest.php
+
+		-
+			message: '#^Offset ''tabs'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/Services/AnalyticsServiceTest.php
+
+		-
+			message: '#^Offset ''unicode'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/Services/AnalyticsServiceTest.php
+
+		-
+			message: '#^Result of && is always false\.$#'
+			identifier: booleanAnd.alwaysFalse
+			count: 1
+			path: tests/Unit/Services/BackupServiceTest.php
+
+		-
+			message: '#^Right side of \|\| is always false\.$#'
+			identifier: booleanOr.rightAlwaysFalse
+			count: 1
+			path: tests/Unit/Services/BackupServiceTest.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between mixed and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: tests/Unit/Services/BackupServiceTest.php
+
+		-
+			message: '#^Access to an undefined property Pest\\Mixins\\Expectation\<string\|null\>\:\:\$not\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Unit/Services/CodeServer/CodeServerServiceTest.php
+
+		-
+			message: '#^Access to an undefined property PHPUnit\\Framework\\TestCase\:\:\$cloudApi\.$#'
+			identifier: property.notFound
+			count: 41
+			path: tests/Unit/Services/ConfigSyncServiceTest.php
+
+		-
+			message: '#^Access to an undefined property PHPUnit\\Framework\\TestCase\:\:\$service\.$#'
+			identifier: property.notFound
+			count: 41
+			path: tests/Unit/Services/ConfigSyncServiceTest.php
+
+		-
+			message: '#^Access to an undefined property PHPUnit\\Framework\\TestCase\:\:\$tunnelService\.$#'
+			identifier: property.notFound
+			count: 19
+			path: tests/Unit/Services/ConfigSyncServiceTest.php
+
+		-
+			message: '#^Call to an undefined static method Illuminate\\Support\\Facades\\Log\:\:shouldHaveReceived\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 2
+			path: tests/Unit/Services/ConfigSyncServiceTest.php
+
+		-
+			message: '#^Call to protected method expectException\(\) of class PHPUnit\\Framework\\TestCase\.$#'
+			identifier: method.protected
+			count: 4
+			path: tests/Unit/Services/ConfigSyncServiceTest.php
+
+		-
+			message: '#^Call to protected method expectExceptionMessage\(\) of class PHPUnit\\Framework\\TestCase\.$#'
+			identifier: method.protected
+			count: 2
+			path: tests/Unit/Services/ConfigSyncServiceTest.php
+
+		-
+			message: '#^Parameter \#1 \$cloudApi of class App\\Services\\ConfigSyncService constructor expects App\\Services\\CloudApiClient, Mockery\\MockInterface given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Unit/Services/ConfigSyncServiceTest.php
+
+		-
+			message: '#^Parameter \#2 \$tunnelService of class App\\Services\\ConfigSyncService constructor expects App\\Services\\Tunnel\\TunnelService, Mockery\\MockInterface given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Unit/Services/ConfigSyncServiceTest.php
+
+		-
+			message: '#^Access to an undefined property PHPUnit\\Framework\\TestCase\:\:\$testDevicePath\.$#'
+			identifier: property.notFound
+			count: 12
+			path: tests/Unit/Services/DeviceRegistry/DeviceIdentityServiceTest.php
+
+		-
+			message: '#^Call to an undefined method PHPUnit\\Framework\\TestCase\:\:setUpTunnelFakes\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Unit/Services/DeviceRegistry/DeviceIdentityServiceTest.php
+
+		-
+			message: '#^Access to an undefined property PHPUnit\\Framework\\TestCase\:\:\$cloudApi\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Unit/Services/DeviceRegistry/DeviceRegistryServiceTest.php
+
+		-
+			message: '#^Access to an undefined property PHPUnit\\Framework\\TestCase\:\:\$service\.$#'
+			identifier: property.notFound
+			count: 23
+			path: tests/Unit/Services/DeviceRegistry/DeviceRegistryServiceTest.php
+
+		-
+			message: '#^Array has 2 duplicate keys with value ''cloud_username'' \(''cloud_username'', ''cloud_username''\)\.$#'
+			identifier: array.duplicateKey
+			count: 1
+			path: tests/Unit/Services/DeviceStateServiceTest.php
+
+		-
+			message: '#^Access to an undefined property Pest\\Expectation\<array\<string, array\<string, string\>\|bool\|string\|null\>\|null\>\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 2
+			path: tests/Unit/Services/Docker/ProjectContainerServiceTest.php
+
+		-
+			message: '#^If condition is always false\.$#'
+			identifier: if.alwaysFalse
+			count: 7
+			path: tests/Unit/Services/NetworkServiceTest.php
+
+		-
+			message: '#^If condition is always true\.$#'
+			identifier: if.alwaysTrue
+			count: 4
+			path: tests/Unit/Services/NetworkServiceTest.php
+
+		-
+			message: '#^Method App\\Services\\NetworkService@anonymous/tests/Unit/Services/NetworkServiceTest\.php\:103\:\:getLocalIp\(\) never returns null so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: tests/Unit/Services/NetworkServiceTest.php
+
+		-
+			message: '#^Method App\\Services\\NetworkService@anonymous/tests/Unit/Services/NetworkServiceTest\.php\:135\:\:getLocalIp\(\) never returns null so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: tests/Unit/Services/NetworkServiceTest.php
+
+		-
+			message: '#^Method App\\Services\\NetworkService@anonymous/tests/Unit/Services/NetworkServiceTest\.php\:166\:\:getLocalIp\(\) never returns null so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: tests/Unit/Services/NetworkServiceTest.php
+
+		-
+			message: '#^Method App\\Services\\NetworkService@anonymous/tests/Unit/Services/NetworkServiceTest\.php\:199\:\:getLocalIp\(\) never returns null so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: tests/Unit/Services/NetworkServiceTest.php
+
+		-
+			message: '#^Method App\\Services\\NetworkService@anonymous/tests/Unit/Services/NetworkServiceTest\.php\:229\:\:getLocalIp\(\) never returns null so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: tests/Unit/Services/NetworkServiceTest.php
+
+		-
+			message: '#^Method App\\Services\\NetworkService@anonymous/tests/Unit/Services/NetworkServiceTest\.php\:42\:\:getLocalIp\(\) never returns null so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: tests/Unit/Services/NetworkServiceTest.php
+
+		-
+			message: '#^Method App\\Services\\NetworkService@anonymous/tests/Unit/Services/NetworkServiceTest\.php\:72\:\:getLocalIp\(\) never returns null so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: tests/Unit/Services/NetworkServiceTest.php
+
+		-
+			message: '#^Result of && is always false\.$#'
+			identifier: booleanAnd.alwaysFalse
+			count: 2
+			path: tests/Unit/Services/NetworkServiceTest.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between ''2\: eth0\: \<BROADCAST…'' and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
+			path: tests/Unit/Services/NetworkServiceTest.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between ''3\: wlan0\: \<NO…'' and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: tests/Unit/Services/NetworkServiceTest.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between ''3\: wlan0\: …'' and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: tests/Unit/Services/NetworkServiceTest.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between null and null will always evaluate to false\.$#'
+			identifier: notIdentical.alwaysFalse
+			count: 2
+			path: tests/Unit/Services/NetworkServiceTest.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 4
+			path: tests/Unit/Services/NetworkServiceTest.php
+
+		-
+			message: '#^Offset ''ANTHROPIC_API_KEY'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/Services/Projects/ProjectScaffoldServiceTest.php
+
+		-
+			message: '#^Offset ''OPENAI_API_KEY'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: tests/Unit/Services/Projects/ProjectScaffoldServiceTest.php
+
+		-
+			message: '#^Access to an undefined property Mockery\\MockInterface\:\:\$response\.$#'
+			identifier: property.notFound
+			count: 4
+			path: tests/Unit/Services/Traits/RetryableTraitTest.php
+
+		-
+			message: '#^Access to an undefined property PHPUnit\\Framework\\TestCase\:\:\$retryable\.$#'
+			identifier: property.notFound
+			count: 24
+			path: tests/Unit/Services/Traits/RetryableTraitTest.php
+
+		-
+			message: '#^Access to an undefined property Pest\\Expectation\<App\\Models\\QuickTunnel\|null\>\:\:\$project_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Unit/Services/Tunnel/QuickTunnelServiceTest.php
+
+		-
+			message: '#^Access to an undefined property Pest\\Mixins\\Expectation\<App\\Models\\QuickTunnel\|null\>\:\:\$project_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Unit/Services/Tunnel/QuickTunnelServiceTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:once\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: tests/Unit/Services/Tunnel/TunnelServiceTest.php
+
+		-
+			message: '#^Call to an undefined static method Illuminate\\Support\\Facades\\Log\:\:shouldHaveReceived\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: tests/Unit/Services/Tunnel/TunnelServiceTest.php
+
+		-
+			message: '#^Access to an undefined property PHPUnit\\Framework\\TestCase\:\:\$service\.$#'
+			identifier: property.notFound
+			count: 48
+			path: tests/Unit/Services/WizardProgressServiceTest.php

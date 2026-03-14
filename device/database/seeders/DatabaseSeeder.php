@@ -21,5 +21,10 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+
+        // Run development seeder if in local environment
+        if (app()->environment('local', 'development')) {
+            $this->call(DevelopmentSeeder::class);
+        }
     }
 }
