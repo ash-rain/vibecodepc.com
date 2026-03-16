@@ -154,6 +154,19 @@ class ProjectRepository
     }
 
     /**
+     * Get all projects with specific columns for tunnel display.
+     *
+     * @return Collection<int, Project>
+     */
+    public function allForTunnelDisplay(): Collection
+    {
+        return Project::query()
+            ->select(['id', 'name', 'slug', 'port', 'tunnel_enabled', 'tunnel_subdomain_path'])
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
      * Get projects with tunnel enabled.
      *
      * @return Collection<int, Project>

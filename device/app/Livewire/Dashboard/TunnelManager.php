@@ -412,7 +412,7 @@ class TunnelManager extends Component
     private function loadProjects(): void
     {
         $projectRepository = app(ProjectRepository::class);
-        $this->projects = $projectRepository->all()->map(fn (Project $p) => [
+        $this->projects = $projectRepository->allForTunnelDisplay()->map(fn (Project $p) => [
             'id' => $p->id,
             'name' => $p->name,
             'slug' => $p->slug,
@@ -480,7 +480,7 @@ class TunnelManager extends Component
             ] : null,
         ];
 
-        foreach ($projectRepository->all() as $project) {
+        foreach ($projectRepository->allForTunnelDisplay() as $project) {
             $tunnel = $project->port ? QuickTunnel::forProject($project->id) : null;
 
             $apps[] = [

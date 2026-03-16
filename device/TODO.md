@@ -54,7 +54,7 @@ The codebase is well-structured with excellent separation of concerns, proper us
 
 #### Potential Optimizations:
 - [x] 2026-03-16 performance: PortAllocatorService line 226 - `Project::pluck('port')` could use caching for high-frequency allocations
-- [ ] performance: `Project::all()` queries in TunnelManager lines 411, 478 - consider pagination if projects grow large
+- [x] 2026-03-16 performance: `Project::all()` queries in TunnelManager lines 411, 478 - optimized with `allForTunnelDisplay()` method that selects only required columns
 - [ ] performance: QuickTunnelService line 239 - sleep-based polling could use event-driven approach
 
 ### Best Practices Compliance
