@@ -66,8 +66,8 @@ This document outlines the plan for configuring OpenCode by editing two key file
 ## Configuration Tasks
 
 ### Phase 1: Backup Current Configuration
-- [ ] Create backup of `~/.config/opencode/opencode.json`
-- [ ] Create backup of `~/.local/share/opencode/auth.json`
+- [x] 2026-03-16 Create backup of `~/.config/opencode/opencode.json`
+- [x] 2026-03-16 Create backup of `~/.local/share/opencode/auth.json`
 
 ### Phase 2: Review Current Providers
 - [ ] Document existing providers in config

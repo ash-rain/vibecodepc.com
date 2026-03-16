@@ -1,0 +1,14 @@
+{
+  "ollama-cloud": {
+    "type": "api",
+    "key": "dd2b4111bc874ede98f4c5b71081ef10.y34xHr5u5YTc3yGM5L042rXU"
+  },
+  "opencode": {
+    "type": "api",
+    "key": "sk-2hGR1poK2BmKJCVIQcME4jotLg07Wt2t6ieh1qhbbO8P1koXoP35Cy0v2qbz1jud"
+  },
+  "moonshot": {
+    "type": "api",
+    "key": "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"
+  }
+}
