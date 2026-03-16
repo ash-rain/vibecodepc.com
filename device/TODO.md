@@ -114,7 +114,7 @@ This document outlines the plan for configuring OpenCode by editing two key file
 - [x] 2026-03-16 Check permissions are working correctly
 
 ### Phase 6: Documentation
-- [ ] Document provider-specific settings
+- [x] 2026-03-16 Document provider-specific settings
 - [ ] Add comments explaining custom configurations
 - [ ] Create troubleshooting guide for common issues
 
