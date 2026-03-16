@@ -41,23 +41,31 @@ it('masks existing api keys on mount', function () {
     $service->setEnvVars([
         'GEMINI_API_KEY' => 'real-gemini-key',
         'CLAUDE_API_KEY' => 'real-claude-key',
+        'OPENAI_API_KEY' => 'real-openai-key',
+        'COHERE_API_KEY' => 'real-cohere-key',
     ]);
 
     Livewire::test(AiToolsConfig::class)
         ->assertSet('geminiApiKey', '••••••••')
-        ->assertSet('claudeApiKey', '••••••••');
+        ->assertSet('claudeApiKey', '••••••••')
+        ->assertSet('openaiApiKey', '••••••••')
+        ->assertSet('cohereApiKey', '••••••••');
 });
 
 it('leaves api key fields empty when no key is configured', function () {
     Livewire::test(AiToolsConfig::class)
         ->assertSet('geminiApiKey', '')
-        ->assertSet('claudeApiKey', '');
+        ->assertSet('claudeApiKey', '')
+        ->assertSet('openaiApiKey', '')
+        ->assertSet('cohereApiKey', '');
 });
 
 it('saves new environment variables', function () {
     Livewire::test(AiToolsConfig::class)
         ->set('geminiApiKey', 'new-gemini-key')
         ->set('claudeApiKey', 'new-claude-key')
+        ->set('openaiApiKey', 'new-openai-key')
+        ->set('cohereApiKey', 'new-cohere-key')
         ->call('saveEnvironment')
         ->assertSet('statusType', 'success')
         ->assertSet('statusMessage', 'Environment variables saved successfully.');
@@ -66,7 +74,9 @@ it('saves new environment variables', function () {
     $vars = $service->getEnvVars();
 
     expect($vars['GEMINI_API_KEY'])->toBe('new-gemini-key')
-        ->and($vars['CLAUDE_API_KEY'])->toBe('new-claude-key');
+        ->and($vars['CLAUDE_API_KEY'])->toBe('new-claude-key')
+        ->and($vars['OPENAI_API_KEY'])->toBe('new-openai-key')
+        ->and($vars['COHERE_API_KEY'])->toBe('new-cohere-key');
 });
 
 it('preserves masked keys on save', function () {

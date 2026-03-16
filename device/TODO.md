@@ -1,7 +1,7 @@
 ## Todo
 
 ## Done
-- [ ] add more settings for claude. gemni, coliolot. openclaw, etc 
+- [x] 2026-03-16 feat: add OpenAI and Cohere API key fields to Environment tab in AI Tools Config UI
 - [x] 2026-03-16 feat: add Opencode API key field to Environment tab in AI Tools Config UI
 
 # OpenCode Configuration Plan

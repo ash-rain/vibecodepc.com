@@ -53,6 +53,24 @@
                     >
                 </div>
                 <div>
+                    <label class="block text-xs text-gray-400 mb-1.5">OpenAI API Key <span class="text-gray-600">OPENAI_API_KEY</span></label>
+                    <input
+                        wire:model="openaiApiKey"
+                        type="password"
+                        class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none"
+                        placeholder="sk-..."
+                    >
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1.5">Cohere API Key <span class="text-gray-600">COHERE_API_KEY</span></label>
+                    <input
+                        wire:model="cohereApiKey"
+                        type="password"
+                        class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none"
+                        placeholder="Cohere key..."
+                    >
+                </div>
+                <div>
                     <label class="block text-xs text-gray-400 mb-1.5">Ollama API Key <span class="text-gray-600">OLLAMA_API_KEY</span></label>
                     <input
                         wire:model="ollamaApiKey"

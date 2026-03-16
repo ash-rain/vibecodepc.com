@@ -20,6 +20,10 @@ class AiToolsConfig extends Component
 
     public string $claudeApiKey = '';
 
+    public string $openaiApiKey = '';
+
+    public string $cohereApiKey = '';
+
     public string $ollamaApiKey = '';
 
     public string $ollamaCloudApiKey = '';
@@ -55,6 +59,8 @@ class AiToolsConfig extends Component
 
         $this->geminiApiKey = isset($envVars['GEMINI_API_KEY']) && $envVars['GEMINI_API_KEY'] !== '' ? '••••••••' : '';
         $this->claudeApiKey = isset($envVars['CLAUDE_API_KEY']) && $envVars['CLAUDE_API_KEY'] !== '' ? '••••••••' : '';
+        $this->openaiApiKey = isset($envVars['OPENAI_API_KEY']) && $envVars['OPENAI_API_KEY'] !== '' ? '••••••••' : '';
+        $this->cohereApiKey = isset($envVars['COHERE_API_KEY']) && $envVars['COHERE_API_KEY'] !== '' ? '••••••••' : '';
         $this->ollamaApiKey = isset($envVars['OLLAMA_API_KEY']) && $envVars['OLLAMA_API_KEY'] !== '' ? '••••••••' : '';
         $this->ollamaCloudApiKey = isset($envVars['OLLAMA_CLOUD_API_KEY']) && $envVars['OLLAMA_CLOUD_API_KEY'] !== '' ? '••••••••' : '';
         $this->opencodeApiKey = isset($envVars['OPENCODE_API_KEY']) && $envVars['OPENCODE_API_KEY'] !== '' ? '••••••••' : '';
@@ -79,6 +85,8 @@ class AiToolsConfig extends Component
         $vars = [
             'GEMINI_API_KEY' => $this->geminiApiKey === '••••••••' ? ($existing['GEMINI_API_KEY'] ?? '') : $this->geminiApiKey,
             'CLAUDE_API_KEY' => $this->claudeApiKey === '••••••••' ? ($existing['CLAUDE_API_KEY'] ?? '') : $this->claudeApiKey,
+            'OPENAI_API_KEY' => $this->openaiApiKey === '••••••••' ? ($existing['OPENAI_API_KEY'] ?? '') : $this->openaiApiKey,
+            'COHERE_API_KEY' => $this->cohereApiKey === '••••••••' ? ($existing['COHERE_API_KEY'] ?? '') : $this->cohereApiKey,
             'OLLAMA_API_KEY' => $this->ollamaApiKey === '••••••••' ? ($existing['OLLAMA_API_KEY'] ?? '') : $this->ollamaApiKey,
             'OLLAMA_CLOUD_API_KEY' => $this->ollamaCloudApiKey === '••••••••' ? ($existing['OLLAMA_CLOUD_API_KEY'] ?? '') : $this->ollamaCloudApiKey,
             'OPENCODE_API_KEY' => $this->opencodeApiKey === '••••••••' ? ($existing['OPENCODE_API_KEY'] ?? '') : $this->opencodeApiKey,
