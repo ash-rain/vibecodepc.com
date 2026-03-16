@@ -53,7 +53,7 @@ The codebase is well-structured with excellent separation of concerns, proper us
 - **Array Operations**: Efficient use of collection methods over raw array operations
 
 #### Potential Optimizations:
-- [ ] performance: PortAllocatorService line 226 - `Project::pluck('port')` could use caching for high-frequency allocations
+- [x] 2026-03-16 performance: PortAllocatorService line 226 - `Project::pluck('port')` could use caching for high-frequency allocations
 - [ ] performance: `Project::all()` queries in TunnelManager lines 411, 478 - consider pagination if projects grow large
 - [ ] performance: QuickTunnelService line 239 - sleep-based polling could use event-driven approach
 

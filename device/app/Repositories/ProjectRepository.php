@@ -9,10 +9,15 @@ use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\Cursor;
+use Illuminate\Support\Facades\Cache;
 use VibecodePC\Common\Enums\ProjectStatus;
 
 class ProjectRepository
 {
+    private const USED_PORTS_CACHE_KEY = 'projects.used_ports';
+
+    private const USED_PORTS_CACHE_TTL_SECONDS = 60;
+
     /**
      * Find a project by ID.
      */
@@ -108,13 +113,32 @@ class ProjectRepository
     /**
      * Get all used ports as an array.
      *
+     * Caches the result for 60 seconds to reduce database load during
+     * high-frequency port allocations. Cache is cleared when projects
+     * are created, updated, or deleted via model events.
+     *
      * @return array<int>
      */
     public function getUsedPorts(): array
     {
-        return Project::pluck('port')
-            ->filter()
-            ->all();
+        return Cache::remember(
+            self::USED_PORTS_CACHE_KEY,
+            self::USED_PORTS_CACHE_TTL_SECONDS,
+            fn (): array => Project::pluck('port')
+                ->filter()
+                ->all()
+        );
+    }
+
+    /**
+     * Clear the used ports cache.
+     *
+     * Called automatically when projects are created, updated, or deleted
+     * via model observers to ensure cache stays synchronized with database.
+     */
+    public function clearUsedPortsCache(): void
+    {
+        Cache::forget(self::USED_PORTS_CACHE_KEY);
     }
 
     /**

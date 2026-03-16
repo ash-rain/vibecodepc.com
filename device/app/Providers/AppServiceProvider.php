@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Models\Project;
+use App\Observers\ProjectObserver;
 use App\Services\AiProviders\AiProviderResolverService;
 use App\Services\CloudApiClient;
 use App\Services\CodeServer\CodeServerService;
@@ -119,6 +121,8 @@ class AppServiceProvider extends ServiceProvider
             app()->environment(['production', 'staging'])
             || ! app()->environment('local')
         );
+
+        Project::observe(ProjectObserver::class);
 
         $this->ensureTunnelTokenFile();
     }
