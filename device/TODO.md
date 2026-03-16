@@ -1,7 +1,7 @@
 ## Todo
-- [ ] verify: All tests passing, ready to proceed to next workflow step
 
 ## Done
+- [x] 2026-03-16 verify: All tests passing, ready to proceed to next workflow step
 - [x] 2026-03-16 feat: add OpenAI and Cohere API key fields to Environment tab in AI Tools Config UI
 - [x] 2026-03-16 feat: add Opencode API key field to Environment tab in AI Tools Config UI
 
