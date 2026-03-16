@@ -70,7 +70,7 @@ This document outlines the plan for configuring OpenCode by editing two key file
 - [x] 2026-03-16 Create backup of `~/.local/share/opencode/auth.json`
 
 ### Phase 2: Review Current Providers
-- [ ] Document existing providers in config
+- [x] 2026-03-16 Document existing providers in config
 - [ ] Verify auth keys are valid and current
 - [ ] Check which providers are actively used
 
@@ -91,14 +91,37 @@ This document outlines the plan for configuring OpenCode by editing two key file
 - [ ] Remove unused provider keys
 - [ ] Ensure proper key format for each provider
 
-### Phase 4: Current Provider Status
+### Phase 4: Current Provider Status (Documented)
 
-| Provider | Status | Models | Auth Key Present |
-|----------|--------|--------|------------------|
-| moonshot | Configured | moonshotai/kimi-k2.5 | Yes |
-| ollama | Configured | glm-5:cloud | Yes |
-| ollama-cloud | Configured | glm-4.7:cloud | Yes |
-| opencode | Not configured | N/A | Yes (has key) |
+| Provider | Status | NPM Package | Base URL | Models | Timeout | Auth Key Present |
+|----------|--------|-------------|----------|--------|---------|------------------|
+| moonshot | Configured | `@ai-sdk/openai-compatible` | `https://integrate.api.nvidia.com/v1` | moonshotai/kimi-k2.5 | `false` (disabled), chunkTimeout: 30000000ms | Yes |
+| ollama | Configured | `@ai-sdk/openai-compatible` | `http://127.0.0.1:11434/v1` | glm-5:cloud | Not set | Yes |
+| ollama-cloud | Configured | `@ai-sdk/openai-compatible` | `http://localhost:11434/v1` | glm-4.7:cloud | Not set | Yes |
+| opencode | Not configured | N/A | N/A | N/A | N/A | Yes (has key but no provider config) |
+
+#### Detailed Configuration Analysis
+
+**Moonshot Provider:**
+- Uses NVIDIA API integration endpoint (not moonshot native API)
+- High chunkTimeout: 30,000,000ms (30 seconds)
+- Timeout disabled globally for this provider
+- Model: `moonshotai/kimi-k2.5` - Moonshot AI's K2.5 model
+
+**Ollama (local) Provider:**
+- Points to local Ollama instance at `127.0.0.1:11434`
+- Model `glm-5:cloud` has `_launch: true` flag (auto-launch enabled)
+- No timeout settings configured (uses defaults)
+
+**Ollama Cloud Provider:**
+- Points to `localhost:11434` (same as local but named differently)
+- Model: `glm-4.7:cloud`
+- No timeout settings configured
+
+**Opencode Provider:**
+- Has authentication key in auth.json
+- No provider configuration in opencode.json
+- Model currently being used: `moonshot/moonshotai/kimi-k2.5`
 
 ### Phase 5: Validation Steps
 - [ ] Run `opencode --version` to verify config loads
