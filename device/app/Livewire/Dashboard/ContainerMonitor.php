@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace App\Livewire\Dashboard;
 
 use App\Models\Project;
+use App\Repositories\ProjectRepository;
 use App\Services\Docker\ProjectContainerService;
 use Illuminate\Pagination\Cursor;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use VibecodePC\Common\Enums\ProjectStatus;
+
+use function app;
 
 #[Layout('layouts.dashboard', ['title' => 'Containers'])]
 #[Title('Containers — VibeCodePC')]
@@ -63,7 +66,7 @@ class ContainerMonitor extends Component
     public function subscribeToLogs(int $projectId): void
     {
         $this->openLogPanels[$projectId] = true;
-        $this->loadLogs($projectId, app(ProjectContainerService::class));
+        $this->loadLogs($projectId, app(ProjectContainerService::class), app(ProjectRepository::class));
     }
 
     public function unsubscribeFromLogs(int $projectId): void
@@ -71,9 +74,9 @@ class ContainerMonitor extends Component
         unset($this->openLogPanels[$projectId]);
     }
 
-    public function startProject(int $projectId, ProjectContainerService $containerService): void
+    public function startProject(int $projectId, ProjectContainerService $containerService, ProjectRepository $projectRepository): void
     {
-        $project = Project::findOrFail($projectId);
+        $project = $projectRepository->findOrFail($projectId);
         $error = $containerService->start($project);
 
         if ($error !== null) {
@@ -85,9 +88,9 @@ class ContainerMonitor extends Component
         $this->loadContainers();
     }
 
-    public function stopProject(int $projectId, ProjectContainerService $containerService): void
+    public function stopProject(int $projectId, ProjectContainerService $containerService, ProjectRepository $projectRepository): void
     {
-        $project = Project::findOrFail($projectId);
+        $project = $projectRepository->findOrFail($projectId);
         $error = $containerService->stop($project);
 
         if ($error !== null) {
@@ -99,9 +102,9 @@ class ContainerMonitor extends Component
         $this->loadContainers();
     }
 
-    public function restartProject(int $projectId, ProjectContainerService $containerService): void
+    public function restartProject(int $projectId, ProjectContainerService $containerService, ProjectRepository $projectRepository): void
     {
-        $project = Project::findOrFail($projectId);
+        $project = $projectRepository->findOrFail($projectId);
         $error = $containerService->restart($project);
 
         if ($error !== null) {
@@ -118,13 +121,13 @@ class ContainerMonitor extends Component
         unset($this->actionErrors[$projectId]);
     }
 
-    public function loadLogs(int $projectId, ProjectContainerService $containerService): void
+    public function loadLogs(int $projectId, ProjectContainerService $containerService, ProjectRepository $projectRepository): void
     {
-        $project = Project::findOrFail($projectId);
+        $project = $projectRepository->findOrFail($projectId);
         $this->logs[$projectId] = $containerService->getLogs($project, 100);
     }
 
-    public function runCommand(int $projectId, ProjectContainerService $containerService): void
+    public function runCommand(int $projectId, ProjectContainerService $containerService, ProjectRepository $projectRepository): void
     {
         $command = trim($this->commandInputs[$projectId] ?? '');
 
@@ -132,7 +135,7 @@ class ContainerMonitor extends Component
             return;
         }
 
-        $project = Project::findOrFail($projectId);
+        $project = $projectRepository->findOrFail($projectId);
         $result = $containerService->execCommand($project, $command);
 
         $this->commandOutputs[$projectId] = $result['output'];
@@ -147,13 +150,14 @@ class ContainerMonitor extends Component
     private function refreshOpenLogs(): void
     {
         $containerService = app(ProjectContainerService::class);
+        $projectRepository = app(ProjectRepository::class);
 
         foreach ($this->openLogPanels as $projectId => $active) {
             if (! $active) {
                 continue;
             }
 
-            $project = Project::find($projectId);
+            $project = $projectRepository->find($projectId);
 
             if ($project) {
                 $this->logs[$projectId] = $containerService->getLogs($project, 100);
@@ -173,7 +177,8 @@ class ContainerMonitor extends Component
         }
 
         $containerService = app(ProjectContainerService::class);
-        $paginator = Project::latest()->cursorPaginate($this->perPage, ['*'], 'cursor', $cursor);
+        $projectRepository = app(ProjectRepository::class);
+        $paginator = $projectRepository->paginateLatest($this->perPage, $cursor);
 
         $this->hasMorePages = $paginator->hasMorePages();
         $this->nextCursor = $paginator->nextCursor()?->encode();
@@ -208,21 +213,22 @@ class ContainerMonitor extends Component
     private function loadContainers(): void
     {
         $containerService = app(ProjectContainerService::class);
-        $paginator = Project::latest()->cursorPaginate($this->perPage);
+        $projectRepository = app(ProjectRepository::class);
+        $paginator = $projectRepository->paginateLatest($this->perPage);
 
         $this->hasMorePages = $paginator->hasMorePages();
         $this->nextCursor = $paginator->nextCursor()?->encode();
 
         $projects = $paginator->getCollection();
 
-        $this->totalRunning = Project::where('status', ProjectStatus::Running)->count();
-        $this->totalStopped = Project::whereIn('status', [
+        $this->totalRunning = $projectRepository->countByStatus(ProjectStatus::Running);
+        $this->totalStopped = $projectRepository->countWhereStatusIn([
             ProjectStatus::Stopped,
             ProjectStatus::Created,
             ProjectStatus::Scaffolding,
             ProjectStatus::Cloning,
-        ])->count();
-        $this->totalError = Project::where('status', ProjectStatus::Error)->count();
+        ]);
+        $this->totalError = $projectRepository->countByStatus(ProjectStatus::Error);
 
         $this->containers = $projects->map(function (Project $project) use ($containerService) {
             $usage = $project->isRunning() ? $containerService->getResourceUsage($project) : null;

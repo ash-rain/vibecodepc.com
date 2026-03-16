@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Projects;
 
 use App\Models\Project;
+use App\Repositories\ProjectRepository;
 use Closure;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +15,10 @@ use VibecodePC\Common\Enums\ProjectFramework;
 
 class PortAllocatorService
 {
+    public function __construct(
+        private ProjectRepository $projectRepository,
+    ) {}
+
     private const MIN_PORT = 1024;
 
     private const MAX_PORT = 65535;
@@ -24,12 +29,23 @@ class PortAllocatorService
 
     private const LOCK_KEY = 'port_allocator';
 
+    /**
+     * Allocate an available port for a project.
+     *
+     * Uses optimistic locking with retry logic to handle race conditions
+     * when multiple processes try to allocate ports simultaneously. If a
+     * unique constraint violation occurs (another process took the port),
+     * we retry with exponential backoff up to MAX_RETRIES.
+     */
     public function allocate(ProjectFramework $framework): int
     {
         $lastException = null;
 
+        // Retry loop: handles transient failures from concurrent allocations
         for ($attempt = 0; $attempt < self::MAX_RETRIES; $attempt++) {
             if ($attempt > 0) {
+                // Calculate delay with exponential backoff to reduce contention
+                // between competing processes
                 $delay = $this->calculateBackoffDelay($attempt);
                 Log::debug('Port allocation conflict detected, retrying', [
                     'attempt' => $attempt + 1,
@@ -42,6 +58,8 @@ class PortAllocatorService
             try {
                 return $this->attemptAllocate($framework);
             } catch (QueryException $e) {
+                // Unique constraint violation = another process took this port
+                // This is expected under high concurrency, so we retry
                 if ($this->isUniqueConstraintViolation($e)) {
                     $lastException = $e;
 
@@ -113,6 +131,14 @@ class PortAllocatorService
         );
     }
 
+    /**
+     * Single attempt to allocate a port with database-level locking.
+     *
+     * The serialization lock (database advisory lock) ensures that only one
+     * process can read the used ports and claim a new port at a time. This
+     * prevents the race condition where two processes could see the same
+     * port as available and both try to use it.
+     */
     private function attemptAllocate(ProjectFramework $framework): int
     {
         return DB::transaction(function () use ($framework) {
@@ -153,9 +179,15 @@ class PortAllocatorService
     }
 
     /**
-     * Acquire MySQL advisory lock using GET_LOCK.
-     * Note: This requires the lock to be explicitly released, so we use a
-     * transaction-scoped approach with a dedicated lock table.
+     * Acquire MySQL advisory lock using table-level row locking.
+     *
+     * MySQL doesn't have pg_advisory_lock equivalent, so we simulate it using
+     * a dedicated lock table with row-level locking. The INSERT ensures the
+     * lock row exists, then SELECT ... FOR UPDATE acquires an exclusive lock
+     * on that row, blocking other transactions until this transaction commits.
+     *
+     * Note: Unlike PostgreSQL's pg_advisory_xact_lock which auto-releases,
+     * MySQL's row lock releases when the transaction ends.
      */
     private function acquireMysqlAdvisoryLock(): void
     {
@@ -208,10 +240,23 @@ class PortAllocatorService
         Project::query()->lockForUpdate()->first();
     }
 
+    /**
+     * Find the next available port for the given framework.
+     *
+     * Port allocation strategy:
+     * 1. Start with the framework's default port (e.g., 8000 for Laravel, 3000 for Next.js)
+     * 2. Clamp to valid port range (1024-65535) if framework default is out of bounds
+     * 3. Query all currently used ports from the database
+     * 4. Increment port until we find one not in use
+     * 5. Fail if we exhaust the entire valid port range
+     *
+     * The serialization lock held by the caller ensures this is atomic.
+     */
     private function findAvailablePort(ProjectFramework $framework): int
     {
         $port = $framework->defaultPort();
 
+        // Ensure we don't try to use privileged ports (<1024)
         if ($port < self::MIN_PORT) {
             $port = self::MIN_PORT;
         }
@@ -223,10 +268,9 @@ class PortAllocatorService
         }
 
         // With the serialization lock held, this query is safe from race conditions
-        $usedPorts = Project::pluck('port')
-            ->filter()
-            ->all();
+        $usedPorts = $this->projectRepository->getUsedPorts();
 
+        // Simple linear scan: this is efficient enough since port ranges are large
         while (in_array($port, $usedPorts, true)) {
             $port++;
 
@@ -252,6 +296,21 @@ class PortAllocatorService
         return $sqliteUniqueViolation || $mysqlUniqueViolation || $postgresUniqueViolation;
     }
 
+    /**
+     * Calculate exponential backoff delay with jitter.
+     *
+     * Backoff formula: base_delay * 2^(attempt-1) + random_jitter
+     *
+     * Exponential backoff prevents thundering herd by spacing out retries,
+     * while jitter prevents synchronized retries from multiple processes that
+     * hit the same error at the same time. Capped at 1000ms to avoid
+     * excessively long waits.
+     *
+     * Example delays:
+     * - Attempt 1: 100ms + jitter
+     * - Attempt 2: 200ms + jitter
+     * - Attempt 3: 400ms + jitter
+     */
     private function calculateBackoffDelay(int $attempt): int
     {
         $delay = self::RETRY_BASE_DELAY_MS * (2 ** ($attempt - 1));

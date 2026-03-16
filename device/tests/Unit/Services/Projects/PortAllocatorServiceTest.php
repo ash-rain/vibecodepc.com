@@ -3,11 +3,16 @@
 declare(strict_types=1);
 
 use App\Models\Project;
+use App\Repositories\ProjectRepository;
 use App\Services\Projects\PortAllocatorService;
 use VibecodePC\Common\Enums\ProjectFramework;
 
+beforeEach(function () {
+    $this->projectRepository = new ProjectRepository;
+});
+
 it('allocates the default port for a framework', function () {
-    $service = new PortAllocatorService;
+    $service = new PortAllocatorService($this->projectRepository);
 
     expect($service->allocate(ProjectFramework::Laravel))->toBe(8000);
     expect($service->allocate(ProjectFramework::NextJs))->toBe(3000);
@@ -16,13 +21,13 @@ it('allocates the default port for a framework', function () {
 it('skips used ports', function () {
     Project::factory()->create(['port' => 8000]);
 
-    $service = new PortAllocatorService;
+    $service = new PortAllocatorService(new ProjectRepository);
 
     expect($service->allocate(ProjectFramework::Laravel))->toBe(8001);
 });
 
 it('validates port is within valid range 1024-65535', function () {
-    $service = new PortAllocatorService;
+    $service = new PortAllocatorService(new ProjectRepository);
 
     $port = $service->allocate(ProjectFramework::Laravel);
 
@@ -36,7 +41,7 @@ it('continues searching until finding an available port', function () {
     Project::factory()->create(['port' => 8001]);
     Project::factory()->create(['port' => 8002]);
 
-    $service = new PortAllocatorService;
+    $service = new PortAllocatorService(new ProjectRepository);
 
     expect($service->allocate(ProjectFramework::Laravel))->toBe(8003);
 });
@@ -48,7 +53,7 @@ it('handles multiple frameworks independently', function () {
     // NextJs project using port 3000
     Project::factory()->create(['port' => 3000]);
 
-    $service = new PortAllocatorService;
+    $service = new PortAllocatorService(new ProjectRepository);
 
     // Laravel should get 8001
     expect($service->allocate(ProjectFramework::Laravel))->toBe(8001);
@@ -61,14 +66,14 @@ it('allocates ports incrementally', function () {
     Project::factory()->create(['port' => 8000]);
     Project::factory()->create(['port' => 8002]);
 
-    $service = new PortAllocatorService;
+    $service = new PortAllocatorService(new ProjectRepository);
 
     // Should allocate 8001 (the first gap), not 8003
     expect($service->allocate(ProjectFramework::Laravel))->toBe(8001);
 });
 
 it('retries on unique constraint violation and eventually succeeds', function () {
-    $service = new PortAllocatorService;
+    $service = new PortAllocatorService(new ProjectRepository);
 
     // First allocation should succeed
     $port1 = $service->allocate(ProjectFramework::Laravel);
@@ -83,7 +88,7 @@ it('retries on unique constraint violation and eventually succeeds', function ()
 });
 
 it('handles concurrent allocation attempts gracefully', function () {
-    $service = new PortAllocatorService;
+    $service = new PortAllocatorService(new ProjectRepository);
     $allocatedPorts = [];
     $errors = [];
 
@@ -108,7 +113,7 @@ it('handles concurrent allocation attempts gracefully', function () {
 });
 
 it('uses database locking to prevent race conditions', function () {
-    $service = new PortAllocatorService;
+    $service = new PortAllocatorService(new ProjectRepository);
 
     // Create initial project
     Project::factory()->create(['port' => 8000]);
@@ -123,7 +128,7 @@ it('fails after maximum retry attempts on persistent conflicts', function () {
     // This test verifies the retry mechanism works correctly
     // by checking that the service eventually gives up after max retries
 
-    $service = new PortAllocatorService;
+    $service = new PortAllocatorService(new ProjectRepository);
 
     // Create enough projects that retry logic would be needed
     // if there were concurrent conflicts
@@ -137,7 +142,7 @@ it('fails after maximum retry attempts on persistent conflicts', function () {
 });
 
 it('logs retry attempts on allocation conflicts', function () {
-    $service = new PortAllocatorService;
+    $service = new PortAllocatorService(new ProjectRepository);
 
     // Normal allocation should not trigger retries
     $port = $service->allocate(ProjectFramework::Laravel);
@@ -146,7 +151,7 @@ it('logs retry attempts on allocation conflicts', function () {
 });
 
 it('allocateAndCreate prevents race conditions by holding lock during project creation', function () {
-    $service = new PortAllocatorService;
+    $service = new PortAllocatorService(new ProjectRepository);
     $allocatedProjects = [];
 
     // Simulate concurrent allocations using allocateAndCreate
@@ -180,7 +185,7 @@ it('allocateAndCreate prevents race conditions by holding lock during project cr
 });
 
 it('allocateAndCreate retries on concurrent conflicts and eventually succeeds', function () {
-    $service = new PortAllocatorService;
+    $service = new PortAllocatorService(new ProjectRepository);
     $callCount = 0;
 
     // First allocation should succeed
@@ -218,7 +223,7 @@ it('allocateAndCreate retries on concurrent conflicts and eventually succeeds', 
 });
 
 it('prevents race conditions with serialization lock on concurrent allocations', function () {
-    $service = new PortAllocatorService;
+    $service = new PortAllocatorService(new ProjectRepository);
     $allocatedPorts = [];
     $errors = [];
 
@@ -256,7 +261,7 @@ it('prevents race conditions with serialization lock on concurrent allocations',
 });
 
 it('handles concurrent allocate() calls safely with retry logic', function () {
-    $service = new PortAllocatorService;
+    $service = new PortAllocatorService(new ProjectRepository);
     $allocatedPorts = [];
 
     // Allocate multiple ports sequentially

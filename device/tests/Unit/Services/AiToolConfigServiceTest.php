@@ -64,14 +64,22 @@ describe('setEnvVars', function () {
 
         expect($content)
             ->toContain('# === VibeCodePC AI Tools ===')
-            ->toContain('export GEMINI_API_KEY="abc123"')
+            ->toContain('export GEMINI_API_KEY="')
             ->toContain('# === END VibeCodePC AI Tools ===');
+
+        // Verify the value is encrypted by checking for ENC: prefix
+        expect($content)->toContain('ENC:');
+
+        // Verify round-trip decryption works
+        $vars = $this->service->getEnvVars();
+        expect($vars['GEMINI_API_KEY'])->toBe('abc123');
     });
 
     it('replaces an existing managed section', function () {
         $initial = "line1\n# === VibeCodePC AI Tools ===\nexport OLD_VAR=\"old\"\n# === END VibeCodePC AI Tools ===\nline2\n";
         file_put_contents($this->tmpDir.'/.bashrc', $initial);
 
+        // Use a non-sensitive key so it's not encrypted
         $this->service->setEnvVars(['NEW_VAR' => 'new-value']);
 
         $content = file_get_contents($this->tmpDir.'/.bashrc');
@@ -113,6 +121,47 @@ describe('setEnvVars', function () {
         expect($vars['GEMINI_API_KEY'])->toBe('gemini-key')
             ->and($vars['CLAUDE_API_KEY'])->toBe('claude-key')
             ->and($vars['_extra_path'])->toBe('/autodev/bin');
+    });
+
+    it('encrypts sensitive keys like API keys', function () {
+        $this->service->setEnvVars(['GEMINI_API_KEY' => 'secret-key-123']);
+
+        $content = file_get_contents($this->tmpDir.'/.bashrc');
+
+        // Value should be encrypted with ENC: prefix
+        expect($content)->toContain('ENC:');
+
+        // Raw key should not appear in file
+        expect($content)->not->toContain('secret-key-123');
+    });
+
+    it('does not encrypt non-sensitive keys', function () {
+        $this->service->setEnvVars(['MY_CUSTOM_VAR' => 'plain-value']);
+
+        $content = file_get_contents($this->tmpDir.'/.bashrc');
+
+        // Non-sensitive value should appear in plain text
+        expect($content)->toContain('export MY_CUSTOM_VAR="plain-value"');
+        expect($content)->not->toContain('ENC:');
+    });
+
+    it('decrypts encrypted values when reading', function () {
+        $this->service->setEnvVars(['OPENAI_API_KEY' => 'sk-openai-secret']);
+
+        $vars = $this->service->getEnvVars();
+
+        expect($vars['OPENAI_API_KEY'])->toBe('sk-openai-secret');
+    });
+
+    it('gracefully handles corrupted encrypted values', function () {
+        // Create bashrc with invalid encrypted data
+        $content = "# === VibeCodePC AI Tools ===\nexport GEMINI_API_KEY=\"ENC:invalid-encrypted-data\"\n# === END VibeCodePC AI Tools ===\n";
+        file_put_contents($this->tmpDir.'/.bashrc', $content);
+
+        $vars = $this->service->getEnvVars();
+
+        // Should return the encrypted string as-is when decryption fails
+        expect($vars['GEMINI_API_KEY'])->toBe('ENC:invalid-encrypted-data');
     });
 });
 

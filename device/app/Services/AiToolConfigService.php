@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Crypt;
+
 class AiToolConfigService
 {
     private const SECTION_START = '# === VibeCodePC AI Tools ===';
 
     private const SECTION_END = '# === END VibeCodePC AI Tools ===';
+
+    private const ENCRYPTED_PREFIX = 'ENC:';
 
     private function getHomeDir(): string
     {
@@ -69,7 +73,7 @@ class AiToolConfigService
         preg_match_all('/^export (?!PATH=)([A-Z_][A-Z0-9_]*)="([^"]*)"$/m', $section, $matches, PREG_SET_ORDER);
 
         foreach ($matches as $match) {
-            $vars[$match[1]] = $match[2];
+            $vars[$match[1]] = $this->decryptIfEncrypted($match[2]);
         }
 
         // Parse the PATH extra prefix line: export PATH="/some/path:$PATH"
@@ -78,6 +82,59 @@ class AiToolConfigService
         }
 
         return $vars;
+    }
+
+    /**
+     * Determine if a key represents sensitive data that should be encrypted.
+     *
+     * @param  string  $key  The environment variable key
+     */
+    private function isSensitiveKey(string $key): bool
+    {
+        $sensitivePatterns = ['_API_KEY', '_TOKEN', '_SECRET', '_PASSWORD', '_AUTH'];
+
+        foreach ($sensitivePatterns as $pattern) {
+            if (str_contains($key, $pattern)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Encrypt a value if it's sensitive.
+     *
+     * @param  string  $key  The environment variable key
+     * @param  string  $value  The value to potentially encrypt
+     */
+    private function encryptIfSensitive(string $key, string $value): string
+    {
+        if (! $this->isSensitiveKey($key)) {
+            return $value;
+        }
+
+        return self::ENCRYPTED_PREFIX.Crypt::encryptString($value);
+    }
+
+    /**
+     * Decrypt a value if it's encrypted.
+     *
+     * @param  string  $value  The potentially encrypted value
+     */
+    private function decryptIfEncrypted(string $value): string
+    {
+        if (! str_starts_with($value, self::ENCRYPTED_PREFIX)) {
+            return $value;
+        }
+
+        try {
+            $encrypted = substr($value, strlen(self::ENCRYPTED_PREFIX));
+
+            return Crypt::decryptString($encrypted);
+        } catch (\Throwable $e) {
+            return $value;
+        }
     }
 
     /**
@@ -103,7 +160,8 @@ class AiToolConfigService
 
         foreach ($vars as $key => $value) {
             if ($value !== '') {
-                $lines[] = 'export '.$key.'="'.addslashes($value).'"';
+                $encryptedValue = $this->encryptIfSensitive($key, $value);
+                $lines[] = 'export '.$key.'="'.addslashes($encryptedValue).'"';
             }
         }
 
