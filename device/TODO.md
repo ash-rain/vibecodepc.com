@@ -1,4 +1,5 @@
 ## Todo
+- [ ] verify: All tests passing, ready to proceed to next workflow step
 
 ## Done
 - [x] 2026-03-16 feat: add OpenAI and Cohere API key fields to Environment tab in AI Tools Config UI
@@ -115,8 +116,8 @@ This document outlines the plan for configuring OpenCode by editing two key file
 
 ### Phase 6: Documentation
 - [x] 2026-03-16 Document provider-specific settings
-- [ ] Add comments explaining custom configurations
-- [ ] Create troubleshooting guide for common issues
+- [x] 2026-03-16 Add comments explaining custom configurations
+- [x] 2026-03-16 Create troubleshooting guide for common issues
 
 ## Security Considerations
 
