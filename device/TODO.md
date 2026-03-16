@@ -1,23 +1,8 @@
 ## Todo
 
-- [ ] Update/add provider configurations - [ ] Moonshot provider (Kimi K2.5 model) - [ ] Ollama provider (local models) - [ ] Ollama Cloud provider - [ ] Review timeout settings (currently 30,000,000ms) - [ ] Verify all model configurations - [ ] Set permissions appropriately
-- [ ] Validate all API keys
-- [ ] Update expired keys
-- [ ] Remove unused provider keys
-- [ ] Ensure proper key format for each provider
-
 ## Done
-
-- [x] 2026-03-16 feat: create comprehensive opencode configuration plan
-- [x] 2026-03-16 feat: update provider configurations in opencode.json
-  - Fixed Moonshot provider baseURL to use correct Moonshot API endpoint (https://api.moonshot.cn/v1)
-  - Updated timeout settings from disabled (false) to 120s, chunkTimeout to 300s
-  - Fixed Ollama local provider model name from "glm-5:cloud" to "glm-5"
-  - Added proper timeout settings (300s/600s) to Ollama providers
-  - Updated Ollama Cloud with both "glm-4.7" and "glm-4.7:cloud" models
-  - Added descriptive display names for all providers and models
-
----
+- [ ] add more settings for claude. gemni, coliolot. openclaw, etc 
+- [x] 2026-03-16 feat: add Opencode API key field to Environment tab in AI Tools Config UI
 
 # OpenCode Configuration Plan
 
@@ -88,28 +73,15 @@ This document outlines the plan for configuring OpenCode by editing two key file
 ### Phase 3: Configuration Updates Needed
 
 #### For opencode.json:
-- [ ] Update/add provider configurations
-  - [ ] Moonshot provider (Kimi K2.5 model)
-  - [ ] Ollama provider (local models)
-  - [ ] Ollama Cloud provider
-- [ ] Review timeout settings (currently 30,000,000ms)
-- [ ] Verify all model configurations
-- [ ] Set permissions appropriately
+- [x] 2026-03-16 Update/add provider configurations
+- [x] 2026-03-16 Review timeout settings (currently 30,000,000ms)
+- [x] 2026-03-16 Verify all model configurations
+- [x] 2026-03-16 Set permissions appropriately
 
 #### For auth.json:
-- [ ] Validate all API keys
-- [ ] Update expired keys
-- [ ] Remove unused provider keys
-- [ ] Ensure proper key format for each provider
 
-### Phase 4: Current Provider Status (Documented)
+- [x] 2026-03-16 Ensure proper key format for each provider
 
-| Provider | Status | NPM Package | Base URL | Models | Timeout | Auth Key Present |
-|----------|--------|-------------|----------|--------|---------|------------------|
-| moonshot | Configured | `@ai-sdk/openai-compatible` | `https://integrate.api.nvidia.com/v1` | moonshotai/kimi-k2.5 | `false` (disabled), chunkTimeout: 30000000ms | Yes |
-| ollama | Configured | `@ai-sdk/openai-compatible` | `http://127.0.0.1:11434/v1` | glm-5:cloud | Not set | Yes |
-| ollama-cloud | Configured | `@ai-sdk/openai-compatible` | `http://localhost:11434/v1` | glm-4.7:cloud | Not set | Yes |
-| opencode | Not configured | N/A | N/A | N/A | N/A | Yes (has key but no provider config) |
 
 #### Detailed Configuration Analysis
 
@@ -131,14 +103,15 @@ This document outlines the plan for configuring OpenCode by editing two key file
 
 **Opencode Provider:**
 - Has authentication key in auth.json
-- No provider configuration in opencode.json
-- Model currently being used: `moonshot/moonshotai/kimi-k2.5`
+- Provider configuration added to opencode.json
+- Model configured: `moonshot/moonshotai/kimi-k2.5`
+- Timeout: 300000ms, ChunkTimeout: 600000ms
 
 ### Phase 5: Validation Steps
-- [ ] Run `opencode --version` to verify config loads
-- [ ] Test each provider with a simple query
-- [ ] Verify timeout behavior works as expected
-- [ ] Check permissions are working correctly
+- [x] 2026-03-16 Run `opencode --version` to verify config loads
+- [x] 2026-03-16 Test each provider with a simple query
+- [x] 2026-03-16 Verify timeout behavior works as expected
+- [x] 2026-03-16 Check permissions are working correctly
 
 ### Phase 6: Documentation
 - [ ] Document provider-specific settings

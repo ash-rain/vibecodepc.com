@@ -24,6 +24,8 @@ class AiToolsConfig extends Component
 
     public string $ollamaCloudApiKey = '';
 
+    public string $opencodeApiKey = '';
+
     public string $extraPath = '';
 
     public bool $opencodeExperimental = false;
@@ -55,6 +57,7 @@ class AiToolsConfig extends Component
         $this->claudeApiKey = isset($envVars['CLAUDE_API_KEY']) && $envVars['CLAUDE_API_KEY'] !== '' ? '••••••••' : '';
         $this->ollamaApiKey = isset($envVars['OLLAMA_API_KEY']) && $envVars['OLLAMA_API_KEY'] !== '' ? '••••••••' : '';
         $this->ollamaCloudApiKey = isset($envVars['OLLAMA_CLOUD_API_KEY']) && $envVars['OLLAMA_CLOUD_API_KEY'] !== '' ? '••••••••' : '';
+        $this->opencodeApiKey = isset($envVars['OPENCODE_API_KEY']) && $envVars['OPENCODE_API_KEY'] !== '' ? '••••••••' : '';
         $this->extraPath = $envVars['_extra_path'] ?? '';
         $this->opencodeExperimental = ($envVars['OPENCODE_EXPERIMENTAL'] ?? '') === '1';
         $this->opencodeExperimentalBashTimeoutMs = $envVars['OPENCODE_EXPERIMENTAL_BASH_DEFAULT_TIMEOUT_MS'] ?? '';
@@ -78,6 +81,7 @@ class AiToolsConfig extends Component
             'CLAUDE_API_KEY' => $this->claudeApiKey === '••••••••' ? ($existing['CLAUDE_API_KEY'] ?? '') : $this->claudeApiKey,
             'OLLAMA_API_KEY' => $this->ollamaApiKey === '••••••••' ? ($existing['OLLAMA_API_KEY'] ?? '') : $this->ollamaApiKey,
             'OLLAMA_CLOUD_API_KEY' => $this->ollamaCloudApiKey === '••••••••' ? ($existing['OLLAMA_CLOUD_API_KEY'] ?? '') : $this->ollamaCloudApiKey,
+            'OPENCODE_API_KEY' => $this->opencodeApiKey === '••••••••' ? ($existing['OPENCODE_API_KEY'] ?? '') : $this->opencodeApiKey,
             '_extra_path' => $this->extraPath,
             'OPENCODE_EXPERIMENTAL' => $this->opencodeExperimental ? '1' : '',
             'OPENCODE_EXPERIMENTAL_BASH_DEFAULT_TIMEOUT_MS' => $this->opencodeExperimentalBashTimeoutMs,

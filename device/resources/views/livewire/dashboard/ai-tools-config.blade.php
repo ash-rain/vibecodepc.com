@@ -61,17 +61,26 @@
                         placeholder="ollama key..."
                     >
                 </div>
-                <div>
-                    <label class="block text-xs text-gray-400 mb-1.5">Ollama Cloud API Key <span class="text-gray-600">OLLAMA_CLOUD_API_KEY</span></label>
-                    <input
-                        wire:model="ollamaCloudApiKey"
-                        type="password"
-                        class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none"
-                        placeholder="cloud key..."
-                    >
-                </div>
-            </div>
-        </div>
+<div>
+<label class="block text-xs text-gray-400 mb-1.5">Ollama Cloud API Key <span class="text-gray-600">OLLAMA_CLOUD_API_KEY</span></label>
+<input
+wire:model="ollamaCloudApiKey"
+type="password"
+class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none"
+placeholder="cloud key..."
+>
+</div>
+<div>
+<label class="block text-xs text-gray-400 mb-1.5">Opencode API Key <span class="text-gray-600">OPENCODE_API_KEY</span></label>
+<input
+wire:model="opencodeApiKey"
+type="password"
+class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none"
+placeholder="opencode key..."
+>
+</div>
+</div>
+</div>
 
         {{-- PATH --}}
         <div class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6 space-y-4">
