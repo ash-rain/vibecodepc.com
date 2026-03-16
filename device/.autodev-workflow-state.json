@@ -1,0 +1,11 @@
+{
+    "step": 0,
+    "total": 5,
+    "workflow_dirs": [
+        "/home/headless/Documents/GitHub/headless-coding-vm/v9_copilot/autodev/workflows/scope-cycle",
+        "/home/headless/Documents/GitHub/headless-coding-vm/v9_copilot/autodev/workflows/dev-cycle"
+    ],
+    "started_at": "2026-03-16T17:46:52+00:00",
+    "updated_at": "2026-03-16T17:46:52+00:00",
+    "completed": []
+}

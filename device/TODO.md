@@ -1,10 +1,21 @@
 ## Todo
 
-- [x] make a plan on how to configuire opencode, we want to edit the files [text](.~/.config/opencode/opencode.json) and [text](~/.local/share/opencode/auth.json) fill the todo.md with the plan
+- [ ] Update/add provider configurations - [ ] Moonshot provider (Kimi K2.5 model) - [ ] Ollama provider (local models) - [ ] Ollama Cloud provider - [ ] Review timeout settings (currently 30,000,000ms) - [ ] Verify all model configurations - [ ] Set permissions appropriately
+- [ ] Validate all API keys
+- [ ] Update expired keys
+- [ ] Remove unused provider keys
+- [ ] Ensure proper key format for each provider
 
 ## Done
 
 - [x] 2026-03-16 feat: create comprehensive opencode configuration plan
+- [x] 2026-03-16 feat: update provider configurations in opencode.json
+  - Fixed Moonshot provider baseURL to use correct Moonshot API endpoint (https://api.moonshot.cn/v1)
+  - Updated timeout settings from disabled (false) to 120s, chunkTimeout to 300s
+  - Fixed Ollama local provider model name from "glm-5:cloud" to "glm-5"
+  - Added proper timeout settings (300s/600s) to Ollama providers
+  - Updated Ollama Cloud with both "glm-4.7" and "glm-4.7:cloud" models
+  - Added descriptive display names for all providers and models
 
 ---
 
