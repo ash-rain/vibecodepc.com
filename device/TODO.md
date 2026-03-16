@@ -72,7 +72,7 @@ This document outlines the plan for configuring OpenCode by editing two key file
 ### Phase 2: Review Current Providers
 - [x] 2026-03-16 Document existing providers in config
 - [x] 2026-03-16 Verify auth keys are valid and current
-- [ ] Check which providers are actively used
+- [x] 2026-03-16 Check which providers are actively used
 
 ### Phase 3: Configuration Updates Needed
 
