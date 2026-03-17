@@ -15,7 +15,7 @@ class AnthropicValidator implements AiProviderContract
                 'x-api-key' => $apiKey,
                 'anthropic-version' => '2023-06-01',
             ])
-                ->timeout(10)
+                ->timeout(config('vibecodepc.http_client.timeout.default'))
                 ->get('https://api.anthropic.com/v1/models');
 
             if ($response->successful()) {

@@ -381,7 +381,7 @@ class CloudApiClient
         $retryConfig = $this->getRetryConfig();
         $request = Http::baseUrl($this->cloudUrl)
             ->acceptJson()
-            ->timeout(10)
+            ->timeout(config('vibecodepc.http_client.timeout.default'))
             ->retry(
                 times: $retryConfig['times'],
                 sleepMilliseconds: $retryConfig['sleepMilliseconds'],
@@ -400,7 +400,7 @@ class CloudApiClient
     {
         $credential = CloudCredential::current();
 
-        $request = $this->http()->timeout(30);
+        $request = $this->http()->timeout(config('vibecodepc.http_client.timeout.authenticated'));
 
         if ($credential) {
             $request->withToken($credential->getToken());

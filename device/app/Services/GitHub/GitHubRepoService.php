@@ -12,7 +12,7 @@ class GitHubRepoService
     public function listUserRepos(string $token, int $perPage = 30, int $page = 1): array
     {
         $response = Http::withToken($token)
-            ->timeout(10)
+            ->timeout(config('vibecodepc.http_client.timeout.default'))
             ->get('https://api.github.com/user/repos', [
                 'sort' => 'updated',
                 'per_page' => $perPage,
@@ -34,7 +34,7 @@ class GitHubRepoService
         $username = $this->getUsername($token);
 
         $response = Http::withToken($token)
-            ->timeout(10)
+            ->timeout(config('vibecodepc.http_client.timeout.default'))
             ->get('https://api.github.com/search/repositories', [
                 'q' => "{$query} user:{$username}",
                 'per_page' => $perPage,
@@ -57,7 +57,7 @@ class GitHubRepoService
     private function getUsername(string $token): string
     {
         $response = Http::withToken($token)
-            ->timeout(10)
+            ->timeout(config('vibecodepc.http_client.timeout.default'))
             ->get('https://api.github.com/user');
 
         $response->throw();

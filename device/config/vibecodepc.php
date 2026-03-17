@@ -63,4 +63,11 @@ return [
             'cloud_credentials',
         ],
     ],
+
+    'http_client' => [
+        'timeout' => [
+            'default' => (int) env('HTTP_CLIENT_TIMEOUT_DEFAULT', 10),
+            'authenticated' => (int) env('HTTP_CLIENT_TIMEOUT_AUTHENTICATED', 30),
+        ],
+    ],
 ];

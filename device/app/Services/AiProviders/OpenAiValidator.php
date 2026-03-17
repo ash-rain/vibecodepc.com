@@ -12,7 +12,7 @@ class OpenAiValidator implements AiProviderContract
     {
         try {
             $response = Http::withToken($apiKey)
-                ->timeout(10)
+                ->timeout(config('vibecodepc.http_client.timeout.default'))
                 ->get('https://api.openai.com/v1/models');
 
             if ($response->successful()) {

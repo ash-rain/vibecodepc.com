@@ -69,7 +69,7 @@ class GitHubDeviceFlowService
 
         try {
             $response = Http::withHeaders(['Accept' => 'application/json'])
-                ->timeout(10)
+                ->timeout(config('vibecodepc.http_client.timeout.default'))
                 ->post('https://github.com/login/device/code', [
                     'client_id' => $this->clientId,
                     'scope' => 'repo user read:org',
@@ -107,7 +107,7 @@ class GitHubDeviceFlowService
 
         try {
             $response = Http::withHeaders(['Accept' => 'application/json'])
-                ->timeout(10)
+                ->timeout(config('vibecodepc.http_client.timeout.default'))
                 ->post('https://github.com/login/oauth/access_token', [
                     'client_id' => $this->clientId,
                     'device_code' => $deviceCode,
@@ -157,7 +157,7 @@ class GitHubDeviceFlowService
     public function getUserProfile(string $token): GitHubProfile
     {
         $response = Http::withToken($token)
-            ->timeout(10)
+            ->timeout(config('vibecodepc.http_client.timeout.default'))
             ->get('https://api.github.com/user');
 
         $response->throw();

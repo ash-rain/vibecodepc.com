@@ -19,9 +19,13 @@
   - Updated DeviceHealth console command
   - All direct Project:: queries now use ProjectRepository abstraction
   - 10 existing repository tests passing
-- [ ] `refactor:` Extract hardcoded timeout values to configuration (S)
-  - Move HTTP client timeouts to config/vibecodepc.php
-  - See PLAN.md Phase 1 for implementation details
+- [x] 2026-03-17 `refactor:` Extract hardcoded timeout values to configuration (S)
+  - Added `http_client.timeout` config to config/vibecodepc.php with `default` (10s) and `authenticated` (30s) values
+  - Updated CloudApiClient::http() and authenticatedHttp() to use config-based timeouts
+  - Updated GitHubDeviceFlowService methods (initiateDeviceFlow, pollForToken, getUserProfile) to use config
+  - Updated GitHubRepoService methods (listUserRepos, searchUserRepos, getUsername) to use config
+  - Updated all AI provider validators (Anthropic, Custom, HuggingFace, OpenAI, OpenRouter) to use config
+  - All 110 affected tests passing, Pint formatting clean
 
 #### Event-Driven Architecture
 - [ ] `feat:` Replace polling with event-driven tunnel status updates (M)
