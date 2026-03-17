@@ -7,8 +7,10 @@
   - Implemented `ProjectRepository::getUsedPorts()` with 60-second cache TTL
   - Added `ProjectObserver` to invalidate cache on project create/update/delete
   - PortAllocatorService now uses repository method instead of raw queries
-- [ ] `perf:` Optimize tunnel display queries with column selection (S)
-  - See PLAN.md Phase 1 for implementation details
+- [x] 2026-03-17 `perf:` Optimize tunnel display queries with column selection (S)
+  - Implemented `ProjectRepository::allForTunnelDisplay()` with selective column loading
+  - Added comprehensive test coverage for column selection optimization
+  - Reduces memory usage by only loading required columns for tunnel display
 
 #### Service Layer Enhancements
 - [ ] `refactor:` Implement repository pattern for complex queries (M)
