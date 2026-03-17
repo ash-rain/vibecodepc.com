@@ -247,14 +247,30 @@ This test plan covers the config file editor system including ConfigFileService,
   - Added 8 comprehensive tests covering: epoch time, future timestamps (near and far), very old timestamps, DST transitions, negative timestamps (before epoch), timestamps just after epoch, and current time
 
 ### B3. Reload Triggering
-- [ ] **B3.1**: Test `triggerReload()` service interactions
-  - Verify actual service signals are sent
-  - Test reload failure scenarios
-  - Test partial reload success (some services fail)
+- [x] 2026-03-17 **B3.1**: Test `triggerReload()` service interactions
+  - Verify actual service signals are sent - tested with mocked CodeServerService
+  - Test reload failure scenarios - tested with code-server not running and exceptions
+  - Test partial reload success (some services fail) - tested opencode_global with cli + vscode
+  - Added 13 comprehensive tests covering:
+    - vscode service reload when code-server is running
+    - vscode service failure when code-server is not running
+    - Partial success with mixed service types (cli succeeds, vscode fails)
+    - Full success when all services succeed
+    - Unknown config key handling (empty services)
+    - MCP service automatic detection behavior
+    - CLI service manual restart messages
+    - Exception handling during code-server reload
+    - Logging of reload operations
+    - Project-scoped config handling (opencode_project, claude_project)
+    - Code-server not running simulation
+    - Code-server not installed simulation
 
-- [ ] **B3.2**: Test reload with non-existent services
-  - Service process not running
-  - PID file exists but process dead
+- [x] **B3.2**: Test reload with non-existent services (2026-03-17)
+  - Service process not running - tested with mocked isRunning returning false
+  - PID file exists but process dead - not applicable (handled by isRunning check)
+  - Added 2 comprehensive tests covering:
+    - `reloadCodeServer handles process not running` - returns false with "not running" message
+    - `reloadCodeServer handles code-server not installed` - returns false with "not running" message
 
 ---
 
