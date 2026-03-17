@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Livewire\Dashboard;
 
 use App\Models\Project;
+use App\Models\TunnelConfig;
+use App\Services\ConfigAuditLogService;
 use App\Services\ConfigFileService;
 use App\Services\ConfigReloadService;
+use App\Services\Tunnel\TunnelService;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
@@ -20,6 +23,10 @@ class AiAgentConfigs extends Component
     public string $activeTab = 'boost';
 
     public ?int $selectedProjectId = null;
+
+    public bool $isPaired = false;
+
+    public bool $isTunnelRunning = false;
 
     /** @var array<string, string> */
     public array $fileContent = [];
@@ -55,8 +62,10 @@ class AiAgentConfigs extends Component
     /** @var array<string, array<string, mixed>> */
     public array $reloadStatus = [];
 
-    public function mount(ConfigFileService $configFileService, ConfigReloadService $reloadService): void
+    public function mount(ConfigFileService $configFileService, ConfigReloadService $reloadService, TunnelService $tunnelService): void
     {
+        $this->isPaired = TunnelConfig::current()?->verified_at !== null;
+        $this->isTunnelRunning = $tunnelService->isRunning();
         $this->loadAllFiles($configFileService, $reloadService);
     }
 
@@ -224,11 +233,20 @@ class AiAgentConfigs extends Component
 
         try {
             if ($key === 'boost') {
-                $this->resetBoostJson();
+                $this->resetBoostJson($project);
             } else {
                 $config = config("vibecodepc.config_files.{$key}");
                 if ($config && isset($config['path'])) {
                     $configFileService = app(ConfigFileService::class);
+                    $path = $configFileService->resolvePath($key, $project);
+
+                    // Log reset action before deletion for audit
+                    if ($configFileService->exists($key, $project)) {
+                        $oldContent = $configFileService->getContent($key, $project);
+                        $auditLogService = app(ConfigAuditLogService::class);
+                        $auditLogService->log($key, 'reset', $path, $oldContent, null, null, $project);
+                    }
+
                     $configFileService->delete($key, $project);
                     $this->fileContent[$key] = '';
                     $this->originalContent[$key] = '';
@@ -246,16 +264,20 @@ class AiAgentConfigs extends Component
         }
     }
 
-    private function resetBoostJson(): void
+    private function resetBoostJson(?Project $project): void
     {
+        $configFileService = app(ConfigFileService::class);
+        $path = $configFileService->resolvePath('boost', $project);
+        $oldContent = $configFileService->exists('boost', $project) ? $configFileService->getContent('boost', $project) : null;
+
         $defaultBoostJson = <<<'JSON'
 {
-    "agents": ["claude_code", "copilot"],
-    "skills": ["laravel-development", "php-development"],
-    "guidelines": {
-        "coding_standards": "PSR-12",
-        "test_coverage": true
-    }
+  "agents": ["claude_code", "copilot"],
+  "skills": ["laravel-development", "php-development"],
+  "guidelines": {
+    "coding_standards": "PSR-12",
+    "test_coverage": true
+  }
 }
 JSON;
 
@@ -263,6 +285,10 @@ JSON;
         $this->originalContent['boost'] = '';
         $this->isDirty['boost'] = true;
         $this->validateContent('boost', $defaultBoostJson);
+
+        // Log reset action
+        $auditLogService = app(ConfigAuditLogService::class);
+        $auditLogService->log('boost', 'reset', $path, $oldContent, $defaultBoostJson, null, $project);
     }
 
     public function formatJson(string $key): void
@@ -330,6 +356,8 @@ JSON;
             'projects' => $projects,
             'schemas' => $this->getSchemas(),
             'reloadStatuses' => $this->reloadStatus,
+            'isPaired' => $this->isPaired,
+            'isTunnelRunning' => $this->isTunnelRunning,
         ]);
     }
 

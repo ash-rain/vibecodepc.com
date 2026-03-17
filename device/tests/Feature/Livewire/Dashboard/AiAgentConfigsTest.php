@@ -22,6 +22,11 @@ beforeEach(function () {
 
     $boostPath = base_path('boost.json');
     File::put($boostPath, $testContent);
+
+    // Ensure tunnel token file does not exist from previous tests
+    if (file_exists('/tunnel/token')) {
+        @unlink('/tunnel/token');
+    }
 });
 
 afterEach(function () {
@@ -29,6 +34,11 @@ afterEach(function () {
     $boostPath = base_path('boost.json');
     if (File::exists($boostPath)) {
         File::delete($boostPath);
+    }
+
+    // Clean up tunnel token file
+    if (file_exists('/tunnel/token')) {
+        @unlink('/tunnel/token');
     }
 });
 
@@ -248,4 +258,52 @@ it('reload status is updated after file operations', function () {
     $reloadStatus = $component->get('reloadStatus');
     expect($reloadStatus)->toHaveKey('boost');
     expect($reloadStatus['boost'])->toHaveKey('last_modified_formatted');
+});
+
+it('sets isPaired to false when no tunnel config exists', function () {
+    $component = Livewire::test(AiAgentConfigs::class);
+    $component->assertSet('isPaired', false);
+});
+
+it('sets isPaired to true when tunnel is verified', function () {
+    \App\Models\TunnelConfig::factory()->verified()->create();
+
+    $component = Livewire::test(AiAgentConfigs::class);
+    $component->assertSet('isPaired', true);
+});
+
+it('sets isTunnelRunning to false when tunnel token file does not exist', function () {
+    // Ensure the tunnel token file does NOT exist (use a non-existent path)
+    $testTokenPath = storage_path('framework/testing/tunnel-token-test');
+    // Delete any existing file at this path
+    if (file_exists($testTokenPath)) {
+        @unlink($testTokenPath);
+    }
+
+    // Override the TunnelService to use a non-existent token path
+    $service = new \App\Services\Tunnel\TunnelService(tokenFilePath: $testTokenPath);
+    app()->instance(\App\Services\Tunnel\TunnelService::class, $service);
+
+    $component = Livewire::test(AiAgentConfigs::class);
+    $component->assertSet('isTunnelRunning', false);
+});
+
+it('sets isTunnelRunning to true when tunnel token file exists', function () {
+    // Create the tunnel token file to simulate running tunnel
+    $tunnelDir = storage_path('framework/testing/tunnel');
+    if (! is_dir($tunnelDir)) {
+        mkdir($tunnelDir, 0755, true);
+    }
+    file_put_contents($tunnelDir.'/token', 'test-token');
+
+    // Override the TunnelService to use our test token path
+    $service = new \App\Services\Tunnel\TunnelService(tokenFilePath: $tunnelDir.'/token');
+    app()->instance(\App\Services\Tunnel\TunnelService::class, $service);
+
+    $component = Livewire::test(AiAgentConfigs::class);
+    $component->assertSet('isTunnelRunning', true);
+
+    // Cleanup
+    @unlink($tunnelDir.'/token');
+    @rmdir($tunnelDir);
 });

@@ -88,8 +88,8 @@ These editors should appear in the **System Settings** or a new **AI Agents** ta
   - Project-scoped configs resolve paths using `{project_path}` placeholder
   - Backups now include project ID suffix for project-scoped configs
 - [x] 2026-03-17 Restart / reload triggers
-- [ ] Read-only mode when tunnel not running / not paired
-- [ ] Audit logging
+- [x] 2026-03-17 Read-only mode when tunnel not running / not paired
+- [x] 2026-03-17 Audit logging
 
 ### Phase 4 – Testing & Polish
 

@@ -140,8 +140,11 @@ class ConfigFileService
             File::makeDirectory($directory, 0755, true);
         }
 
+        $oldContent = File::exists($path) ? File::get($path) : null;
+
+        $backupPath = null;
         if (File::exists($path)) {
-            $this->backup($key, $project);
+            $backupPath = $this->backup($key, $project);
         }
 
         $success = retry($this->maxRetries, function () use ($path, $newContent): bool {
@@ -153,6 +156,11 @@ class ConfigFileService
         }
 
         Log::info('Configuration file updated', ['key' => $key, 'path' => $path, 'project_id' => $project?->id]);
+
+        // Log audit entry
+        $auditLogService = app(ConfigAuditLogService::class);
+        $action = $oldContent === null ? 'save' : 'save';
+        $auditLogService->log($key, $action, $path, $oldContent, $newContent, $backupPath, $project);
     }
 
     /**
@@ -277,6 +285,7 @@ class ConfigFileService
         }
 
         $path = $this->resolvePath($key, $project);
+        $oldContent = File::exists($path) ? File::get($path) : null;
 
         $content = File::get($backupPath);
         if ($content === false) {
@@ -294,6 +303,10 @@ class ConfigFileService
         }
 
         Log::info('Configuration file restored from backup', ['key' => $key, 'backup_path' => $backupPath, 'project_id' => $project?->id]);
+
+        // Log audit entry
+        $auditLogService = app(ConfigAuditLogService::class);
+        $auditLogService->log($key, 'restore', $path, $oldContent, $content, $backupPath, $project);
     }
 
     /**
@@ -323,11 +336,17 @@ class ConfigFileService
         $path = $this->resolvePath($key, $project);
 
         if (File::exists($path)) {
+            $oldContent = File::get($path);
+
             if (! File::delete($path)) {
                 throw new \RuntimeException("Failed to delete configuration file: {$path}");
             }
 
             Log::info('Configuration file deleted', ['key' => $key, 'path' => $path, 'project_id' => $project?->id]);
+
+            // Log audit entry
+            $auditLogService = app(ConfigAuditLogService::class);
+            $auditLogService->log($key, 'delete', $path, $oldContent, null, null, $project);
         }
     }
 

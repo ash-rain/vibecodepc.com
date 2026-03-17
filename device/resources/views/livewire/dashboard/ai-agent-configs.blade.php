@@ -1,10 +1,36 @@
 <div class="space-y-6" x-data="aiAgentConfigs()" x-init="init()">
-    <div>
-        <h2 class="text-lg font-semibold text-white">AI Agent Configs</h2>
-        <p class="text-gray-400 text-sm mt-0.5">Edit configuration files for AI agents: Boost, OpenCode, Claude Code, and Copilot.</p>
-    </div>
+  <div>
+    <h2 class="text-lg font-semibold text-white">AI Agent Configs</h2>
+    <p class="text-gray-400 text-sm mt-0.5">Edit configuration files for AI agents: Boost, OpenCode, Claude Code, and Copilot.</p>
+  </div>
 
-{{-- Status Message --}}
+  {{-- Read-Only Notice --}}
+  @if (!$isPaired || !$isTunnelRunning)
+    <div class="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4">
+      <div class="flex items-start gap-3">
+        <div class="flex-shrink-0">
+          <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+        <div class="flex-1">
+          <h3 class="text-sm font-medium text-amber-400">Read-Only Mode</h3>
+          <p class="text-xs text-amber-400/80 mt-1">
+            @if (!$isPaired && !$isTunnelRunning)
+              Editing is disabled because the device is not paired and the tunnel is not running.
+            @elseif (!$isPaired)
+              Editing is disabled because the device is not paired.
+            @else
+              Editing is disabled because the tunnel is not running.
+            @endif
+            <a href="{{ route('dashboard.tunnels') }}" class="underline hover:text-amber-300">Go to Tunnels</a> to configure remote access.
+          </p>
+        </div>
+      </div>
+    </div>
+  @endif
+
+  {{-- Status Message --}}
 @if ($statusMessage)
 <div @class([
     'rounded-lg p-4 text-sm border',
@@ -156,14 +182,15 @@
                         <div class="flex items-center gap-2">
                             {{-- Format JSON button (only for JSON files) --}}
                             @if ($key !== 'copilot_instructions')
-                                <button
-                                    @click="formatEditor('{{ $key }}')"
-                                    type="button"
-                                    class="px-3 py-1.5 bg-white/[0.06] hover:bg-white/10 text-gray-400 hover:text-white text-xs rounded-lg transition-colors"
-                                >
-                                    Format JSON
-                                </button>
-                            @endif
+        <button
+          @click="formatEditor('{{ $key }}')"
+          type="button"
+          @disabled($isPaired && $isTunnelRunning)
+          class="px-3 py-1.5 bg-white/[0.06] hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed text-gray-400 hover:text-white text-xs rounded-lg transition-colors"
+        >
+          Format JSON
+        </button>
+        @endif
 
                             {{-- Backup dropdown --}}
                             @if (!empty($backups[$key] ?? []))
@@ -184,12 +211,13 @@
                                         class="absolute left-0 top-full mt-1 w-64 bg-gray-900 border border-white/10 rounded-lg shadow-xl z-10"
                                     >
                                         @foreach ($backups[$key] as $backup)
-                                            <button
-                                                wire:click="restore('{{ $key }}')"
-                                                wire:confirm="Restore this backup? Current unsaved changes will be lost."
-                                                @click="open = false"
-                                                class="w-full text-left px-3 py-2 text-xs text-gray-400 hover:bg-white/5 hover:text-white transition-colors"
-                                            >
+              <button
+                wire:click="restore('{{ $key }}')"
+                wire:confirm="Restore this backup? Current unsaved changes will be lost."
+                @click="open = false"
+                @disabled(!($isPaired && $isTunnelRunning))
+                class="w-full text-left px-3 py-2 text-xs text-gray-400 hover:bg-white/5 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
                                                 {{ \Carbon\Carbon::createFromTimestamp($backup['created_at'])->format('M j, Y g:i A') }}
                                                 ({{ number_format($backup['size'] / 1024, 1) }} KB)
                                             </button>
@@ -201,26 +229,27 @@
 
                         <div class="flex items-center gap-2">
                             {{-- Reset button --}}
-                            <button
-                                wire:click="resetToDefaults('{{ $key }}')"
-                                wire:confirm="Reset {{ $config['label'] }} to defaults? This cannot be undone."
-                                type="button"
-                                class="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm rounded-lg transition-colors"
-                            >
-                                Reset to Defaults
-                            </button>
+        <button
+          wire:click="resetToDefaults('{{ $key }}')"
+          wire:confirm="Reset {{ $config['label'] }} to defaults? This cannot be undone."
+          type="button"
+          @disabled(!($isPaired && $isTunnelRunning))
+          class="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed text-red-400 text-sm rounded-lg transition-colors"
+        >
+          Reset to Defaults
+        </button>
 
-                            {{-- Save button --}}
-                            <button
-                                wire:click="save('{{ $key }}')"
-                                wire:loading.attr="disabled"
-                                wire:target="save"
-                                @disabled(!($isDirty[$key] ?? false) || !($isValid[$key] ?? true))
-                                class="px-5 py-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-gray-950 text-sm font-medium rounded-xl transition-colors"
-                            >
-                                <span wire:loading.remove wire:target="save">Save Changes</span>
-                                <span wire:loading wire:target="save">Saving...</span>
-                            </button>
+        {{-- Save button --}}
+        <button
+          wire:click="save('{{ $key }}')"
+          wire:loading.attr="disabled"
+          wire:target="save"
+          @disabled(!($isDirty[$key] ?? false) || !($isValid[$key] ?? true) || !($isPaired && $isTunnelRunning))
+          class="px-5 py-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-gray-950 text-sm font-medium rounded-xl transition-colors"
+        >
+          <span wire:loading.remove wire:target="save">Save Changes</span>
+          <span wire:loading wire:target="save">Saving...</span>
+        </button>
                         </div>
                     </div>
                 </div>
@@ -281,10 +310,11 @@
                 activeTab: @entangle('activeTab'),
                 editors: {},
                 monacoReady: false,
-                schemas: @json($schemas),
-                selectedProjectId: @entangle('selectedProjectId'),
+    schemas: @json($schemas),
+    selectedProjectId: @entangle('selectedProjectId'),
+    isReadOnly: {{ (!$isPaired || !$isTunnelRunning) ? 'true' : 'false' }},
 
-                init() {
+    init() {
                     // Load Monaco Editor
                     require.config({
                         paths: {
@@ -361,30 +391,31 @@
                             language = 'markdown';
                         }
 
-                        // Create editor
-                        this.editors[key] = monaco.editor.create(container, {
-                            value: textarea.value,
-                            language: language,
-                            theme: 'vs-dark',
-                            automaticLayout: true,
-                            minimap: { enabled: false },
-                            scrollBeyondLastLine: false,
-                            fontSize: 13,
-                            lineNumbers: 'on',
-                            renderLineHighlight: 'line',
-                            matchBrackets: 'always',
-                            tabSize: 2,
-                            insertSpaces: true,
-                            folding: true,
-                            foldingStrategy: 'auto',
-                            showFoldingControls: 'always',
-                            wordWrap: 'on',
-                            wrappingStrategy: 'advanced',
-                            suggest: {
-                                showKeywords: true,
-                                showSnippets: true
-                            }
-                        });
+    // Create editor
+    this.editors[key] = monaco.editor.create(container, {
+      value: textarea.value,
+      language: language,
+      theme: 'vs-dark',
+      automaticLayout: true,
+      minimap: { enabled: false },
+      scrollBeyondLastLine: false,
+      fontSize: 13,
+      lineNumbers: 'on',
+      renderLineHighlight: 'line',
+      matchBrackets: 'always',
+      tabSize: 2,
+      insertSpaces: true,
+      folding: true,
+      foldingStrategy: 'auto',
+      showFoldingControls: 'always',
+      wordWrap: 'on',
+      wrappingStrategy: 'advanced',
+      suggest: {
+        showKeywords: true,
+        showSnippets: true
+      },
+      readOnly: this.isReadOnly
+    });
 
                         // Listen for changes and update Livewire
                         this.editors[key].onDidChangeModelContent(() => {
