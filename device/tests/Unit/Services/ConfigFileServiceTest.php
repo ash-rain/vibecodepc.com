@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Project;
 use App\Services\ConfigFileService;
 use Illuminate\Support\Facades\File;
 
@@ -10,12 +11,16 @@ beforeEach(function (): void {
 
     $this->testDir = storage_path('testing/config');
     $this->backupDir = storage_path('testing/backups');
+    $this->schemaDir = storage_path('testing/schemas');
 
     if (! File::isDirectory($this->testDir)) {
         File::makeDirectory($this->testDir, 0755, true);
     }
     if (! File::isDirectory($this->backupDir)) {
         File::makeDirectory($this->backupDir, 0755, true);
+    }
+    if (! File::isDirectory($this->schemaDir)) {
+        File::makeDirectory($this->schemaDir, 0755, true);
     }
 
     config()->set('vibecodepc.config_files', [
@@ -24,12 +29,21 @@ beforeEach(function (): void {
             'label' => 'Test Config',
             'description' => 'Test configuration file',
             'editable' => true,
+            'scope' => 'global',
+        ],
+        'test_project_config' => [
+            'path_template' => '{project_path}/config.json',
+            'label' => 'Test Project Config',
+            'description' => 'Test project-scoped configuration',
+            'editable' => true,
+            'scope' => 'project',
         ],
         'copilot_instructions' => [
             'path' => $this->testDir.'/copilot.md',
             'label' => 'Copilot Instructions',
             'description' => 'Copilot instructions file',
             'editable' => true,
+            'scope' => 'global',
         ],
     ]);
 
@@ -46,6 +60,9 @@ afterEach(function (): void {
     }
     if (File::isDirectory($this->backupDir)) {
         File::deleteDirectory($this->backupDir);
+    }
+    if (File::isDirectory($this->schemaDir)) {
+        File::deleteDirectory($this->schemaDir);
     }
 });
 
@@ -225,5 +242,356 @@ describe('ConfigFileService', function (): void {
 
     test('exists returns false for non-existent file', function (): void {
         expect($this->service->exists('test_config'))->toBeFalse();
+    });
+
+    describe('project-scoped configurations', function (): void {
+        beforeEach(function (): void {
+            $this->project = Project::factory()->create([
+                'name' => 'Test Project',
+                'path' => $this->testDir.'/projects/test-project',
+            ]);
+
+            if (! File::isDirectory($this->project->path)) {
+                File::makeDirectory($this->project->path, 0755, true);
+            }
+        });
+
+        test('getScope returns global for global configs', function (): void {
+            expect($this->service->getScope('test_config'))->toBe('global');
+        });
+
+        test('getScope returns project for project-scoped configs', function (): void {
+            expect($this->service->getScope('test_project_config'))->toBe('project');
+        });
+
+        test('isProjectScoped returns false for global configs', function (): void {
+            expect($this->service->isProjectScoped('test_config'))->toBeFalse();
+        });
+
+        test('isProjectScoped returns true for project-scoped configs', function (): void {
+            expect($this->service->isProjectScoped('test_project_config'))->toBeTrue();
+        });
+
+        test('resolvePath returns path for global config', function (): void {
+            $path = $this->service->resolvePath('test_config');
+
+            expect($path)->toBe($this->testDir.'/test.json');
+        });
+
+        test('resolvePath resolves path template for project-scoped config', function (): void {
+            $path = $this->service->resolvePath('test_project_config', $this->project);
+
+            expect($path)->toBe($this->project->path.'/config.json');
+        });
+
+        test('resolvePath throws exception when project is required but not provided', function (): void {
+            expect(fn () => $this->service->resolvePath('test_project_config'))
+                ->toThrow(\InvalidArgumentException::class, 'Project is required for project-scoped config');
+        });
+
+        test('getContent works with project-scoped config', function (): void {
+            File::put($this->project->path.'/config.json', '{"project": "value"}', true);
+
+            $content = $this->service->getContent('test_project_config', $this->project);
+
+            expect($content)->toBe('{"project": "value"}');
+        });
+
+        test('putContent works with project-scoped config', function (): void {
+            $this->service->putContent('test_project_config', '{"project": "value"}', $this->project);
+
+            expect(File::exists($this->project->path.'/config.json'))->toBeTrue();
+            expect(File::get($this->project->path.'/config.json'))->toBe('{"project": "value"}');
+        });
+
+        test('backup includes project suffix for project-scoped configs', function (): void {
+            File::put($this->project->path.'/config.json', '{"project": "backup"}', true);
+
+            $backupPath = $this->service->backup('test_project_config', $this->project);
+
+            expect(File::exists($backupPath))->toBeTrue();
+            expect(strpos($backupPath, '-project-1'))->toBeInt();
+            expect(File::get($backupPath))->toBe('{"project": "backup"}');
+        });
+
+        test('listBackups filters by project for project-scoped configs', function (): void {
+            File::put($this->project->path.'/config.json', 'v1', true);
+            $this->service->backup('test_project_config', $this->project);
+
+            $project2 = Project::factory()->create([
+                'name' => 'Project 2',
+                'path' => $this->testDir.'/projects/project-2',
+            ]);
+            if (! File::isDirectory($project2->path)) {
+                File::makeDirectory($project2->path, 0755, true);
+            }
+            File::put($project2->path.'/config.json', 'v2', true);
+            $this->service->backup('test_project_config', $project2);
+
+            $backups = $this->service->listBackups('test_project_config', $this->project);
+
+            expect($backups)->toHaveCount(1);
+            expect(File::get($backups[0]['path']))->toBe('v1');
+
+            File::deleteDirectory($project2->path);
+        });
+
+        afterEach(function (): void {
+            if (File::isDirectory($this->testDir.'/projects')) {
+                File::deleteDirectory($this->testDir.'/projects');
+            }
+        });
+    });
+
+    describe('delete operations', function (): void {
+        test('delete removes existing file', function (): void {
+            File::put($this->testDir.'/test.json', '{"key": "value"}', true);
+
+            $this->service->delete('test_config');
+
+            expect(File::exists($this->testDir.'/test.json'))->toBeFalse();
+        });
+
+        test('delete does nothing for non-existent file', function (): void {
+            expect(fn () => $this->service->delete('test_config'))->not->toThrow(\Exception::class);
+        });
+    });
+
+    describe('forbidden key validation', function (): void {
+        test('validateJson throws exception for forbidden api_key', function (): void {
+            $json = '{"api_key": "secret123"}';
+
+            expect(fn () => $this->service->validateJson($json))
+                ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected: \'api_key\'');
+        });
+
+        test('validateJson throws exception for forbidden api_secret', function (): void {
+            $json = '{"api_secret": "shh"}';
+
+            expect(fn () => $this->service->validateJson($json))
+                ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected: \'api_secret\'');
+        });
+
+        test('validateJson throws exception for forbidden password', function (): void {
+            $json = '{"password": "hunter2"}';
+
+            expect(fn () => $this->service->validateJson($json))
+                ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected: \'password\'');
+        });
+
+        test('validateJson throws exception for nested forbidden key', function (): void {
+            $json = '{"config": {"secret_key": "hidden"}}';
+
+            expect(fn () => $this->service->validateJson($json))
+                ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected: \'secret_key\'');
+        });
+
+        test('validateJson throws exception for snake_case forbidden key', function (): void {
+            $json = '{"private_key": "ssh-rsa ..."}';
+
+            expect(fn () => $this->service->validateJson($json))
+                ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected: \'private_key\'');
+        });
+
+        test('validateJson throws exception for camelCase forbidden key', function (): void {
+            $json = '{"accessToken": "bearer123"}';
+
+            expect(fn () => $this->service->validateJson($json))
+                ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected: \'accessToken\'');
+        });
+
+        test('validateJson allows safe keys', function (): void {
+            $json = '{"name": "test", "enabled": true, "count": 42}';
+
+            $result = $this->service->validateJson($json);
+
+            expect($result)->toBe(['name' => 'test', 'enabled' => true, 'count' => 42]);
+        });
+    });
+
+    describe('JSONC comment stripping', function (): void {
+        test('strips single-line comments', function (): void {
+            $jsonc = "{\n  // This is a comment\n  \"key\": \"value\"\n}";
+
+            $result = $this->service->validateJson($jsonc);
+
+            expect($result)->toBe(['key' => 'value']);
+        });
+
+        test('strips multi-line comments', function (): void {
+            $jsonc = "{\n  /* Multi-line\n     comment */\n  \"key\": \"value\"\n}";
+
+            $result = $this->service->validateJson($jsonc);
+
+            expect($result)->toBe(['key' => 'value']);
+        });
+
+        test('strips inline multi-line comments', function (): void {
+            $jsonc = '{"key": /* inline */ "value"}';
+
+            $result = $this->service->validateJson($jsonc);
+
+            expect($result)->toBe(['key' => 'value']);
+        });
+
+        test('strips multiple comment types', function (): void {
+            $jsonc = "{\n  // Single line\n  /* Multi-line */\n  \"key\": \"value\",\n  // Another comment\n  \"other\": 123\n}";
+
+            $result = $this->service->validateJson($jsonc);
+
+            expect($result)->toBe(['key' => 'value', 'other' => 123]);
+        });
+    });
+
+    describe('boost.json validation', function (): void {
+        beforeEach(function (): void {
+            config()->set('vibecodepc.config_files.boost', [
+                'path' => $this->testDir.'/boost.json',
+                'label' => 'Boost',
+                'description' => 'Boost configuration',
+                'editable' => true,
+                'scope' => 'global',
+            ]);
+        });
+
+        test('validates skills must be an array', function (): void {
+            $invalidBoost = ['skills' => 'not an array'];
+
+            expect(fn () => $this->service->validateJson(json_encode($invalidBoost), 'boost'))
+                ->toThrow(\InvalidArgumentException::class, 'skills" must be an array');
+        });
+
+        test('validates empty boost.json', function (): void {
+            $result = $this->service->validateJson('{}', 'boost');
+
+            expect($result)->toBe([]);
+        });
+
+        test('validates complete boost.json structure', function (): void {
+            $validBoost = [
+                'agents' => ['claude_code', 'copilot'],
+                'skills' => ['livewire-development', 'pest-testing'],
+                'guidelines' => true,
+                'herd_mcp' => [],
+                'mcp' => [],
+                'nightwatch_mcp' => [],
+                'sail' => [],
+            ];
+
+            $result = $this->service->validateJson(json_encode($validBoost), 'boost');
+
+            expect($result)->toBe($validBoost);
+        });
+
+        test('allows unknown keys with warning', function (): void {
+            $boostWithUnknown = [
+                'agents' => [],
+                'unknown_field' => 'value',
+            ];
+
+            $result = $this->service->validateJson(json_encode($boostWithUnknown), 'boost');
+
+            expect($result)->toBe($boostWithUnknown);
+        });
+    });
+
+    describe('cleanupOldBackups', function (): void {
+        test('removes backups older than retention period', function (): void {
+            // Set retention to 1 day for testing (applies to the entire test)
+            config()->set('vibecodepc.config_editor.backup_retention_days', 1);
+
+            File::put($this->testDir.'/test.json', 'old', true);
+
+            $backupPath = $this->service->backup('test_config');
+
+            // Set the file modification time to 2 days ago (older than retention period)
+            touch($backupPath, time() - (2 * 24 * 60 * 60));
+
+            // Verify the file exists with old timestamp
+            expect(File::exists($backupPath))->toBeTrue();
+            expect(File::lastModified($backupPath))->toBeLessThan(time() - (24 * 60 * 60));
+
+            // Create a new backup by saving - this triggers cleanup via backup()
+            File::put($this->testDir.'/test.json', 'new', true);
+            $this->service->putContent('test_config', '{"trigger": "cleanup"}');
+
+            // Check that the OLD backup was deleted during cleanup
+            // Note: listBackups uses the CURRENT config value, so we need to verify directly
+            $files = File::glob($this->backupDir.'/*');
+            $oldBackupStillExists = false;
+            foreach ($files as $file) {
+                if (File::lastModified($file) < time() - (24 * 60 * 60)) {
+                    $oldBackupStillExists = true;
+                    break;
+                }
+            }
+            expect($oldBackupStillExists)->toBeFalse('Old backups should be cleaned up');
+        });
+    });
+
+    describe('schema validation', function (): void {
+        $realSchemaDir = '';
+
+        beforeEach(function () use (&$realSchemaDir): void {
+            $realSchemaDir = storage_path('schemas');
+            if (! File::isDirectory($realSchemaDir)) {
+                File::makeDirectory($realSchemaDir, 0755, true);
+            }
+
+            config()->set('vibecodepc.config_files.opencode_global', [
+                'path' => $this->testDir.'/opencode.json',
+                'label' => 'OpenCode',
+                'description' => 'OpenCode configuration',
+                'editable' => true,
+                'scope' => 'global',
+            ]);
+        });
+
+        afterEach(function () use (&$realSchemaDir): void {
+            // Clean up any test schema files we created
+            $testSchemas = ['opencode.json', 'claude.json', 'boost.json'];
+            foreach ($testSchemas as $schema) {
+                $path = $realSchemaDir.'/'.$schema;
+                if (File::exists($path)) {
+                    File::delete($path);
+                }
+            }
+        });
+
+        test('getSchemaUrl returns null for unknown key', function (): void {
+            $url = $this->service->getSchemaUrl('unknown_key');
+
+            expect($url)->toBeNull();
+        });
+
+        test('getSchemaUrl returns null when schema file does not exist', function (): void {
+            // Ensure opencode schema file does NOT exist
+            $schemaPath = storage_path('schemas/opencode.json');
+            if (File::exists($schemaPath)) {
+                File::delete($schemaPath);
+            }
+
+            $url = $this->service->getSchemaUrl('opencode_global');
+
+            expect($url)->toBeNull();
+        });
+
+        test('getSchemaUrl returns URL when schema file exists', function () use (&$realSchemaDir): void {
+            File::put($realSchemaDir.'/opencode.json', '{}', true);
+
+            $this->service = new ConfigFileService;
+            $url = $this->service->getSchemaUrl('opencode_global');
+
+            expect($url)->not->toBeNull();
+            expect($url)->toContain('schemas/opencode.json');
+        });
+
+        test('validateJsonSchema returns empty array when no schema exists', function (): void {
+            $data = ['key' => 'value'];
+
+            $errors = $this->service->validateJsonSchema($data, 'unknown_key');
+
+            expect($errors)->toBe([]);
+        });
     });
 });
