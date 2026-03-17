@@ -226,7 +226,7 @@ This test plan covers the config file editor system including ConfigFileService,
   - All known config keys have associated services with required structure
   - Empty/null-like string keys return empty array
 
-- [ ] **B1.2**: Test `requiresManualReload()` variations
+- [x] **B1.2**: Test `requiresManualReload()` variations (2026-03-17)
   - All service type combinations (mcp, cli, vscode)
   - Empty service list
   - Services that support hot reload

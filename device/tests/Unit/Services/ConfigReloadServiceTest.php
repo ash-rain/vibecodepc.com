@@ -111,6 +111,63 @@ describe('ConfigReloadService', function (): void {
         expect($this->service->requiresManualReload('copilot_instructions'))->toBeFalse();
     });
 
+    // B1.2: Test requiresManualReload() variations
+    describe('requiresManualReload variations', function (): void {
+        test('requiresManualReload returns false for unknown config key (empty services)', function (): void {
+            // Unknown keys have no services, should return false (nothing to reload)
+            expect($this->service->requiresManualReload('unknown_key'))->toBeFalse();
+            expect($this->service->requiresManualReload(''))->toBeFalse();
+        });
+
+        test('requiresManualReload handles all service type combinations', function (): void {
+            // Test configs with different service combinations
+            // boost: mcp only -> true
+            expect($this->service->requiresManualReload('boost'))->toBeTrue();
+
+            // opencode_global: cli + vscode -> true (because of cli)
+            expect($this->service->requiresManualReload('opencode_global'))->toBeTrue();
+
+            // claude_global: cli only -> true
+            expect($this->service->requiresManualReload('claude_global'))->toBeTrue();
+
+            // claude_project: cli only -> true
+            expect($this->service->requiresManualReload('claude_project'))->toBeTrue();
+
+            // opencode_project: cli only -> true
+            expect($this->service->requiresManualReload('opencode_project'))->toBeTrue();
+
+            // copilot_instructions: vscode only -> false
+            expect($this->service->requiresManualReload('copilot_instructions'))->toBeFalse();
+        });
+
+        test('requiresManualReload prioritizes mcp and cli over vscode', function (): void {
+            // Any presence of mcp or cli should return true
+            // This is tested implicitly by the service combinations above
+            // opencode_global has both cli and vscode, returns true because of cli
+            $services = $this->service->getAffectedServices('opencode_global');
+            $hasCliOrMcp = collect($services)->contains(fn ($s) => in_array($s['type'], ['mcp', 'cli'], true));
+
+            expect($hasCliOrMcp)->toBeTrue();
+            expect($this->service->requiresManualReload('opencode_global'))->toBeTrue();
+        });
+
+        test('requiresManualReload returns false for services supporting hot reload only', function (): void {
+            // vscode services support hot reload, don't require manual reload
+            $services = $this->service->getAffectedServices('copilot_instructions');
+
+            expect($services)->toHaveCount(1);
+            expect($services[0]['type'])->toBe('vscode');
+            expect($this->service->requiresManualReload('copilot_instructions'))->toBeFalse();
+        });
+
+        test('requiresManualReload is case sensitive', function (): void {
+            // Different case should return false (no matching services)
+            expect($this->service->requiresManualReload('BOOST'))->toBeFalse();
+            expect($this->service->requiresManualReload('Boost'))->toBeFalse();
+            expect($this->service->requiresManualReload('Opencode_Global'))->toBeFalse();
+        });
+    });
+
     test('getReloadInstructions returns specific instructions for each config type', function (): void {
         $boostInstructions = $this->service->getReloadInstructions('boost');
         expect($boostInstructions)->toContain('MCP server');
