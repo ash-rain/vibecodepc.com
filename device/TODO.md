@@ -139,7 +139,7 @@ This test plan covers the config file editor system including ConfigFileService,
   - Network filesystem timeout (if applicable)
   - Concurrent write conflicts (race conditions)
 
-- [ ] **A1.3**: Test `resolvePath()` edge cases
+- [x] 2026-03-17 **A1.3**: Test `resolvePath()` edge cases
   - Project path contains special characters (spaces, unicode, etc.)
   - Project path is relative instead of absolute
   - Template contains multiple `{project_path}` placeholders

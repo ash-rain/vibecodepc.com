@@ -366,6 +366,149 @@ describe('ConfigFileService', function (): void {
             File::deleteDirectory($project2->path);
         });
 
+        describe('resolvePath edge cases', function (): void {
+            test('handles project path with spaces', function (): void {
+                $projectWithSpaces = Project::factory()->create([
+                    'name' => 'Project With Spaces',
+                    'path' => $this->testDir.'/projects/project with spaces',
+                ]);
+                if (! File::isDirectory($projectWithSpaces->path)) {
+                    File::makeDirectory($projectWithSpaces->path, 0755, true);
+                }
+
+                $path = $this->service->resolvePath('test_project_config', $projectWithSpaces);
+
+                expect($path)->toBe($projectWithSpaces->path.'/config.json');
+
+                File::deleteDirectory($projectWithSpaces->path);
+            });
+
+            test('handles project path with unicode characters', function (): void {
+                $projectUnicode = Project::factory()->create([
+                    'name' => 'Projekt Mit Umlauten',
+                    'path' => $this->testDir.'/projects/项目-日本語-émojis-🚀',
+                ]);
+                if (! File::isDirectory($projectUnicode->path)) {
+                    File::makeDirectory($projectUnicode->path, 0755, true);
+                }
+
+                $path = $this->service->resolvePath('test_project_config', $projectUnicode);
+
+                expect($path)->toBe($projectUnicode->path.'/config.json');
+
+                File::deleteDirectory($projectUnicode->path);
+            });
+
+            test('handles project path with special characters', function (): void {
+                $projectSpecial = Project::factory()->create([
+                    'name' => 'Special Chars Project',
+                    'path' => $this->testDir.'/projects/project-with-dash_underscore.dot',
+                ]);
+                if (! File::isDirectory($projectSpecial->path)) {
+                    File::makeDirectory($projectSpecial->path, 0755, true);
+                }
+
+                $path = $this->service->resolvePath('test_project_config', $projectSpecial);
+
+                expect($path)->toBe($projectSpecial->path.'/config.json');
+
+                File::deleteDirectory($projectSpecial->path);
+            });
+
+            test('handles relative project path', function (): void {
+                // Get the relative path from storage_path
+                $absolutePath = $this->testDir.'/projects/relative-test';
+                $relativePath = 'storage/testing/config/projects/relative-test';
+
+                // Laravel's File facade works with absolute paths, but we test that the service
+                // properly uses whatever path is provided in the project model
+                $projectRelative = Project::factory()->create([
+                    'name' => 'Relative Path Project',
+                    'path' => $relativePath,
+                ]);
+
+                $path = $this->service->resolvePath('test_project_config', $projectRelative);
+
+                // The path should contain the relative path as-is
+                expect($path)->toContain($relativePath);
+                expect($path)->toBe($relativePath.'/config.json');
+            });
+
+            test('replaces multiple project_path placeholders in template', function (): void {
+                // Create a config with multiple placeholders
+                config()->set('vibecodepc.config_files.multi_path_config', [
+                    'path_template' => '{project_path}/config/{project_path}/settings.json',
+                    'label' => 'Multi Path Config',
+                    'description' => 'Test config with multiple path placeholders',
+                    'editable' => true,
+                    'scope' => 'project',
+                ]);
+
+                $path = $this->service->resolvePath('multi_path_config', $this->project);
+
+                // Each placeholder should be replaced
+                $expected = $this->project->path.'/config/'.$this->project->path.'/settings.json';
+                expect($path)->toBe($expected);
+            });
+
+            test('handles project path with trailing slash', function (): void {
+                $projectWithSlash = Project::factory()->create([
+                    'name' => 'Trailing Slash Project',
+                    'path' => rtrim($this->testDir.'/projects/trailing-slash', '/').'/',
+                ]);
+                if (! File::isDirectory($projectWithSlash->path)) {
+                    File::makeDirectory(rtrim($projectWithSlash->path, '/'), 0755, true);
+                }
+
+                $path = $this->service->resolvePath('test_project_config', $projectWithSlash);
+
+                // Should handle trailing slash gracefully
+                // str_replace will replace the entire {project_path} including trailing slash
+                // so the path might have double slashes if template starts with /
+                expect($path)->toContain($projectWithSlash->path);
+                expect($path)->toContain('config.json');
+
+                File::deleteDirectory(rtrim($projectWithSlash->path, '/'));
+            });
+
+            test('handles very long project path', function (): void {
+                $longPath = $this->testDir.'/projects/'.str_repeat('very-long-path-name/', 20).'project';
+                $projectLong = Project::factory()->create([
+                    'name' => 'Long Path Project',
+                    'path' => $longPath,
+                ]);
+                if (! File::isDirectory($projectLong->path)) {
+                    File::makeDirectory($projectLong->path, 0755, true);
+                }
+
+                $path = $this->service->resolvePath('test_project_config', $projectLong);
+
+                expect($path)->toBe($longPath.'/config.json');
+
+                File::deleteDirectory($projectLong->path);
+            });
+
+            test('handles project path with parent directory references', function (): void {
+                $projectParentRef = Project::factory()->create([
+                    'name' => 'Parent Ref Project',
+                    'path' => $this->testDir.'/projects/../project-parent-ref',
+                ]);
+
+                // Create the actual directory
+                $actualPath = $this->testDir.'/project-parent-ref';
+                if (! File::isDirectory($actualPath)) {
+                    File::makeDirectory($actualPath, 0755, true);
+                }
+
+                $path = $this->service->resolvePath('test_project_config', $projectParentRef);
+
+                // The path is resolved exactly as provided by str_replace
+                expect($path)->toBe($projectParentRef->path.'/config.json');
+
+                File::deleteDirectory($actualPath);
+            });
+        });
+
         afterEach(function (): void {
             if (File::isDirectory($this->testDir.'/projects')) {
                 File::deleteDirectory($this->testDir.'/projects');
