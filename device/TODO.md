@@ -187,10 +187,18 @@ This test plan covers the config file editor system including ConfigFileService,
     - Backup isolation between multiple deleted projects
     - Project ID suffix format verification in backup filenames
   
-- [ ] **A3.2**: Test backup listing with multiple projects
+- [x] 2026-03-17 **A3.2**: Test backup listing with multiple projects
   - Verify project isolation in backup listing
   - Verify project suffix format is correct
   - Verify backups don't leak between projects
+  - Added 7 comprehensive tests covering:
+    - listBackups returns only backups for specified project
+    - Project suffix format verification in backup filenames
+    - Backup isolation between multiple projects
+    - Empty array when no backups exist for project
+    - Sorting by creation time descending per project
+    - Config key isolation within same project
+    - Backup isolation after multiple saves
 
 ### A4. Schema Validation (when implemented)
 - [ ] **A4.1**: Test schema validation with valid/invalid schemas
