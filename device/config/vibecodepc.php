@@ -70,4 +70,37 @@ return [
             'authenticated' => (int) env('HTTP_CLIENT_TIMEOUT_AUTHENTICATED', 30),
         ],
     ],
+
+    'config_files' => [
+        'boost' => [
+            'path' => env('VIBECODEPC_BOOST_JSON_PATH', base_path('boost.json')),
+            'label' => 'Boost Configuration',
+            'description' => 'Controls AI agents and skills for this project.',
+            'editable' => true,
+        ],
+        'opencode_global' => [
+            'path' => env('OPENCODE_CONFIG_PATH', ($_SERVER['HOME'] ?? '/home/vibecodepc').'/.config/opencode/opencode.json'),
+            'label' => 'OpenCode Global',
+            'description' => 'Global OpenCode CLI and VS Code extension settings.',
+            'editable' => true,
+        ],
+        'claude_global' => [
+            'path' => env('CLAUDE_CONFIG_PATH', ($_SERVER['HOME'] ?? '/home/vibecodepc').'/.claude/settings.json'),
+            'label' => 'Claude Code Global',
+            'description' => 'Global Claude Code settings and preferences.',
+            'editable' => true,
+        ],
+        'copilot_instructions' => [
+            'path' => base_path('.github/copilot-instructions.md'),
+            'label' => 'GitHub Copilot Instructions',
+            'description' => 'Custom instructions for GitHub Copilot in this project.',
+            'editable' => true,
+        ],
+    ],
+
+    'config_editor' => [
+        'backup_retention_days' => (int) env('CONFIG_EDITOR_BACKUP_RETENTION_DAYS', 30),
+        'max_file_size_kb' => (int) env('CONFIG_EDITOR_MAX_FILE_SIZE_KB', 64),
+        'backup_directory' => env('CONFIG_EDITOR_BACKUP_DIR', storage_path('app/backups/config')),
+    ],
 ];

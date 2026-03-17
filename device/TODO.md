@@ -1,13 +1,3 @@
-Here is a proposed **TODO.md** file content you can create (or append to) in the root of your project. It focuses on adding editors for **OpenCode config files**, **boost.json** (which controls agents like "claude_code" and "copilot"), and related configuration files inside your Laravel-based **VibeCodePC Device App**.
-
-The plan assumes:
-
-- You want to let the **device owner** edit these configs via the dashboard UI (Livewire components)
-- The files are stored on the device filesystem (not inside projects)
-- Editing should be safe, with validation, backups, and reload/restart logic where needed
-- We'll reuse the existing **CodeEditor** Livewire component as much as possible
-
-```markdown
 # TODO: Config File Editors for OpenCode, Claude, Copilot & boost.json
 
 ## Goal
@@ -45,19 +35,13 @@ These editors should appear in the **System Settings** or a new **AI Agents** ta
 
 ## Implementation Plan
 
-### Phase 1 – Preparation & Safety (1-2 days)
+### Phase 1 – Preparation & Safety
 
-- [ ] Create new config constants / helper in `config/vibecodepc.php`
-  ```php
-  'config_files' => [
-      'boost' => base_path('boost.json'),
-      'opencode_global' => home_path('.config/opencode/opencode.json'),  // use Helpers or Carbon::now()->format...
-      'claude_global' => home_path('.claude/claude.json'),
-      // optional: opencode_project => null (per-project later)
-  ],
-  ```
+- [x] 2026-03-17 Create new config constants / helper in `config/vibecodepc.php`
+  - Added `config_files` array with entries for: boost, opencode_global, claude_global, copilot_instructions
+  - Added `config_editor` array with backup settings, max file size, and backup directory
 
-- [ ] Add `ConfigFileService` in `app/Services/`
+- [x] 2026-03-17 Add `ConfigFileService` in `app/Services/`
   - Methods: `getContent($key)`, `putContent($key, $newContent)`, `validateJson($content)`, `backup($key)`
   - Use `retryable` trait for file operations
   - Create backup before every write → `storage/app/backups/config/{key}-{timestamp}.json`
@@ -68,7 +52,7 @@ These editors should appear in the **System Settings** or a new **AI Agents** ta
   - Size limit (~64 KB)
   - No forbidden keys (e.g. remove api keys if they appear)
 
-### Phase 2 – UI & Livewire Editor (2-4 days)
+### Phase 2 – UI & Livewire Editor
 
 - [ ] Create new Livewire component: `app/Livewire/Dashboard/AiAgentConfigs.php`
   - Tabbed interface: Boost.json | OpenCode | Claude Code | Copilot Instructions
@@ -83,54 +67,28 @@ These editors should appear in the **System Settings** or a new **AI Agents** ta
   - Update `resources/views/components/dashboard/sidebar.blade.php`
 
 - [ ] Wire up save action
-  ```php
-  public function save(string $key)
-  {
-      $this->validate(['content' => 'required|json']);   // or custom JSONC validator
-      $service = app(ConfigFileService::class);
-      $service->backup($key);
-      $ok = $service->putContent($key, $this->content);
-      if (!$ok) $this->addError('Failed to write file (permissions / disk full?)');
-  }
-  ```
+  - Validate content as JSON
+  - Use ConfigFileService for backup and write operations
+  - Handle errors (permissions, disk full)
 
 - [ ] Add danger zone: "Reset to defaults" button
   - For boost.json → regenerate from template
   - For others → delete or empty file + let extension/CLI recreate
 
-### Phase 3 – Advanced / Nice-to-have (after core works)
+### Phase 3 – Advanced / Nice-to-have
 
 - [ ] JSON schema validation in editor (Monaco)
-  - Provide schema URLs / inline schemas for each file type
-  - e.g. boost.json → own simple schema
-  - opencode.json → `"$schema": "https://opencode.ai/config.json"`
-
-- [ ] Per-project config support (phase 2 extension)
-  - Dropdown: "Global" vs "Current Project"
-  - Store project-specific paths in `Project` model or config
-
+- [ ] Per-project config support
 - [ ] Restart / reload triggers
-  - After saving `boost.json` → show toast: "Some changes require page refresh or MCP restart"
-  - After opencode/claude → suggest "reload VS Code window" or "restart extension host"
-
 - [ ] Read-only mode when tunnel not running / not paired
-  - Show warning banner: "Remote editing disabled until tunnel is active"
-
 - [ ] Audit logging
-  - Create `ConfigChange` model / log entry when file is modified
 
 ### Phase 4 – Testing & Polish
 
 - [ ] Unit tests for `ConfigFileService`
-  - Happy path, disk full, permission denied, invalid JSON
 - [ ] Feature tests for `AiAgentConfigs` component
-  - Save → file changes
-  - Validation errors shown
-  - Backup created
 - [ ] Pint + formatting pass
 - [ ] Manual test on real device
-  - Change agent list in boost.json → see if claude_code / copilot behavior changes
-  - Add model in opencode.json → verify OpenCode CLI sees it
 
 ## Open Questions / Decisions Needed
 
@@ -139,11 +97,4 @@ These editors should appear in the **System Settings** or a new **AI Agents** ta
 - Should Copilot get its own tab (just instructions.md + settings snippet preview)?
 - Do we restart any process after save (e.g. MCP server, code-server)? Probably not automatically — too risky.
 
-Start with Phase 1 → get ConfigFileService working + basic file read/write tested.
-
 Priority: **boost.json** first (already in project), then OpenCode global, then Claude.
-```
-
-Feel free to copy-paste this content into `TODO.md` and start checking off items.
-
-If you want to prioritize one file (e.g. only boost.json first), or change the UI location (e.g. inside System Settings instead of new page), let me know — I can refine the plan. Good luck!
