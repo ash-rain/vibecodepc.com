@@ -284,6 +284,200 @@ describe('ConfigReloadService', function (): void {
         expect($vscodeService)->toHaveKey('reloaded');
     });
 
+    // B3.1: Test triggerReload() service interactions
+    describe('triggerReload service interactions', function (): void {
+        test('triggerReload signals are sent to vscode service when code-server is running', function (): void {
+            // Mock CodeServerService to simulate running state
+            $mockCodeServer = Mockery::mock(\App\Services\CodeServer\CodeServerService::class);
+            $mockCodeServer->shouldReceive('isRunning')->andReturn(true);
+            $mockCodeServer->shouldReceive('isInstalled')->andReturn(true);
+            $mockCodeServer->shouldReceive('getPort')->andReturn(8443);
+            app()->instance(\App\Services\CodeServer\CodeServerService::class, $mockCodeServer);
+
+            $service = new ConfigReloadService;
+            $result = $service->triggerReload('copilot_instructions');
+
+            expect($result['success'])->toBeTrue();
+            expect($result['services'])->toHaveCount(1);
+            expect($result['services'][0]['type'])->toBe('vscode');
+            expect($result['services'][0]['reloaded'])->toBeTrue();
+            expect($result['services'][0]['message'])->toContain('VS Code extensions will reload');
+        });
+
+        test('triggerReload handles code-server not running for vscode service', function (): void {
+            // Mock CodeServerService to simulate stopped state
+            $mockCodeServer = Mockery::mock(\App\Services\CodeServer\CodeServerService::class);
+            $mockCodeServer->shouldReceive('isRunning')->andReturn(false);
+            $mockCodeServer->shouldReceive('isInstalled')->andReturn(true);
+            $mockCodeServer->shouldReceive('getPort')->andReturn(8443);
+            app()->instance(\App\Services\CodeServer\CodeServerService::class, $mockCodeServer);
+
+            $service = new ConfigReloadService;
+            $result = $service->triggerReload('copilot_instructions');
+
+            expect($result['success'])->toBeFalse();
+            expect($result['services'])->toHaveCount(1);
+            expect($result['services'][0]['type'])->toBe('vscode');
+            expect($result['services'][0]['reloaded'])->toBeFalse();
+            expect($result['services'][0]['message'])->toContain('not running');
+        });
+
+        test('triggerReload returns partial success when some services fail', function (): void {
+            // opencode_global has both cli and vscode services
+            // cli should succeed (marked as reloaded=true, manual handling)
+            // vscode should fail (code-server not running)
+
+            $mockCodeServer = Mockery::mock(\App\Services\CodeServer\CodeServerService::class);
+            $mockCodeServer->shouldReceive('isRunning')->andReturn(false);
+            $mockCodeServer->shouldReceive('isInstalled')->andReturn(true);
+            $mockCodeServer->shouldReceive('getPort')->andReturn(8443);
+            app()->instance(\App\Services\CodeServer\CodeServerService::class, $mockCodeServer);
+
+            $service = new ConfigReloadService;
+            $result = $service->triggerReload('opencode_global');
+
+            // Overall success should be false since not all services reloaded
+            expect($result['success'])->toBeFalse();
+            expect($result['services'])->toHaveCount(2);
+
+            // Find cli service - should be marked as reloaded (manual handling)
+            $cliService = collect($result['services'])->first(fn ($s) => $s['type'] === 'cli');
+            expect($cliService['reloaded'])->toBeFalse();
+            expect($cliService['message'])->toContain('Manual restart required');
+
+            // Find vscode service - should have failed
+            $vscodeService = collect($result['services'])->first(fn ($s) => $s['type'] === 'vscode');
+            expect($vscodeService['reloaded'])->toBeFalse();
+            expect($vscodeService['message'])->toContain('not running');
+        });
+
+        test('triggerReload returns full success when all services succeed', function (): void {
+            // copilot_instructions only has vscode service
+            // Mock code-server as running
+
+            $mockCodeServer = Mockery::mock(\App\Services\CodeServer\CodeServerService::class);
+            $mockCodeServer->shouldReceive('isRunning')->andReturn(true);
+            $mockCodeServer->shouldReceive('isInstalled')->andReturn(true);
+            $mockCodeServer->shouldReceive('getPort')->andReturn(8443);
+            app()->instance(\App\Services\CodeServer\CodeServerService::class, $mockCodeServer);
+
+            $service = new ConfigReloadService;
+            $result = $service->triggerReload('copilot_instructions');
+
+            expect($result['success'])->toBeTrue();
+            expect($result['services'])->toHaveCount(1);
+            expect($result['services'][0]['reloaded'])->toBeTrue();
+        });
+
+        test('triggerReload handles unknown config key gracefully', function (): void {
+            $result = $this->service->triggerReload('unknown_config_key');
+
+            expect($result['config_key'])->toBe('unknown_config_key');
+            expect($result['success'])->toBeTrue(); // Empty services means success
+            expect($result['services'])->toBe([]);
+            expect($result['message'])->toBe('');
+        });
+
+        test('triggerReload handles mcp service type with automatic detection', function (): void {
+            $result = $this->service->triggerReload('boost');
+
+            expect($result['services'])->toHaveCount(1);
+            expect($result['services'][0]['type'])->toBe('mcp');
+            expect($result['services'][0]['reloaded'])->toBeTrue();
+            expect($result['services'][0]['message'])->toContain('automatically');
+        });
+
+        test('triggerReload handles cli service type with manual restart message', function (): void {
+            $result = $this->service->triggerReload('claude_global');
+
+            expect($result['services'])->toHaveCount(1);
+            expect($result['services'][0]['type'])->toBe('cli');
+            expect($result['services'][0]['reloaded'])->toBeFalse();
+            expect($result['services'][0]['message'])->toContain('Manual restart required');
+        });
+
+        test('triggerReload handles exception during code-server reload', function (): void {
+            // Mock CodeServerService to throw an exception
+            $mockCodeServer = Mockery::mock(\App\Services\CodeServer\CodeServerService::class);
+            $mockCodeServer->shouldReceive('isRunning')->andThrow(new \Exception('Connection refused'));
+            app()->instance(\App\Services\CodeServer\CodeServerService::class, $mockCodeServer);
+
+            $service = new ConfigReloadService;
+            $result = $service->triggerReload('copilot_instructions');
+
+            expect($result['success'])->toBeFalse();
+            expect($result['services'])->toHaveCount(1);
+            expect($result['services'][0]['reloaded'])->toBeFalse();
+            expect($result['services'][0]['message'])->toContain('Failed');
+        });
+
+        test('triggerReload logs reload operations', function (): void {
+            \Illuminate\Support\Facades\Log::spy();
+
+            $this->service->triggerReload('boost');
+
+            \Illuminate\Support\Facades\Log::shouldHaveReceived('info')
+                ->once()
+                ->with('Config reload triggered', Mockery::on(function ($context) {
+                    return $context['config_key'] === 'boost'
+                        && $context['services_count'] === 1
+                        && is_array($context['results']);
+                }));
+        });
+
+        test('triggerReload handles project-scoped configs', function (): void {
+            // Test opencode_project which has cli service
+            $result = $this->service->triggerReload('opencode_project');
+
+            expect($result['services'])->toHaveCount(1);
+            expect($result['services'][0]['type'])->toBe('cli');
+            expect($result['services'][0]['reloaded'])->toBeFalse();
+            expect($result['services'][0]['message'])->toContain('Manual restart required');
+        });
+
+        test('triggerReload handles claude_project config', function (): void {
+            $result = $this->service->triggerReload('claude_project');
+
+            expect($result['services'])->toHaveCount(1);
+            expect($result['services'][0]['name'])->toBe('Claude Code');
+            expect($result['services'][0]['type'])->toBe('cli');
+            expect($result['services'][0]['reloaded'])->toBeFalse();
+        });
+    });
+
+    // B3.2: Test reload with non-existent services
+    describe('reload with non-existent services', function (): void {
+        test('reloadCodeServer handles process not running', function (): void {
+            // Mock CodeServerService
+            $mockCodeServer = Mockery::mock(\App\Services\CodeServer\CodeServerService::class);
+            $mockCodeServer->shouldReceive('isRunning')->andReturn(false);
+            $mockCodeServer->shouldReceive('isInstalled')->andReturn(true);
+            $mockCodeServer->shouldReceive('getPort')->andReturn(8443);
+            app()->instance(\App\Services\CodeServer\CodeServerService::class, $mockCodeServer);
+
+            $service = new ConfigReloadService;
+
+            // Use reflection to call private method
+            $result = $service->reloadCodeServer();
+
+            expect($result['success'])->toBeFalse();
+            expect($result['message'])->toContain('not running');
+        });
+
+        test('reloadCodeServer handles code-server not installed', function (): void {
+            $mockCodeServer = Mockery::mock(\App\Services\CodeServer\CodeServerService::class);
+            $mockCodeServer->shouldReceive('isRunning')->andReturn(false);
+            $mockCodeServer->shouldReceive('isInstalled')->andReturn(false);
+            app()->instance(\App\Services\CodeServer\CodeServerService::class, $mockCodeServer);
+
+            $service = new ConfigReloadService;
+            $result = $service->reloadCodeServer();
+
+            expect($result['success'])->toBeFalse();
+            expect($result['message'])->toContain('not running');
+        });
+    });
+
     // B2.1: Test getLastModified() edge cases
     describe('getLastModified edge cases', function (): void {
         test('getLastModified handles file modified in the future (clock skew)', function (): void {

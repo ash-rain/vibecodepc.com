@@ -313,10 +313,31 @@ This test plan covers the config file editor system including ConfigFileService,
 ## Phase D: AiToolConfigService - Missing Tests
 
 ### D1. Environment Variable Management
-- [ ] **D1.1**: Test `getEnvVars()` parsing
+
+- [x] **D1.1**: Test `getEnvVars()` parsing (2026-03-17)
   - Parse existing bashrc with VibeCodePC section
   - Parse bashrc without section
   - Parse with multiple export statements
+  - Parse PATH modifications with single and complex paths
+  - Handle encrypted values correctly
+  - Handle empty values in exports
+  - Handle values with special characters
+  - Parse section at beginning or end of file
+  - Ignore variables outside managed section
+  - Handle variables with numbers in names
+  - Skip lowercase variable names
+  - Handle very long values (10KB)
+  - Handle unicode values
+  - Handle extra whitespace around section markers
+  - Ignore PATH line that doesn't end with :$PATH
+  - Handle only start or only end marker present
+  - Handle reversed section markers
+  - Ignore commented export lines
+  - Handle multiple PATH lines (uses first)
+  - Handle multiple sections (uses first complete)
+  - Handle values with equals signs
+  - Handle empty managed section
+  - Added 25 comprehensive tests (all passing)
   - Parse PATH modifications
   - Handle encrypted values
 
