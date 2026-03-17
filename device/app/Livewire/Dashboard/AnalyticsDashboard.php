@@ -77,7 +77,7 @@ class AnalyticsDashboard extends Component
      *
      * @return array<string, int>
      */
-    private function getCategoryCounts(AnalyticsService $analyticsService): array
+    private function getCategoryCounts(): array
     {
         $counts = [];
         $categories = ['wizard', 'tunnel', 'project', 'system'];

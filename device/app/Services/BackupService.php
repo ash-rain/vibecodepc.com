@@ -10,6 +10,11 @@ use ZipArchive;
 
 class BackupService
 {
+    /**
+     * Get the list of database tables to backup.
+     *
+     * @return array<int, string>
+     */
     private function getBackupTables(): array
     {
         return config('vibecodepc.backup.tables', [

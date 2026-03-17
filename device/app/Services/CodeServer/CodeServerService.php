@@ -447,6 +447,8 @@ class CodeServerService
 
     /**
      * Read code-server settings (User/settings.json) as an array.
+     *
+     * @return array<string, mixed>
      */
     public function readSettings(): array
     {
