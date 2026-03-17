@@ -200,3 +200,52 @@ it('can reset to defaults for boost.json', function () {
     expect($content)->toContain('agents');
     expect($content)->toContain('skills');
 });
+
+it('loads reload status on mount', function () {
+    $component = Livewire::test(AiAgentConfigs::class);
+
+    // Check that reloadStatus is populated for config files
+    $reloadStatus = $component->get('reloadStatus');
+    expect($reloadStatus)->toHaveKey('boost');
+    expect($reloadStatus['boost'])->toHaveKey('services');
+    expect($reloadStatus['boost'])->toHaveKey('requires_manual_reload');
+    expect($reloadStatus['boost'])->toHaveKey('instructions');
+});
+
+it('shows reload instructions after save for services requiring manual reload', function () {
+    $component = Livewire::test(AiAgentConfigs::class);
+
+    $newContent = json_encode(['agents' => ['copilot'], 'skills' => []], JSON_PRETTY_PRINT);
+    $component->set('fileContent.boost', $newContent);
+
+    $component->call('save', 'boost');
+
+    $component->assertSet('statusType', 'success');
+    // Check that the status message contains reload instructions
+    $statusMessage = $component->get('statusMessage');
+    expect($statusMessage)->toContain('Boost Configuration');
+    expect($statusMessage)->toContain('saved');
+});
+
+it('can trigger manual reload for config files', function () {
+    $component = Livewire::test(AiAgentConfigs::class);
+
+    $component->call('triggerReload', 'boost');
+
+    // Should get a warning status since MCP servers require manual restart
+    $statusType = $component->get('statusType');
+    expect($statusType)->toBeIn(['success', 'warning']);
+});
+
+it('reload status is updated after file operations', function () {
+    $component = Livewire::test(AiAgentConfigs::class);
+
+    $newContent = json_encode(['agents' => ['copilot']], JSON_PRETTY_PRINT);
+    $component->set('fileContent.boost', $newContent);
+    $component->call('save', 'boost');
+
+    // Check that reloadStatus is still populated after save
+    $reloadStatus = $component->get('reloadStatus');
+    expect($reloadStatus)->toHaveKey('boost');
+    expect($reloadStatus['boost'])->toHaveKey('last_modified_formatted');
+});

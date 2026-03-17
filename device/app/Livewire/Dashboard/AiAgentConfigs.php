@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Livewire\Dashboard;
 
+use App\Models\Project;
 use App\Services\ConfigFileService;
+use App\Services\ConfigReloadService;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
@@ -16,6 +18,8 @@ use Livewire\Component;
 class AiAgentConfigs extends Component
 {
     public string $activeTab = 'boost';
+
+    public ?int $selectedProjectId = null;
 
     /** @var array<string, string> */
     public array $fileContent = [];
@@ -48,13 +52,22 @@ class AiAgentConfigs extends Component
     /** @var array<string, bool> */
     public array $fileExists = [];
 
-    public function mount(ConfigFileService $configFileService): void
+    /** @var array<string, array<string, mixed>> */
+    public array $reloadStatus = [];
+
+    public function mount(ConfigFileService $configFileService, ConfigReloadService $reloadService): void
     {
-        $this->loadAllFiles($configFileService);
+        $this->loadAllFiles($configFileService, $reloadService);
     }
 
-    public function loadAllFiles(ConfigFileService $configFileService): void
+    public function updatedSelectedProjectId(int $value): void
     {
+        $this->loadAllFiles(app(ConfigFileService::class), app(ConfigReloadService::class));
+    }
+
+    public function loadAllFiles(ConfigFileService $configFileService, ConfigReloadService $reloadService): void
+    {
+        $project = $this->getSelectedProject();
         $configKeys = array_keys(config('vibecodepc.config_files', []));
 
         foreach ($configKeys as $key) {
@@ -65,17 +78,22 @@ class AiAgentConfigs extends Component
             $this->selectedBackup[$key] = '';
 
             try {
-                $content = $configFileService->getContent($key);
+                $content = $configFileService->getContent($key, $project);
                 $this->fileContent[$key] = $content;
                 $this->originalContent[$key] = $content;
-                $this->fileExists[$key] = $configFileService->exists($key);
-                $this->backups[$key] = $configFileService->listBackups($key);
+                $this->fileExists[$key] = $configFileService->exists($key, $project);
+                $this->backups[$key] = $configFileService->listBackups($key, $project);
+
+                // Load reload status for this config file
+                $path = $configFileService->resolvePath($key, $project);
+                $this->reloadStatus[$key] = $reloadService->getReloadStatus($key, $path);
             } catch (\Exception $e) {
                 Log::error("Failed to load config file: {$key}", ['error' => $e->getMessage()]);
                 $this->fileContent[$key] = '';
                 $this->originalContent[$key] = '';
                 $this->fileExists[$key] = false;
                 $this->backups[$key] = [];
+                $this->reloadStatus[$key] = $reloadService->getReloadStatus($key);
             }
         }
     }
@@ -116,10 +134,11 @@ class AiAgentConfigs extends Component
         }
     }
 
-    public function save(string $key, ConfigFileService $configFileService): void
+    public function save(string $key, ConfigFileService $configFileService, ConfigReloadService $reloadService): void
     {
         $this->isSaving[$key] = true;
         $content = $this->fileContent[$key] ?? '';
+        $project = $this->getSelectedProject();
 
         try {
             if ($content === '') {
@@ -138,14 +157,26 @@ class AiAgentConfigs extends Component
                 return;
             }
 
-            $configFileService->putContent($key, $content);
+            $configFileService->putContent($key, $content, $project);
 
             $this->originalContent[$key] = $content;
             $this->isDirty[$key] = false;
             $this->fileExists[$key] = true;
-            $this->backups[$key] = $configFileService->listBackups($key);
+            $this->backups[$key] = $configFileService->listBackups($key, $project);
 
-            $this->statusMessage = config("vibecodepc.config_files.{$key}.label").' saved successfully.';
+            // Trigger reload for affected services
+            $reloadResult = $reloadService->triggerReload($key);
+            $this->reloadStatus[$key] = $reloadService->getReloadStatus($key);
+
+            // Build status message with reload info
+            $baseMessage = config("vibecodepc.config_files.{$key}.label").' saved successfully.';
+
+            if ($reloadResult['requires_manual'] ?? false) {
+                $this->statusMessage = $baseMessage.' '.$reloadResult['instructions'];
+            } else {
+                $this->statusMessage = $baseMessage;
+            }
+
             $this->statusType = 'success';
         } catch (\Exception $e) {
             Log::error("Failed to save config file: {$key}", ['error' => $e->getMessage()]);
@@ -167,10 +198,12 @@ class AiAgentConfigs extends Component
             return;
         }
 
-        try {
-            $configFileService->restore($key, $backupPath);
+        $project = $this->getSelectedProject();
 
-            $content = $configFileService->getContent($key);
+        try {
+            $configFileService->restore($key, $backupPath, $project);
+
+            $content = $configFileService->getContent($key, $project);
             $this->fileContent[$key] = $content;
             $this->originalContent[$key] = $content;
             $this->isDirty[$key] = false;
@@ -187,13 +220,16 @@ class AiAgentConfigs extends Component
 
     public function resetToDefaults(string $key): void
     {
+        $project = $this->getSelectedProject();
+
         try {
             if ($key === 'boost') {
                 $this->resetBoostJson();
             } else {
                 $config = config("vibecodepc.config_files.{$key}");
                 if ($config && isset($config['path'])) {
-                    File::delete($config['path']);
+                    $configFileService = app(ConfigFileService::class);
+                    $configFileService->delete($key, $project);
                     $this->fileContent[$key] = '';
                     $this->originalContent[$key] = '';
                     $this->isDirty[$key] = false;
@@ -251,12 +287,83 @@ JSON;
         }
     }
 
+    /**
+     * Trigger reload for a specific config file's services.
+     */
+    public function triggerReload(string $key, ConfigReloadService $reloadService): void
+    {
+        try {
+            $result = $reloadService->triggerReload($key);
+
+            // Update reload status
+            $configFileService = app(ConfigFileService::class);
+            $project = $this->getSelectedProject();
+            $path = $configFileService->resolvePath($key, $project);
+            $this->reloadStatus[$key] = $reloadService->getReloadStatus($key, $path);
+
+            if ($result['success']) {
+                $this->statusMessage = 'Reload triggered for '.config("vibecodepc.config_files.{$key}.label").'.';
+                $this->statusType = 'success';
+            } else {
+                $serviceMessages = collect($result['services'] ?? [])
+                    ->filter(fn ($s) => ! $s['reloaded'])
+                    ->map(fn ($s) => $s['name'].': '.$s['message'])
+                    ->implode(', ');
+
+                $this->statusMessage = 'Some services may require manual restart: '.$serviceMessages;
+                $this->statusType = 'warning';
+            }
+        } catch (\Exception $e) {
+            Log::error("Failed to trigger reload: {$key}", ['error' => $e->getMessage()]);
+            $this->statusMessage = 'Reload failed: '.$e->getMessage();
+            $this->statusType = 'error';
+        }
+    }
+
     public function render(): \Illuminate\View\View
     {
         $configFiles = config('vibecodepc.config_files', []);
+        $projects = Project::orderBy('name')->get();
 
         return view('livewire.dashboard.ai-agent-configs', [
             'configFiles' => $configFiles,
+            'projects' => $projects,
+            'schemas' => $this->getSchemas(),
+            'reloadStatuses' => $this->reloadStatus,
         ]);
+    }
+
+    /**
+     * Get the currently selected project.
+     */
+    private function getSelectedProject(): ?Project
+    {
+        if ($this->selectedProjectId === null) {
+            return null;
+        }
+
+        return Project::find($this->selectedProjectId);
+    }
+
+    /**
+     * Get JSON schemas for each config file type.
+     *
+     * @return array<string, string>
+     */
+    private function getSchemas(): array
+    {
+        $schemas = [];
+        $schemaPath = storage_path('schemas');
+
+        if (File::isDirectory($schemaPath)) {
+            foreach (File::files($schemaPath) as $file) {
+                if ($file->getExtension() === 'json') {
+                    $key = $file->getFilenameWithoutExtension();
+                    $schemas[$key] = route('schemas.json', ['name' => $key]);
+                }
+            }
+        }
+
+        return $schemas;
     }
 }

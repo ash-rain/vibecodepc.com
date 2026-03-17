@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\Project;
 use App\Services\Traits\RetryableTrait;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
@@ -36,17 +37,70 @@ class ConfigFileService
     ];
 
     /**
+     * Get the scope of a configuration key.
+     *
+     * @param  string  $key  The configuration key
+     * @return string 'global' or 'project'
+     */
+    public function getScope(string $key): string
+    {
+        $config = $this->getConfig($key);
+
+        return $config['scope'] ?? 'global';
+    }
+
+    /**
+     * Check if a configuration key is project-scoped.
+     *
+     * @param  string  $key  The configuration key
+     * @return bool True if project-scoped
+     */
+    public function isProjectScoped(string $key): bool
+    {
+        return $this->getScope($key) === 'project';
+    }
+
+    /**
+     * Get the actual file path for a configuration.
+     *
+     * @param  string  $key  The configuration key
+     * @param  Project|null  $project  Project context for project-scoped configs
+     * @return string The resolved file path
+     *
+     * @throws \InvalidArgumentException If project is required but not provided
+     */
+    public function resolvePath(string $key, ?Project $project = null): string
+    {
+        $config = $this->getConfig($key);
+
+        if ($this->isProjectScoped($key)) {
+            if ($project === null) {
+                throw new \InvalidArgumentException("Project is required for project-scoped config: {$key}");
+            }
+
+            if (isset($config['path_template'])) {
+                return str_replace('{project_path}', $project->path, $config['path_template']);
+            }
+
+            // Fallback for boost.json which is always project-scoped but uses a fixed path
+            return $config['path'];
+        }
+
+        return $config['path'];
+    }
+
+    /**
      * Get the content of a configuration file.
      *
      * @param  string  $key  The configuration key from vibecodepc.config_files
+     * @param  Project|null  $project  Project context for project-scoped configs
      * @return string The file content, or empty string if file doesn't exist
      *
      * @throws \RuntimeException If the file cannot be read
      */
-    public function getContent(string $key): string
+    public function getContent(string $key, ?Project $project = null): string
     {
-        $config = $this->getConfig($key);
-        $path = $config['path'];
+        $path = $this->resolvePath($key, $project);
 
         if (! File::exists($path)) {
             return '';
@@ -66,14 +120,14 @@ class ConfigFileService
      *
      * @param  string  $key  The configuration key from vibecodepc.config_files
      * @param  string  $newContent  The content to write
+     * @param  Project|null  $project  Project context for project-scoped configs
      *
      * @throws \InvalidArgumentException If validation fails
      * @throws \RuntimeException If the file cannot be written
      */
-    public function putContent(string $key, string $newContent): void
+    public function putContent(string $key, string $newContent, ?Project $project = null): void
     {
-        $config = $this->getConfig($key);
-        $path = $config['path'];
+        $path = $this->resolvePath($key, $project);
 
         $this->validateFileSize($newContent);
 
@@ -87,7 +141,7 @@ class ConfigFileService
         }
 
         if (File::exists($path)) {
-            $this->backup($key);
+            $this->backup($key, $project);
         }
 
         $success = retry($this->maxRetries, function () use ($path, $newContent): bool {
@@ -98,7 +152,7 @@ class ConfigFileService
             throw new \RuntimeException("Failed to write configuration file: {$path}");
         }
 
-        Log::info('Configuration file updated', ['key' => $key, 'path' => $path]);
+        Log::info('Configuration file updated', ['key' => $key, 'path' => $path, 'project_id' => $project?->id]);
     }
 
     /**
@@ -133,14 +187,14 @@ class ConfigFileService
      * Create a backup of a configuration file.
      *
      * @param  string  $key  The configuration key from vibecodepc.config_files
+     * @param  Project|null  $project  Project context for project-scoped configs
      * @return string The path to the backup file
      *
      * @throws \RuntimeException If backup cannot be created
      */
-    public function backup(string $key): string
+    public function backup(string $key, ?Project $project = null): string
     {
-        $config = $this->getConfig($key);
-        $path = $config['path'];
+        $path = $this->resolvePath($key, $project);
 
         if (! File::exists($path)) {
             throw new \RuntimeException("Cannot backup non-existent file: {$path}");
@@ -148,7 +202,8 @@ class ConfigFileService
 
         $backupDir = config('vibecodepc.config_editor.backup_directory');
         $timestamp = now()->format('Y-m-d-His');
-        $backupPath = "{$backupDir}/{$key}-{$timestamp}.json";
+        $projectSuffix = $project ? "-project-{$project->id}" : '';
+        $backupPath = "{$backupDir}/{$key}{$projectSuffix}-{$timestamp}.json";
 
         if (! File::isDirectory($backupDir)) {
             File::makeDirectory($backupDir, 0755, true);
@@ -165,9 +220,9 @@ class ConfigFileService
             throw new \RuntimeException("Failed to create backup: {$backupPath}");
         }
 
-        $this->cleanupOldBackups($key);
+        $this->cleanupOldBackups($key, $project);
 
-        Log::info('Configuration file backed up', ['key' => $key, 'backup_path' => $backupPath]);
+        Log::info('Configuration file backed up', ['key' => $key, 'backup_path' => $backupPath, 'project_id' => $project?->id]);
 
         return $backupPath;
     }
@@ -176,9 +231,10 @@ class ConfigFileService
      * Get list of available backups for a configuration file.
      *
      * @param  string  $key  The configuration key
+     * @param  Project|null  $project  Project context for project-scoped configs
      * @return array<int, array<string, mixed>> List of backups with metadata
      */
-    public function listBackups(string $key): array
+    public function listBackups(string $key, ?Project $project = null): array
     {
         $backupDir = config('vibecodepc.config_editor.backup_directory');
 
@@ -186,7 +242,8 @@ class ConfigFileService
             return [];
         }
 
-        $pattern = $backupDir.'/'.$key.'-*.json';
+        $projectSuffix = $project ? "-project-{$project->id}" : '';
+        $pattern = $backupDir.'/'.$key.$projectSuffix.'-*.json';
         $files = File::glob($pattern);
 
         $backups = [];
@@ -209,17 +266,17 @@ class ConfigFileService
      *
      * @param  string  $key  The configuration key
      * @param  string  $backupPath  The path to the backup file
+     * @param  Project|null  $project  Project context for project-scoped configs
      *
      * @throws \RuntimeException If restore fails
      */
-    public function restore(string $key, string $backupPath): void
+    public function restore(string $key, string $backupPath, ?Project $project = null): void
     {
         if (! File::exists($backupPath)) {
             throw new \RuntimeException("Backup file does not exist: {$backupPath}");
         }
 
-        $config = $this->getConfig($key);
-        $path = $config['path'];
+        $path = $this->resolvePath($key, $project);
 
         $content = File::get($backupPath);
         if ($content === false) {
@@ -236,20 +293,42 @@ class ConfigFileService
             throw new \RuntimeException("Failed to restore configuration file: {$path}");
         }
 
-        Log::info('Configuration file restored from backup', ['key' => $key, 'backup_path' => $backupPath]);
+        Log::info('Configuration file restored from backup', ['key' => $key, 'backup_path' => $backupPath, 'project_id' => $project?->id]);
     }
 
     /**
      * Check if a file exists and is readable.
      *
      * @param  string  $key  The configuration key
+     * @param  Project|null  $project  Project context for project-scoped configs
      * @return bool True if file exists and is readable
      */
-    public function exists(string $key): bool
+    public function exists(string $key, ?Project $project = null): bool
     {
-        $config = $this->getConfig($key);
+        $path = $this->resolvePath($key, $project);
 
-        return File::exists($config['path']) && File::isReadable($config['path']);
+        return File::exists($path) && File::isReadable($path);
+    }
+
+    /**
+     * Delete a configuration file.
+     *
+     * @param  string  $key  The configuration key
+     * @param  Project|null  $project  Project context for project-scoped configs
+     *
+     * @throws \RuntimeException If deletion fails
+     */
+    public function delete(string $key, ?Project $project = null): void
+    {
+        $path = $this->resolvePath($key, $project);
+
+        if (File::exists($path)) {
+            if (! File::delete($path)) {
+                throw new \RuntimeException("Failed to delete configuration file: {$path}");
+            }
+
+            Log::info('Configuration file deleted', ['key' => $key, 'path' => $path, 'project_id' => $project?->id]);
+        }
     }
 
     /**
@@ -412,17 +491,190 @@ class ConfigFileService
      * Remove old backups based on retention policy.
      *
      * @param  string  $key  The configuration key
+     * @param  Project|null  $project  Project context for project-scoped configs
      */
-    private function cleanupOldBackups(string $key): void
+    private function cleanupOldBackups(string $key, ?Project $project = null): void
     {
         $retentionDays = config('vibecodepc.config_editor.backup_retention_days', 30);
-        $backups = $this->listBackups($key);
+        $backups = $this->listBackups($key, $project);
         $cutoff = now()->subDays($retentionDays)->timestamp;
 
         foreach ($backups as $backup) {
             if ($backup['created_at'] < $cutoff) {
                 File::delete($backup['path']);
                 Log::info('Old backup deleted', ['path' => $backup['path']]);
+            }
+        }
+    }
+
+    /**
+     * Get the schema URL for a given config key.
+     *
+     * @param  string  $key  The configuration key
+     * @return string|null The schema URL or null if no schema exists
+     */
+    public function getSchemaUrl(string $key): ?string
+    {
+        $schemaMapping = [
+            'boost' => 'boost',
+            'opencode_global' => 'opencode',
+            'opencode_project' => 'opencode',
+            'claude_global' => 'claude',
+            'claude_project' => 'claude',
+        ];
+
+        if (! isset($schemaMapping[$key])) {
+            return null;
+        }
+
+        $schemaName = $schemaMapping[$key];
+        $schemaPath = storage_path("schemas/{$schemaName}.json");
+
+        if (! File::exists($schemaPath)) {
+            return null;
+        }
+
+        return route('schemas.json', ['name' => $schemaName]);
+    }
+
+    /**
+     * Validate JSON content against schema if available.
+     *
+     * @param  array<string, mixed>  $data  The decoded JSON data
+     * @param  string  $key  The configuration key
+     * @return array<string> Array of validation errors, empty if valid
+     */
+    public function validateJsonSchema(array $data, string $key): array
+    {
+        $schemaUrl = $this->getSchemaUrl($key);
+
+        if ($schemaUrl === null) {
+            return [];
+        }
+
+        $schemaPath = storage_path('schemas/'.basename($schemaUrl, '.json').'.json');
+
+        if (! File::exists($schemaPath)) {
+            return [];
+        }
+
+        $schemaContent = File::get($schemaPath);
+        if ($schemaContent === false) {
+            return [];
+        }
+
+        try {
+            $schema = json_decode($schemaContent, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+            Log::warning('Failed to parse schema file', ['key' => $key, 'error' => $e->getMessage()]);
+
+            return [];
+        }
+
+        $errors = [];
+        $this->validateSchemaRecursive($data, $schema, '', $errors);
+
+        return $errors;
+    }
+
+    /**
+     * Recursively validate data against schema.
+     *
+     * @param  mixed  $data  The data to validate
+     * @param  array<string, mixed>  $schema  The schema definition
+     * @param  string  $path  Current path in the data structure
+     * @param  array<string>  $errors  Array to collect errors
+     */
+    private function validateSchemaRecursive(mixed $data, array $schema, string $path, array &$errors): void
+    {
+        // Check type
+        if (isset($schema['type'])) {
+            $type = $schema['type'];
+            $dataType = gettype($data);
+
+            if ($dataType === 'array' && array_is_list($data)) {
+                $dataType = 'array';
+            } elseif ($dataType === 'array') {
+                $dataType = 'object';
+            } elseif ($dataType === 'double') {
+                $dataType = 'number';
+            }
+
+            if ($type === 'array' && $dataType !== 'array') {
+                $errors[] = "{$path}: must be an array";
+
+                return;
+            }
+
+            if ($type === 'object' && $dataType !== 'array') {
+                $errors[] = "{$path}: must be an object";
+
+                return;
+            }
+
+            if ($type === 'string' && $dataType !== 'string') {
+                $errors[] = "{$path}: must be a string";
+
+                return;
+            }
+
+            if ($type === 'number' && ! is_numeric($data)) {
+                $errors[] = "{$path}: must be a number";
+
+                return;
+            }
+
+            if ($type === 'boolean' && $dataType !== 'boolean') {
+                $errors[] = "{$path}: must be a boolean";
+
+                return;
+            }
+        }
+
+        // Validate object properties
+        if (isset($schema['properties']) && is_array($data)) {
+            foreach ($schema['properties'] as $propName => $propSchema) {
+                if (isset($data[$propName])) {
+                    $propPath = $path ? "{$path}.{$propName}" : $propName;
+                    $this->validateSchemaRecursive($data[$propName], $propSchema, $propPath, $errors);
+                }
+            }
+
+            // Check for additional properties
+            if (isset($schema['additionalProperties']) && $schema['additionalProperties'] === false) {
+                $allowedKeys = array_keys($schema['properties'] ?? []);
+                $actualKeys = array_keys($data);
+                $extraKeys = array_diff($actualKeys, $allowedKeys);
+
+                foreach ($extraKeys as $extraKey) {
+                    $propPath = $path ? "{$path}.{$extraKey}" : $extraKey;
+                    $errors[] = "{$propPath}: additional property not allowed";
+                }
+            }
+        }
+
+        // Validate array items
+        if (isset($schema['items']) && is_array($data) && array_is_list($data)) {
+            foreach ($data as $index => $item) {
+                $itemPath = "{$path}[{$index}]";
+                $this->validateSchemaRecursive($item, $schema['items'], $itemPath, $errors);
+            }
+        }
+
+        // Check enum values
+        if (isset($schema['enum']) && is_array($schema['enum'])) {
+            if (! in_array($data, $schema['enum'], true)) {
+                $errors[] = "{$path}: must be one of: ".implode(', ', $schema['enum']);
+            }
+        }
+
+        // Check minimum/maximum for numbers
+        if (is_numeric($data)) {
+            if (isset($schema['minimum']) && $data < $schema['minimum']) {
+                $errors[] = "{$path}: must be >= {$schema['minimum']}";
+            }
+            if (isset($schema['maximum']) && $data > $schema['maximum']) {
+                $errors[] = "{$path}: must be <= {$schema['maximum']}";
             }
         }
     }

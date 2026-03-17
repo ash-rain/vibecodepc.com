@@ -79,9 +79,15 @@ These editors should appear in the **System Settings** or a new **AI Agents** ta
 
 ### Phase 3 – Advanced / Nice-to-have
 
-- [ ] JSON schema validation in editor (Monaco)
-- [ ] Per-project config support
-- [ ] Restart / reload triggers
+- [x] 2026-03-17 JSON schema validation in editor (Monaco)
+- [x] 2026-03-17 Per-project config support
+  - Added `opencode_project` and `claude_project` config entries with `path_template`
+  - Updated `ConfigFileService` to support project-scoped configs with `resolvePath()` method
+  - Added `selectedProjectId` property to `AiAgentConfigs` component
+  - Added project selector dropdown in UI to switch between global and project contexts
+  - Project-scoped configs resolve paths using `{project_path}` placeholder
+  - Backups now include project ID suffix for project-scoped configs
+- [x] 2026-03-17 Restart / reload triggers
 - [ ] Read-only mode when tunnel not running / not paired
 - [ ] Audit logging
 

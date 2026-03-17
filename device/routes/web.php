@@ -16,6 +16,7 @@ use App\Livewire\Pairing\PairingScreen;
 use App\Livewire\TunnelLogin;
 use App\Livewire\Wizard\WizardController;
 use App\Services\DeviceStateService;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function (DeviceStateService $stateService) {
@@ -52,3 +53,19 @@ Route::middleware('tunnel.auth.optional')->group(function () {
     Route::get('/dashboard/settings', SystemSettings::class)->name('dashboard.settings');
     Route::get('/dashboard/analytics', AnalyticsDashboard::class)->name('dashboard.analytics');
 });
+
+// JSON Schema routes for Monaco editor
+Route::get('/schemas/{name}.json', function (string $name) {
+    $schemaPath = storage_path("schemas/{$name}.json");
+
+    if (! File::exists($schemaPath)) {
+        return response()->json(['error' => 'Schema not found'], 404);
+    }
+
+    $content = File::get($schemaPath);
+
+    return response($content, 200, [
+        'Content-Type' => 'application/json',
+        'Access-Control-Allow-Origin' => '*',
+    ]);
+})->where('name', '[a-zA-Z0-9_-]+')->name('schemas.json');
