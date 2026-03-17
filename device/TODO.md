@@ -28,11 +28,13 @@
   - All 110 affected tests passing, Pint formatting clean
 
 #### Event-Driven Architecture
-- [ ] `feat:` Replace polling with event-driven tunnel status updates (M)
-  - Implement PollTunnelUrlJob
-  - Create QuickTunnelUrlDiscovered event
-  - Remove sleep-based polling in QuickTunnelService
-  - See PLAN.md Phase 1 for implementation details
+- [x] 2026-03-17 `feat:` Replace polling with event-driven tunnel status updates (M)
+  - Implemented PollTunnelUrlJob with ShouldBeUnique to prevent duplicate polling
+  - Created QuickTunnelUrlDiscovered event for broadcasting when URL is discovered
+  - Removed blocking sleep-based polling from QuickTunnelService::start()
+  - Added async URL discovery dispatching PollTunnelUrlJob immediately after tunnel creation
+  - Event broadcasts on 'quick-tunnels' channel for real-time UI updates
+  - All 37 related tests passing
 
 ### Reference
 - See [PLAN.md](./PLAN.md) for complete implementation roadmap
