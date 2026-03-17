@@ -46,34 +46,36 @@ These editors should appear in the **System Settings** or a new **AI Agents** ta
   - Use `retryable` trait for file operations
   - Create backup before every write → `storage/app/backups/config/{key}-{timestamp}.json`
 
-- [ ] Add validation rules
+- [x] 2026-03-17 Add validation rules
   - Must be valid JSON (or JSONC for opencode)
   - For boost.json: validate known structure (`agents` array, `skills`, etc.)
   - Size limit (~64 KB)
-  - No forbidden keys (e.g. remove api keys if they appear)
+  - No forbidden keys (e.g. api_key, secret, token, password, credential)
 
 ### Phase 2 – UI & Livewire Editor
 
-- [ ] Create new Livewire component: `app/Livewire/Dashboard/AiAgentConfigs.php`
+- [x] 2026-03-17 Create new Livewire component: `app/Livewire/Dashboard/AiAgentConfigs.php`
   - Tabbed interface: Boost.json | OpenCode | Claude Code | Copilot Instructions
   - Each tab shows:
-    - Monaco / CodeMirror editor (reuse existing `CodeEditor` component)
-    - "Save" button + loading state
-    - "Restore backup" dropdown (list recent backups)
-    - Status indicator (last saved, valid/invalid JSON)
+  - Textarea editor with syntax highlighting hints
+  - "Save" button + loading state with dirty/valid indicators
+  - "Restore backup" dropdown (list recent backups)
+  - Status indicator (last saved, valid/invalid JSON)
+  - Format JSON button for JSON files
+  - Reset to defaults functionality
 
-- [ ] Add route & sidebar link
-  - `routes/web.php`: `Route::livewire('/system/ai-agents', AiAgentConfigs::class)->name('system.ai-agents');`
-  - Update `resources/views/components/dashboard/sidebar.blade.php`
+- [x] 2026-03-17 Add route & sidebar link
+  - `routes/web.php`: Added `Route::get('/dashboard/ai-agents', AiAgentConfigs::class)->name('dashboard.ai-agents');`
+  - Updated `resources/views/components/dashboard/sidebar.blade.php` with new nav item
 
-- [ ] Wire up save action
-  - Validate content as JSON
-  - Use ConfigFileService for backup and write operations
-  - Handle errors (permissions, disk full)
+- [x] 2026-03-17 Wire up save action
+  - Real-time JSON validation in component
+  - Uses ConfigFileService for backup and write operations
+  - Handles errors with user-friendly messages
 
-- [ ] Add danger zone: "Reset to defaults" button
-  - For boost.json → regenerate from template
-  - For others → delete or empty file + let extension/CLI recreate
+- [x] 2026-03-17 Add danger zone: "Reset to defaults" button
+  - For boost.json → regenerates with template defaults
+  - For others → deletes file to let extension/CLI recreate
 
 ### Phase 3 – Advanced / Nice-to-have
 

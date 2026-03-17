@@ -15,6 +15,27 @@ class ConfigFileService
     private const MAX_FILE_SIZE_BYTES = 65536;
 
     /**
+     * Forbidden key patterns that should not appear in config files.
+     * These patterns match common API key, secret, and credential field names.
+     *
+     * @var array<int, string>
+     */
+    private const FORBIDDEN_KEY_PATTERNS = [
+        '/^api[_-]?key$/i',
+        '/^api[_-]?secret$/i',
+        '/^api[_-]?token$/i',
+        '/^auth[_-]?token$/i',
+        '/^access[_-]?token$/i',
+        '/^bearer[_-]?token$/i',
+        '/^private[_-]?key$/i',
+        '/^secret[_-]?key$/i',
+        '/^client[_-]?secret$/i',
+        '/^password$/i',
+        '/^secret$/i',
+        '/^token$/i',
+    ];
+
+    /**
      * Get the content of a configuration file.
      *
      * @param  string  $key  The configuration key from vibecodepc.config_files
@@ -102,6 +123,8 @@ class ConfigFileService
         if ($key === 'boost') {
             $this->validateBoostJson($decoded);
         }
+
+        $this->validateNoForbiddenKeys($decoded);
 
         return $decoded;
     }
@@ -290,6 +313,47 @@ class ConfigFileService
 
         if (! empty($unknownKeys)) {
             Log::warning('boost.json contains unknown keys', ['unknown_keys' => $unknownKeys]);
+        }
+    }
+
+    /**
+     * Validate that no forbidden keys are present in the configuration.
+     *
+     * @param  array<string, mixed>  $data  The decoded JSON data
+     *
+     * @throws \InvalidArgumentException If forbidden keys are detected
+     */
+    private function validateNoForbiddenKeys(array $data): void
+    {
+        $this->checkForbiddenKeysRecursive($data);
+    }
+
+    /**
+     * Recursively check for forbidden keys in nested arrays.
+     *
+     * @param  array<string, mixed>  $data  The data to check
+     * @param  string  $path  The current key path (for error reporting)
+     *
+     * @throws \InvalidArgumentException If forbidden keys are detected
+     */
+    private function checkForbiddenKeysRecursive(array $data, string $path = ''): void
+    {
+        foreach ($data as $key => $value) {
+            $key = (string) $key;
+            $currentPath = $path ? "{$path}.{$key}" : $key;
+
+            foreach (self::FORBIDDEN_KEY_PATTERNS as $pattern) {
+                if (preg_match($pattern, $key)) {
+                    throw new \InvalidArgumentException(
+                        "Forbidden key detected: '{$key}' at path '{$currentPath}'. ".
+                        'Configuration files should not contain API keys, secrets, or credentials.'
+                    );
+                }
+            }
+
+            if (is_array($value)) {
+                $this->checkForbiddenKeysRecursive($value, $currentPath);
+            }
         }
     }
 
