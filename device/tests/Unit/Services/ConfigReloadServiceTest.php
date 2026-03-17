@@ -410,4 +410,97 @@ describe('ConfigReloadService', function (): void {
             @unlink($symlinkFile);
         });
     });
+
+    // B2.2: Test formatLastModified() edge cases
+    describe('formatLastModified edge cases', function (): void {
+        test('formatLastModified handles timestamp at epoch (1970-01-01)', function (): void {
+            $epoch = 0; // Unix epoch
+            $formatted = $this->service->formatLastModified($epoch);
+
+            // Should return a human-readable time for the epoch
+            expect($formatted)->toBeString();
+            expect($formatted)->not->toBe('Never');
+            // Should contain "ago" since epoch is in the past
+            expect($formatted)->toContain('ago');
+            // Should represent a very long time ago (50+ years)
+            expect($formatted)->toContain('years');
+        });
+
+        test('formatLastModified handles timestamp in the future', function (): void {
+            $futureTimestamp = time() + 3600; // 1 hour in the future
+            $formatted = $this->service->formatLastModified($futureTimestamp);
+
+            // diffForHumans handles future timestamps
+            expect($formatted)->toBeString();
+            expect($formatted)->not->toBe('Never');
+            // Should indicate it's in the future ("from now" or similar)
+            expect($formatted)->toContain('from now');
+        });
+
+        test('formatLastModified handles timestamp far in the future', function (): void {
+            $farFuture = time() + (365 * 24 * 60 * 60); // 1 year in the future
+            $formatted = $this->service->formatLastModified($farFuture);
+
+            expect($formatted)->toBeString();
+            expect($formatted)->toContain('from now');
+            // diffForHumans rounds, so it might say "11 months" or "1 year" depending on exact timing
+            expect($formatted)->toMatch('/year|month|day/');
+        });
+
+        test('formatLastModified handles very old timestamps (>10 years ago)', function (): void {
+            $veryOld = time() - (15 * 365 * 24 * 60 * 60); // 15 years ago
+            $formatted = $this->service->formatLastModified($veryOld);
+
+            expect($formatted)->toBeString();
+            expect($formatted)->toContain('ago');
+            expect($formatted)->toContain('years');
+        });
+
+        test('formatLastModified handles timestamp during DST transition', function (): void {
+            // Use a timestamp that falls during a DST transition
+            // DST transitions typically happen at 2:00 AM on specific dates
+            // For example, in US: second Sunday in March, first Sunday in November
+            // Let's use a timestamp that should work across timezones
+            $dstTimestamp = strtotime('2024-03-10 02:30:00'); // During DST transition
+
+            if ($dstTimestamp === false) {
+                // If strtotime fails, skip this test
+                $this->markTestSkipped('Could not create DST timestamp');
+            }
+
+            $formatted = $this->service->formatLastModified($dstTimestamp);
+
+            expect($formatted)->toBeString();
+            expect($formatted)->not->toBe('Never');
+            expect($formatted)->toContain('ago');
+        });
+
+        test('formatLastModified handles timestamp with negative values (before epoch)', function (): void {
+            $beforeEpoch = -86400; // 1 day before Unix epoch (1969-12-31)
+            $formatted = $this->service->formatLastModified($beforeEpoch);
+
+            expect($formatted)->toBeString();
+            expect($formatted)->not->toBe('Never');
+            // diffForHumans should handle negative timestamps
+            expect($formatted)->toContain('ago');
+        });
+
+        test('formatLastModified handles timestamp just after epoch', function (): void {
+            $justAfter = 1; // 1 second after epoch
+            $formatted = $this->service->formatLastModified($justAfter);
+
+            expect($formatted)->toBeString();
+            expect($formatted)->toContain('ago');
+            expect($formatted)->toContain('years'); // Should be ~50+ years
+        });
+
+        test('formatLastModified handles timestamp representing current time', function (): void {
+            $now = time();
+            $formatted = $this->service->formatLastModified($now);
+
+            expect($formatted)->toBeString();
+            // Should show "now" or "1 second ago" or similar
+            expect($formatted)->toMatch('/now|second|moment/i');
+        });
+    });
 });

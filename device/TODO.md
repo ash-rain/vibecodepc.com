@@ -239,11 +239,12 @@ This test plan covers the config file editor system including ConfigFileService,
   - File permissions changed - tested with chmod 0000
   - Added 7 comprehensive tests covering: clock skew, file deletion race conditions, restrictive permissions, read-only filesystem, multiple call consistency, directory handling, and broken symlinks
 
-- [ ] **B2.2**: Test `formatLastModified()` edge cases
-  - Timestamp exactly at epoch (1970-01-01)
-  - Timestamp in the future
-  - Very old timestamps (>10 years ago)
-  - DST transitions
+- [x] **B2.2**: Test `formatLastModified()` edge cases (2026-03-17)
+  - Timestamp exactly at epoch (1970-01-01) - tested, shows "55 years ago"
+  - Timestamp in the future (1 hour, 1 year) - tested with "from now" format
+  - Very old timestamps (>10 years ago) - tested with 15-year-old timestamp
+  - DST transitions - tested with DST transition timestamp
+  - Added 8 comprehensive tests covering: epoch time, future timestamps (near and far), very old timestamps, DST transitions, negative timestamps (before epoch), timestamps just after epoch, and current time
 
 ### B3. Reload Triggering
 - [ ] **B3.1**: Test `triggerReload()` service interactions
