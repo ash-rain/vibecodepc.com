@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Models\CloudCredential;
-use App\Models\Project;
 use App\Models\QuickTunnel;
+use App\Repositories\ProjectRepository;
 use App\Services\DeviceHealthService;
 use App\Services\DeviceStateService;
 use App\Services\NetworkService;
@@ -28,14 +28,16 @@ class DeviceHealth extends Command
         NetworkService $networkService,
         DeviceStateService $stateService,
         SystemService $systemService,
-        TunnelService $tunnelService
+        TunnelService $tunnelService,
+        ProjectRepository $projectRepository
     ): int {
         $metrics = $this->collectMetrics(
             $healthService,
             $networkService,
             $stateService,
             $systemService,
-            $tunnelService
+            $tunnelService,
+            $projectRepository
         );
 
         if ($this->option('json') || $this->option('format') === 'json') {
@@ -55,7 +57,8 @@ class DeviceHealth extends Command
         NetworkService $networkService,
         DeviceStateService $stateService,
         SystemService $systemService,
-        TunnelService $tunnelService
+        TunnelService $tunnelService,
+        ProjectRepository $projectRepository
     ): array {
         $healthMetrics = $healthService->getMetrics();
         $credential = CloudCredential::current();
@@ -97,8 +100,8 @@ class DeviceHealth extends Command
             'uptime' => $this->getUptime(),
 
             // Application state
-            'running_projects' => Project::running()->count(),
-            'total_projects' => Project::count(),
+            'running_projects' => $projectRepository->countRunning(),
+            'total_projects' => $projectRepository->count(),
             'tunnel_active' => $tunnelService->isRunning(),
             'quick_tunnels_active' => QuickTunnel::whereIn('status', ['starting', 'running'])->count(),
 

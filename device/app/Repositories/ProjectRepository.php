@@ -294,4 +294,46 @@ class ProjectRepository
     {
         return Project::query();
     }
+
+    /**
+     * Get projects for tunnel routes (tunnel enabled with subdomain and port).
+     *
+     * @return array<string, int>
+     */
+    public function getTunnelRoutes(): array
+    {
+        return Project::where('tunnel_enabled', true)
+            ->whereNotNull('tunnel_subdomain_path')
+            ->whereNotNull('port')
+            ->pluck('port', 'tunnel_subdomain_path')
+            ->all();
+    }
+
+    /**
+     * Get all projects ordered by latest first.
+     *
+     * @return Collection<int, Project>
+     */
+    public function getLatest(): Collection
+    {
+        return Project::latest()->get();
+    }
+
+    /**
+     * Count running projects.
+     */
+    public function countRunning(): int
+    {
+        return Project::running()->count();
+    }
+
+    /**
+     * Get projects with only name and env_vars columns.
+     *
+     * @return Collection<int, Project>
+     */
+    public function getAllWithEnvVars(): Collection
+    {
+        return Project::all(['name', 'env_vars']);
+    }
 }

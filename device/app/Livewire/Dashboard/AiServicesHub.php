@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Dashboard;
 
 use App\Models\AiProviderConfig;
-use App\Models\Project;
+use App\Repositories\ProjectRepository;
 use App\Services\AiProviders\AiProviderResolverService;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -78,7 +78,8 @@ class AiServicesHub extends Component
             'custom' => 'CUSTOM_API_KEY',
         ];
 
-        $projects = Project::all(['name', 'env_vars']);
+        $projectRepository = app(ProjectRepository::class);
+        $projects = $projectRepository->getAllWithEnvVars();
 
         foreach ($projects as $project) {
             $envVars = $project->env_vars ?? [];

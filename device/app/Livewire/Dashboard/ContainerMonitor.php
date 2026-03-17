@@ -254,8 +254,9 @@ class ContainerMonitor extends Component
         }
 
         $containerService = app(ProjectContainerService::class);
+        $projectRepository = app(ProjectRepository::class);
         $projectIds = array_column($this->containers, 'id');
-        $projects = Project::whereIn('id', $projectIds)->get()->keyBy('id');
+        $projects = $projectRepository->getByIdsKeyed($projectIds);
 
         $this->containers = array_map(function (array $container) use ($projects, $containerService) {
             $project = $projects->get($container['id']);
@@ -282,13 +283,14 @@ class ContainerMonitor extends Component
 
     private function refreshTotals(): void
     {
-        $this->totalRunning = Project::where('status', ProjectStatus::Running)->count();
-        $this->totalStopped = Project::whereIn('status', [
+        $projectRepository = app(ProjectRepository::class);
+        $this->totalRunning = $projectRepository->countByStatus(ProjectStatus::Running);
+        $this->totalStopped = $projectRepository->countWhereStatusIn([
             ProjectStatus::Stopped,
             ProjectStatus::Created,
             ProjectStatus::Scaffolding,
             ProjectStatus::Cloning,
-        ])->count();
-        $this->totalError = Project::where('status', ProjectStatus::Error)->count();
+        ]);
+        $this->totalError = $projectRepository->countByStatus(ProjectStatus::Error);
     }
 }

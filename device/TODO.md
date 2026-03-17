@@ -13,10 +13,12 @@
   - Reduces memory usage by only loading required columns for tunnel display
 
 #### Service Layer Enhancements
-- [ ] `refactor:` Implement repository pattern for complex queries (M)
-  - Create ProjectRepository class
-  - Move raw SQL from services to repository
-  - See PLAN.md Phase 1 for implementation details
+- [x] 2026-03-17 `refactor:` Implement repository pattern for complex queries (M)
+  - Added `getTunnelRoutes()`, `getLatest()`, `countRunning()`, `getAllWithEnvVars()` methods to ProjectRepository
+  - Updated ContainerMonitor, ProjectList, ProjectCreate, ProjectDetail, Overview, AiServicesHub Livewire components
+  - Updated DeviceHealth console command
+  - All direct Project:: queries now use ProjectRepository abstraction
+  - 10 existing repository tests passing
 - [ ] `refactor:` Extract hardcoded timeout values to configuration (S)
   - Move HTTP client timeouts to config/vibecodepc.php
   - See PLAN.md Phase 1 for implementation details
