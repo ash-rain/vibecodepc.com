@@ -177,9 +177,15 @@ This test plan covers the config file editor system including ConfigFileService,
   - Values containing forbidden strings in content (not keys)
 
 ### A3. Project-Scoped Config Edge Cases
-- [ ] **A3.1**: Test project-scoped configs with deleted projects
+- [x] 2026-03-17 **A3.1**: Test project-scoped configs with deleted projects
   - Config exists but project has been deleted from DB
   - Config directory exists but project record doesn't
+  - Added 12 comprehensive tests covering:
+    - Soft-deleted projects (getContent, putContent, backup, restore, delete, exists, resolvePath)
+    - Force-deleted projects with orphaned config files
+    - Backup isolation between deleted vs active projects
+    - Backup isolation between multiple deleted projects
+    - Project ID suffix format verification in backup filenames
   
 - [ ] **A3.2**: Test backup listing with multiple projects
   - Verify project isolation in backup listing

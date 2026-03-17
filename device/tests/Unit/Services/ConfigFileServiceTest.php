@@ -514,6 +514,307 @@ describe('ConfigFileService', function (): void {
                 File::deleteDirectory($this->testDir.'/projects');
             }
         });
+
+        describe('deleted projects edge cases', function (): void {
+            test('getContent works with soft-deleted project when file exists', function (): void {
+                // Create project and config file
+                File::put($this->project->path.'/config.json', '{"project": "value"}', true);
+
+                // Soft delete the project
+                $this->project->delete();
+
+                // getContent should still work if the file exists (uses project path from the model)
+                // Re-fetch the soft-deleted project including trashed
+                $deletedProject = Project::withTrashed()->find($this->project->id);
+                $content = $this->service->getContent('test_project_config', $deletedProject);
+
+                expect($content)->toBe('{"project": "value"}');
+
+                // Cleanup
+                $this->project->forceDelete();
+            });
+
+            test('putContent works with soft-deleted project when file exists', function (): void {
+                // Create initial config file
+                File::put($this->project->path.'/config.json', '{"original": "data"}', true);
+
+                // Soft delete the project
+                $this->project->delete();
+
+                // Re-fetch the soft-deleted project including trashed
+                $deletedProject = Project::withTrashed()->find($this->project->id);
+
+                // putContent should still work
+                $this->service->putContent('test_project_config', '{"updated": "data"}', $deletedProject);
+
+                expect(File::get($this->project->path.'/config.json'))->toBe('{"updated": "data"}');
+
+                // Cleanup
+                $this->project->forceDelete();
+            });
+
+            test('backup works with soft-deleted project', function (): void {
+                // Create config file
+                File::put($this->project->path.'/config.json', '{"backup": "test"}', true);
+
+                // Soft delete the project
+                $this->project->delete();
+
+                // Re-fetch the soft-deleted project including trashed
+                $deletedProject = Project::withTrashed()->find($this->project->id);
+
+                // Backup should still work
+                $backupPath = $this->service->backup('test_project_config', $deletedProject);
+
+                expect(File::exists($backupPath))->toBeTrue();
+                expect(File::get($backupPath))->toBe('{"backup": "test"}');
+                expect(strpos($backupPath, "-project-{$this->project->id}"))->toBeInt();
+
+                // Cleanup
+                $this->project->forceDelete();
+            });
+
+            test('listBackups includes backups from soft-deleted projects', function (): void {
+                // Create config file and backup
+                File::put($this->project->path.'/config.json', 'v1', true);
+                $this->service->backup('test_project_config', $this->project);
+
+                // Soft delete the project
+                $this->project->delete();
+
+                // Re-fetch the soft-deleted project including trashed
+                $deletedProject = Project::withTrashed()->find($this->project->id);
+
+                // listBackups should still find the backup
+                $backups = $this->service->listBackups('test_project_config', $deletedProject);
+
+                expect($backups)->toHaveCount(1);
+                expect(File::get($backups[0]['path']))->toBe('v1');
+
+                // Cleanup
+                $this->project->forceDelete();
+            });
+
+            test('delete operation works with soft-deleted project', function (): void {
+                // Create config file
+                File::put($this->project->path.'/config.json', '{"delete": "me"}', true);
+                expect(File::exists($this->project->path.'/config.json'))->toBeTrue();
+
+                // Soft delete the project
+                $this->project->delete();
+
+                // Re-fetch the soft-deleted project including trashed
+                $deletedProject = Project::withTrashed()->find($this->project->id);
+
+                // Delete should still work
+                $this->service->delete('test_project_config', $deletedProject);
+
+                expect(File::exists($this->project->path.'/config.json'))->toBeFalse();
+
+                // Cleanup
+                $this->project->forceDelete();
+            });
+
+            test('resolvePath works with soft-deleted project', function (): void {
+                // Soft delete the project
+                $this->project->delete();
+
+                // Re-fetch the soft-deleted project including trashed
+                $deletedProject = Project::withTrashed()->find($this->project->id);
+
+                // resolvePath should still work
+                $path = $this->service->resolvePath('test_project_config', $deletedProject);
+
+                expect($path)->toBe($this->project->path.'/config.json');
+
+                // Cleanup
+                $this->project->forceDelete();
+            });
+
+            test('exists works with soft-deleted project when file exists', function (): void {
+                // Create config file
+                File::put($this->project->path.'/config.json', '{"exists": "true"}', true);
+
+                // Soft delete the project
+                $this->project->delete();
+
+                // Re-fetch the soft-deleted project including trashed
+                $deletedProject = Project::withTrashed()->find($this->project->id);
+
+                // exists should return true
+                expect($this->service->exists('test_project_config', $deletedProject))->toBeTrue();
+
+                // Cleanup
+                $this->project->forceDelete();
+            });
+
+            test('exists returns false with soft-deleted project when file does not exist', function (): void {
+                // Ensure no config file exists
+                if (File::exists($this->project->path.'/config.json')) {
+                    File::delete($this->project->path.'/config.json');
+                }
+
+                // Soft delete the project
+                $this->project->delete();
+
+                // Re-fetch the soft-deleted project including trashed
+                $deletedProject = Project::withTrashed()->find($this->project->id);
+
+                // exists should return false
+                expect($this->service->exists('test_project_config', $deletedProject))->toBeFalse();
+
+                // Cleanup
+                $this->project->forceDelete();
+            });
+
+            test('restore works with soft-deleted project', function (): void {
+                // Create initial file and backup
+                File::put($this->project->path.'/config.json', 'original', true);
+                $backupPath = $this->service->backup('test_project_config', $this->project);
+
+                // Modify the file
+                File::put($this->project->path.'/config.json', 'modified', true);
+
+                // Soft delete the project
+                $this->project->delete();
+
+                // Re-fetch the soft-deleted project including trashed
+                $deletedProject = Project::withTrashed()->find($this->project->id);
+
+                // Restore should work
+                $this->service->restore('test_project_config', $backupPath, $deletedProject);
+
+                expect(File::get($this->project->path.'/config.json'))->toBe('original');
+
+                // Cleanup
+                $this->project->forceDelete();
+            });
+
+            test('config directory exists but project force deleted from database', function (): void {
+                // Create config file
+                File::put($this->project->path.'/config.json', '{"orphaned": "config"}', true);
+
+                // Get project ID before force delete
+                $projectId = $this->project->id;
+                $projectPath = $this->project->path;
+
+                // Force delete the project (removes from database completely)
+                $this->project->forceDelete();
+
+                // At this point, we have a project model that's deleted from DB
+                // but the config file still exists on disk
+
+                // Create a temporary project model with the same path
+                // This simulates what happens if someone tries to access
+                // a config for a force-deleted project using a cached/stored reference
+                $orphanedProject = new Project([
+                    'id' => $projectId,
+                    'name' => 'Orphaned Project',
+                    'path' => $projectPath,
+                ]);
+                $orphanedProject->id = $projectId; // Set ID manually since it's not in DB
+
+                // getContent should still work if we have the project object
+                // even though it's not in the database
+                $content = $this->service->getContent('test_project_config', $orphanedProject);
+
+                expect($content)->toBe('{"orphaned": "config"}');
+            });
+
+            test('backup isolation for deleted vs active projects', function (): void {
+                // Create two projects
+                $project2 = Project::factory()->create([
+                    'name' => 'Active Project',
+                    'path' => $this->testDir.'/projects/active-project',
+                ]);
+                if (! File::isDirectory($project2->path)) {
+                    File::makeDirectory($project2->path, 0755, true);
+                }
+
+                // Create config files for both
+                File::put($this->project->path.'/config.json', 'deleted-project-content', true);
+                File::put($project2->path.'/config.json', 'active-project-content', true);
+
+                // Create backups for both
+                $this->service->backup('test_project_config', $this->project);
+                $this->service->backup('test_project_config', $project2);
+
+                // Soft delete first project
+                $this->project->delete();
+
+                // Re-fetch deleted project
+                $deletedProject = Project::withTrashed()->find($this->project->id);
+
+                // List backups for deleted project should only show its backups
+                $deletedBackups = $this->service->listBackups('test_project_config', $deletedProject);
+                expect($deletedBackups)->toHaveCount(1);
+                expect(File::get($deletedBackups[0]['path']))->toBe('deleted-project-content');
+
+                // List backups for active project should only show its backups
+                $activeBackups = $this->service->listBackups('test_project_config', $project2);
+                expect($activeBackups)->toHaveCount(1);
+                expect(File::get($activeBackups[0]['path']))->toBe('active-project-content');
+
+                // Verify project ID suffix in backup filenames
+                foreach ($deletedBackups as $backup) {
+                    expect(strpos($backup['filename'], "-project-{$this->project->id}"))->toBeInt();
+                }
+                foreach ($activeBackups as $backup) {
+                    expect(strpos($backup['filename'], "-project-{$project2->id}"))->toBeInt();
+                }
+
+                // Cleanup
+                $this->project->forceDelete();
+                File::deleteDirectory($project2->path);
+            });
+
+            test('project isolation prevents backup leakage between deleted projects', function (): void {
+                // Create two projects that will both be deleted
+                $project2 = Project::factory()->create([
+                    'name' => 'Project 2',
+                    'path' => $this->testDir.'/projects/project-2',
+                ]);
+                if (! File::isDirectory($project2->path)) {
+                    File::makeDirectory($project2->path, 0755, true);
+                }
+
+                // Create config and backup for both
+                File::put($this->project->path.'/config.json', 'project-1-data', true);
+                File::put($project2->path.'/config.json', 'project-2-data', true);
+
+                $this->service->backup('test_project_config', $this->project);
+                $this->service->backup('test_project_config', $project2);
+
+                // Soft delete both
+                $this->project->delete();
+                $project2->delete();
+
+                // Re-fetch both
+                $deletedProject1 = Project::withTrashed()->find($this->project->id);
+                $deletedProject2 = Project::withTrashed()->find($project2->id);
+
+                // Each project should only see its own backups
+                $backups1 = $this->service->listBackups('test_project_config', $deletedProject1);
+                $backups2 = $this->service->listBackups('test_project_config', $deletedProject2);
+
+                expect($backups1)->toHaveCount(1);
+                expect($backups2)->toHaveCount(1);
+                expect(File::get($backups1[0]['path']))->toBe('project-1-data');
+                expect(File::get($backups2[0]['path']))->toBe('project-2-data');
+
+                // Ensure no cross-contamination
+                $backup1Filenames = array_map(fn ($b) => $b['filename'], $backups1);
+                $backup2Filenames = array_map(fn ($b) => $b['filename'], $backups2);
+
+                // No overlap between the two sets
+                $intersection = array_intersect($backup1Filenames, $backup2Filenames);
+                expect($intersection)->toBe([]);
+
+                // Cleanup
+                $this->project->forceDelete();
+                $project2->forceDelete();
+            });
+        });
     });
 
     describe('delete operations', function (): void {
