@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Exceptions\DeviceRegistrationException;
+use App\Exceptions\DeviceStatusException;
 use App\Services\CloudApiClient;
 use App\Services\DeviceRegistry\DeviceRegistryService;
 use Illuminate\Http\Client\ConnectionException;
@@ -30,7 +32,7 @@ describe('registerDeviceWithRetry', function () {
         ]);
 
         expect(fn () => $this->service->registerDeviceWithRetry($device))
-            ->not->toThrow(\RuntimeException::class);
+            ->not->toThrow(DeviceRegistrationException::class);
 
         Http::assertSent(fn ($request) => $request->url() === 'https://vibecodepc.test/api/devices/register');
     });
@@ -56,7 +58,7 @@ describe('registerDeviceWithRetry', function () {
         ]);
 
         expect(fn () => $this->service->registerDeviceWithRetry($device))
-            ->not->toThrow(\RuntimeException::class);
+            ->not->toThrow(DeviceRegistrationException::class);
 
         expect($callCount)->toBe(2);
     });
@@ -82,7 +84,7 @@ describe('registerDeviceWithRetry', function () {
         ]);
 
         expect(fn () => $this->service->registerDeviceWithRetry($device))
-            ->not->toThrow(\RuntimeException::class);
+            ->not->toThrow(DeviceRegistrationException::class);
 
         expect($callCount)->toBe(2);
     });
@@ -101,8 +103,15 @@ describe('registerDeviceWithRetry', function () {
             },
         ]);
 
-        expect(fn () => $this->service->registerDeviceWithRetry($device))
-            ->toThrow(RuntimeException::class, 'Failed to register device after 3 attempts');
+        $caught = null;
+        try {
+            $this->service->registerDeviceWithRetry($device);
+        } catch (Throwable $e) {
+            $caught = $e;
+        }
+
+        expect($caught)->toBeInstanceOf(DeviceRegistrationException::class);
+        expect($caught->getMessage())->toContain('Failed to register device after 3 attempts');
     });
 
     it('fails immediately on non-retryable errors', function () {
@@ -122,9 +131,14 @@ describe('registerDeviceWithRetry', function () {
             },
         ]);
 
-        expect(fn () => $this->service->registerDeviceWithRetry($device))
-            ->toThrow(RuntimeException::class);
+        $caught = null;
+        try {
+            $this->service->registerDeviceWithRetry($device);
+        } catch (Throwable $e) {
+            $caught = $e;
+        }
 
+        expect($caught)->toBeInstanceOf(DeviceRegistrationException::class);
         expect($callCount)->toBe(1);
     });
 });
@@ -208,8 +222,15 @@ describe('getDeviceStatusWithRetry', function () {
             ),
         ]);
 
-        expect(fn () => $this->service->getDeviceStatusWithRetry($uuid))
-            ->toThrow(RuntimeException::class, 'Failed to get device status after 3 attempts');
+        $caught = null;
+        try {
+            $this->service->getDeviceStatusWithRetry($uuid);
+        } catch (Throwable $e) {
+            $caught = $e;
+        }
+
+        expect($caught)->toBeInstanceOf(DeviceStatusException::class);
+        expect($caught->getMessage())->toContain('Failed to get device status after 3 attempts');
     });
 
     it('fails immediately on 404 errors', function () {
@@ -224,9 +245,14 @@ describe('getDeviceStatusWithRetry', function () {
             },
         ]);
 
-        expect(fn () => $this->service->getDeviceStatusWithRetry($uuid))
-            ->toThrow(RuntimeException::class);
+        $caught = null;
+        try {
+            $this->service->getDeviceStatusWithRetry($uuid);
+        } catch (Throwable $e) {
+            $caught = $e;
+        }
 
+        expect($caught)->toBeInstanceOf(DeviceStatusException::class);
         expect($callCount)->toBe(1);
     });
 
@@ -452,9 +478,14 @@ describe('retryable status codes', function () {
             },
         ]);
 
-        expect(fn () => $this->service->getDeviceStatusWithRetry($uuid))
-            ->toThrow(RuntimeException::class);
+        $caught = null;
+        try {
+            $this->service->getDeviceStatusWithRetry($uuid);
+        } catch (Throwable $e) {
+            $caught = $e;
+        }
 
+        expect($caught)->toBeInstanceOf(DeviceStatusException::class);
         expect($callCount)->toBe(1);
     });
 
@@ -470,9 +501,14 @@ describe('retryable status codes', function () {
             },
         ]);
 
-        expect(fn () => $this->service->getDeviceStatusWithRetry($uuid))
-            ->toThrow(RuntimeException::class);
+        $caught = null;
+        try {
+            $this->service->getDeviceStatusWithRetry($uuid);
+        } catch (Throwable $e) {
+            $caught = $e;
+        }
 
+        expect($caught)->toBeInstanceOf(DeviceStatusException::class);
         expect($callCount)->toBe(1);
     });
 });

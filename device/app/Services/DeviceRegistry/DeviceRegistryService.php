@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services\DeviceRegistry;
 
+use App\Exceptions\DeviceRegistrationException;
+use App\Exceptions\DeviceStatusException;
 use App\Services\CloudApiClient;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Log;
-use RuntimeException;
 use Throwable;
 use VibecodePC\Common\DTOs\DeviceInfo;
 use VibecodePC\Common\DTOs\DeviceStatusResult;
@@ -28,7 +29,7 @@ class DeviceRegistryService
     /**
      * Register a device with the cloud API with retry logic.
      *
-     * @throws RuntimeException When registration fails after all retries
+     * @throws DeviceRegistrationException When registration fails after all retries
      */
     public function registerDeviceWithRetry(DeviceInfo $deviceInfo): void
     {
@@ -60,6 +61,8 @@ class DeviceRegistryService
                 ]);
 
                 usleep($delay * 1000);
+            } catch (DeviceRegistrationException $e) {
+                throw $e;
             } catch (Throwable $e) {
                 $lastException = $e;
 
@@ -73,7 +76,7 @@ class DeviceRegistryService
             'error' => $lastException?->getMessage(),
         ]);
 
-        throw new RuntimeException(
+        throw new DeviceRegistrationException(
             sprintf('Failed to register device after %d attempts: %s', self::MAX_RETRIES, $lastException?->getMessage()),
             0,
             $lastException
@@ -83,7 +86,7 @@ class DeviceRegistryService
     /**
      * Get device status from the cloud API with retry logic.
      *
-     * @throws RuntimeException When status check fails after all retries
+     * @throws DeviceStatusException When status check fails after all retries
      */
     public function getDeviceStatusWithRetry(string $deviceId): DeviceStatusResult
     {
@@ -115,6 +118,8 @@ class DeviceRegistryService
                 ]);
 
                 usleep($delay * 1000);
+            } catch (DeviceStatusException $e) {
+                throw $e;
             } catch (Throwable $e) {
                 $lastException = $e;
 
@@ -128,7 +133,7 @@ class DeviceRegistryService
             'error' => $lastException?->getMessage(),
         ]);
 
-        throw new RuntimeException(
+        throw new DeviceStatusException(
             sprintf('Failed to get device status after %d attempts: %s', self::MAX_RETRIES, $lastException?->getMessage()),
             0,
             $lastException
@@ -143,7 +148,7 @@ class DeviceRegistryService
     {
         try {
             return $this->getDeviceStatusWithRetry($deviceId);
-        } catch (Throwable $e) {
+        } catch (DeviceStatusException $e) {
             Log::warning('Failed to check pairing status (non-critical)', [
                 'device_id' => $deviceId,
                 'error' => $e->getMessage(),
@@ -162,7 +167,7 @@ class DeviceRegistryService
             $this->registerDeviceWithRetry($deviceInfo);
 
             return true;
-        } catch (Throwable $e) {
+        } catch (DeviceRegistrationException $e) {
             Log::warning('Failed to register device (non-critical)', [
                 'device_id' => $deviceInfo->id,
                 'error' => $e->getMessage(),

@@ -69,8 +69,8 @@ The codebase is well-structured with excellent separation of concerns, proper us
 - [x] Enum-driven configuration
 
 #### Recommendations:
-- [ ] improve: Add comprehensive PHPDoc array shapes for complex return types (enhancement)
-- [ ] improve: Consider adding more specific exception types instead of generic \Throwable catches
+- [x] 2026-03-17 improve: Add comprehensive PHPDoc array shapes for complex return types (enhancement)
+- [x] 2026-03-17 improve: Add specific exception types instead of generic \Throwable catches
 
 ### Technical Debt
 - **Low**: CircuitBreaker has duplicate logic with CloudApiClient (both implement circuit breaking)

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Exceptions\CloudApiException;
+use App\Exceptions\TunnelException;
 use App\Models\TunnelConfig;
 use App\Services\CloudApiClient;
 use App\Services\DeviceRegistry\DeviceIdentityService;
@@ -44,8 +46,21 @@ class ProvisionQuickTunnelJob implements ShouldBeUnique, ShouldQueue
 
         try {
             $url = $quickTunnelService->startForDashboard();
-        } catch (Throwable $e) {
+        } catch (TunnelException $e) {
             Log::warning("Quick tunnel failed: {$e->getMessage()}");
+
+            if (! app()->environment('local')) {
+                $progressService->seedProgress();
+
+                return;
+            }
+
+            // In local dev, fall back to the device's direct URL so the
+            // cloud setup page can redirect without a real tunnel.
+            $url = config('app.url');
+            Log::info("Using local fallback URL: {$url}");
+        } catch (Throwable $e) {
+            Log::warning("Quick tunnel failed unexpectedly: {$e->getMessage()}");
 
             if (! app()->environment('local')) {
                 $progressService->seedProgress();
@@ -68,8 +83,10 @@ class ProvisionQuickTunnelJob implements ShouldBeUnique, ShouldQueue
             // URL was captured immediately (rare, but possible)
             try {
                 $client->registerTunnelUrl($identity->getDeviceInfo()->id, $url);
-            } catch (Throwable $e) {
+            } catch (CloudApiException $e) {
                 Log::warning("Failed to register tunnel URL with cloud: {$e->getMessage()}");
+            } catch (Throwable $e) {
+                Log::warning("Failed to register tunnel URL unexpectedly: {$e->getMessage()}");
             }
         } else {
             Log::info('Quick tunnel started; URL will be discovered asynchronously by PollTunnelUrlJob');
