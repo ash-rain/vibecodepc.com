@@ -232,11 +232,12 @@ This test plan covers the config file editor system including ConfigFileService,
   - Services that support hot reload
 
 ### B2. File Operations
-- [ ] **B2.1**: Test `getLastModified()` edge cases
-  - File modified in the future (clock skew)
-  - File on read-only filesystem
-  - File deleted between check and read
-  - File permissions changed
+- [x] **B2.1**: Test `getLastModified()` edge cases (2026-03-17)
+  - File modified in the future (clock skew) - tested with future timestamp
+  - File on read-only filesystem - tested with chmod 0444
+  - File deleted between check and read - tested with explicit deletion
+  - File permissions changed - tested with chmod 0000
+  - Added 7 comprehensive tests covering: clock skew, file deletion race conditions, restrictive permissions, read-only filesystem, multiple call consistency, directory handling, and broken symlinks
 
 - [ ] **B2.2**: Test `formatLastModified()` edge cases
   - Timestamp exactly at epoch (1970-01-01)

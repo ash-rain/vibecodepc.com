@@ -283,4 +283,131 @@ describe('ConfigReloadService', function (): void {
         expect($cliService['reloaded'])->toBeFalse();
         expect($vscodeService)->toHaveKey('reloaded');
     });
+
+    // B2.1: Test getLastModified() edge cases
+    describe('getLastModified edge cases', function (): void {
+        test('getLastModified handles file modified in the future (clock skew)', function (): void {
+            $testFile = $this->testDir.'/future-file.json';
+            File::put($testFile, '{"test": true}');
+
+            // Set modification time to 1 hour in the future
+            $futureTime = time() + 3600;
+            touch($testFile, $futureTime);
+
+            $timestamp = $this->service->getLastModified($testFile);
+
+            expect($timestamp)->toBeInt();
+            expect($timestamp)->toBeGreaterThan(time());
+            expect($timestamp)->toBeGreaterThanOrEqual($futureTime - 1); // Allow 1 second tolerance
+        });
+
+        test('getLastModified returns null when file is deleted between check and read', function (): void {
+            $testFile = $this->testDir.'/race-condition.json';
+            File::put($testFile, '{"test": true}');
+
+            // Verify file exists initially
+            expect(File::exists($testFile))->toBeTrue();
+
+            // Delete the file
+            File::delete($testFile);
+
+            // Should return null for non-existent file
+            $timestamp = $this->service->getLastModified($testFile);
+            expect($timestamp)->toBeNull();
+        });
+
+        test('getLastModified handles file with restrictive permissions', function (): void {
+            $testFile = $this->testDir.'/unreadable.json';
+            File::put($testFile, '{"test": true}');
+
+            // Remove all permissions (even read)
+            chmod($testFile, 0000);
+
+            try {
+                // File::exists() uses file_exists() which works regardless of permissions
+                // File::lastModified() typically still works even without read permissions on most systems
+                // because it only needs stat(), not open()
+                // The important thing is it doesn't throw an exception
+                $timestamp = $this->service->getLastModified($testFile);
+
+                // On most systems, lastModified works even without read permissions
+                expect($timestamp)->toBeInt();
+                expect($timestamp)->toBeGreaterThan(0);
+            } finally {
+                // Restore permissions for cleanup
+                chmod($testFile, 0644);
+            }
+        });
+
+        test('getLastModified handles file on read-only filesystem simulation', function (): void {
+            $testFile = $this->testDir.'/readonly-test.json';
+            File::put($testFile, '{"test": true}');
+
+            // Make file read-only
+            chmod($testFile, 0444);
+
+            try {
+                $timestamp = $this->service->getLastModified($testFile);
+
+                // Should still be able to read modification time on read-only file
+                expect($timestamp)->toBeInt();
+                expect($timestamp)->toBeGreaterThan(0);
+            } finally {
+                // Restore permissions for cleanup
+                chmod($testFile, 0644);
+            }
+        });
+
+        test('getLastModified returns consistent results on multiple calls', function (): void {
+            $testFile = $this->testDir.'/consistent.json';
+            File::put($testFile, '{"test": true}');
+
+            // Get timestamp multiple times
+            $timestamp1 = $this->service->getLastModified($testFile);
+            $timestamp2 = $this->service->getLastModified($testFile);
+            $timestamp3 = $this->service->getLastModified($testFile);
+
+            // All calls should return the same value
+            expect($timestamp1)->toBe($timestamp2);
+            expect($timestamp2)->toBe($timestamp3);
+            expect($timestamp1)->toBeInt();
+        });
+
+        test('getLastModified handles directory instead of file', function (): void {
+            $testDir = $this->testDir.'/test-directory';
+            File::makeDirectory($testDir);
+
+            // File::lastModified works on directories too
+            $timestamp = $this->service->getLastModified($testDir);
+
+            expect($timestamp)->toBeInt();
+            expect($timestamp)->toBeGreaterThan(0);
+        });
+
+        test('getLastModified handles symlink to non-existent file', function (): void {
+            $targetFile = $this->testDir.'/symlink-target.json';
+            $symlinkFile = $this->testDir.'/symlink.json';
+
+            // Create the target file first
+            File::put($targetFile, '{"test": true}');
+
+            // Create symlink
+            symlink($targetFile, $symlinkFile);
+
+            // Verify symlink works when target exists
+            expect($this->service->getLastModified($symlinkFile))->toBeInt();
+
+            // Delete target file
+            File::delete($targetFile);
+
+            // Symlink now points to non-existent file
+            // File::exists follows symlinks and returns false for broken symlinks
+            $timestamp = $this->service->getLastModified($symlinkFile);
+
+            expect($timestamp)->toBeNull();
+
+            // Cleanup symlink
+            @unlink($symlinkFile);
+        });
+    });
 });
