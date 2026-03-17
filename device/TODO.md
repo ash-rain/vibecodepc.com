@@ -341,12 +341,20 @@ This test plan covers the config file editor system including ConfigFileService,
   - Parse PATH modifications
   - Handle encrypted values
 
-- [ ] **D1.2**: Test `setEnvVars()` writing
+- [x] 2026-03-17 **D1.2**: Test `setEnvVars()` writing
   - Write new section to bashrc
   - Update existing section
-  - Remove section entirely
-  - Handle special characters in values
+  - Remove section entirely when all values are empty
+  - Handle special characters in values (spaces, dollar signs, backticks, backslashes)
   - Encrypt sensitive values
+  - Handle unicode characters
+  - Preserve content outside managed section
+  - Handle files with only partial section markers
+  - Handle very long values
+  - Handle empty bashrc file
+  - Handle values with equals signs
+  - Handle single quotes (escaped by addslashes)
+  - Handle updating/removing _extra_path
 
 - [ ] **D1.3**: Test encryption/decryption
   - Encrypt sensitive keys

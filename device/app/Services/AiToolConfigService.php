@@ -150,7 +150,8 @@ class AiToolConfigService
         $path = $this->getBashrcPath();
         $content = file_exists($path) ? (string) file_get_contents($path) : '';
 
-        $lines = [self::SECTION_START];
+        // Build the new section content
+        $lines = [];
 
         if (! empty($vars['_extra_path'])) {
             $lines[] = 'export PATH="'.addslashes($vars['_extra_path']).':$PATH"';
@@ -165,11 +166,32 @@ class AiToolConfigService
             }
         }
 
-        $lines[] = self::SECTION_END;
-        $newSection = implode("\n", $lines);
-
+        // Find existing section
         $start = strpos($content, self::SECTION_START);
         $end = strpos($content, self::SECTION_END);
+
+        // If there are no vars to write, remove the section entirely
+        if (empty($lines)) {
+            if ($start !== false && $end !== false) {
+                $endOffset = $end + strlen(self::SECTION_END);
+                $before = rtrim(substr($content, 0, $start));
+                $after = ltrim(substr($content, $endOffset));
+                $content = $before;
+                if ($before !== '' && $after !== '') {
+                    $content .= "\n\n".$after;
+                } elseif ($after !== '') {
+                    $content .= $after;
+                }
+            }
+            file_put_contents($path, $content);
+
+            return;
+        }
+
+        // Build section with markers
+        array_unshift($lines, self::SECTION_START);
+        $lines[] = self::SECTION_END;
+        $newSection = implode("\n", $lines);
 
         if ($start !== false && $end !== false) {
             $endOffset = $end + strlen(self::SECTION_END);
