@@ -170,7 +170,7 @@ This test plan covers the config file editor system including ConfigFileService,
   - Fixed JSONC parser to properly handle strings and escape sequences
   - Added 17 comprehensive edge case tests (all passing)
 
-- [ ] **A2.3**: Test forbidden key detection
+- [x] **A2.3**: Test forbidden key detection (2026-03-17)
   - Keys that partially match patterns (e.g., `api_key_name` should NOT trigger)
   - Keys in arrays vs objects
   - Keys with different case variations (API_KEY, Api_Key, api_key)

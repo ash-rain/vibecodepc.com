@@ -580,6 +580,238 @@ describe('ConfigFileService', function (): void {
 
             expect($result)->toBe(['name' => 'test', 'enabled' => true, 'count' => 42]);
         });
+
+        describe('forbidden key detection edge cases', function (): void {
+            test('allows keys that contain forbidden pattern as substring but not exact match', function (): void {
+                // Keys like 'api_key_name' should NOT trigger (partial match is ok)
+                $json = '{"api_key_name": "valid", "my_api_key": "valid", "api_key_suffix": "valid"}';
+
+                $result = $this->service->validateJson($json);
+
+                expect($result)->toBe(['api_key_name' => 'valid', 'my_api_key' => 'valid', 'api_key_suffix' => 'valid']);
+            });
+
+            test('allows keys that contain password as substring but not exact match', function (): void {
+                // Keys like 'password_hint' should NOT trigger (partial match is ok)
+                $json = '{"password_hint": "valid", "user_password": "valid", "password_policy": "valid"}';
+
+                $result = $this->service->validateJson($json);
+
+                expect($result)->toBe(['password_hint' => 'valid', 'user_password' => 'valid', 'password_policy' => 'valid']);
+            });
+
+            test('allows keys that contain secret as substring but not exact match', function (): void {
+                // Keys like 'secret_question' should NOT trigger (partial match is ok)
+                $json = '{"secret_question": "valid", "secret_sauce": "valid", "top_secret": "valid"}';
+
+                $result = $this->service->validateJson($json);
+
+                expect($result)->toBe(['secret_question' => 'valid', 'secret_sauce' => 'valid', 'top_secret' => 'valid']);
+            });
+
+            test('allows keys that contain token as substring but not exact match', function (): void {
+                // Keys like 'token_expiry' should NOT trigger (partial match is ok)
+                $json = '{"token_expiry": "valid", "csrf_token_name": "valid", "token_generator": "valid"}';
+
+                $result = $this->service->validateJson($json);
+
+                expect($result)->toBe(['token_expiry' => 'valid', 'csrf_token_name' => 'valid', 'token_generator' => 'valid']);
+            });
+
+            test('detects all case variations of forbidden keys', function (): void {
+                // Test UPPERCASE
+                $json = '{"API_KEY": "secret"}';
+                expect(fn () => $this->service->validateJson($json))
+                    ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected: \'API_KEY\'');
+
+                // Test MixedCase (PascalCase)
+                $json = '{"Api_Key": "secret"}';
+                expect(fn () => $this->service->validateJson($json))
+                    ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected: \'Api_Key\'');
+
+                // Test camelCase
+                $json = '{"apiKey": "secret"}';
+                expect(fn () => $this->service->validateJson($json))
+                    ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected: \'apiKey\'');
+            });
+
+            test('detects UPPERCASE variations of password and secret', function (): void {
+                $json = '{"PASSWORD": "secret"}';
+                expect(fn () => $this->service->validateJson($json))
+                    ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected: \'PASSWORD\'');
+
+                $json = '{"SECRET": "shh"}';
+                expect(fn () => $this->service->validateJson($json))
+                    ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected: \'SECRET\'');
+            });
+
+            test('detects mixed separator variations', function (): void {
+                // Test with hyphen separator
+                $json = '{"api-key": "secret"}';
+                expect(fn () => $this->service->validateJson($json))
+                    ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected: \'api-key\'');
+
+                // Test with no separator (camelCase handled by case-insensitive regex)
+                $json = '{"accessToken": "secret"}';
+                expect(fn () => $this->service->validateJson($json))
+                    ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected: \'accessToken\'');
+            });
+
+            test('allows values containing forbidden strings but not keys', function (): void {
+                // Values containing forbidden strings should be allowed
+                $json = '{"description": "This is an api_key value", "note": "password: 123", "info": "secret token here"}';
+
+                $result = $this->service->validateJson($json);
+
+                expect($result)->toBe([
+                    'description' => 'This is an api_key value',
+                    'note' => 'password: 123',
+                    'info' => 'secret token here',
+                ]);
+            });
+
+            test('allows deeply nested values containing forbidden strings', function (): void {
+                // Values containing forbidden strings should be allowed, even nested
+                $json = '{"config": {"description": "This api_key is just a reference"}, "data": {"items": [{"text": "password"}]}}';
+
+                $result = $this->service->validateJson($json);
+
+                expect($result['config']['description'])->toBe('This api_key is just a reference');
+                expect($result['data']['items'][0]['text'])->toBe('password');
+            });
+
+            test('detects forbidden keys in arrays', function (): void {
+                // Arrays with keys (associative arrays) should still be checked
+                $json = '{"items": {"api_key": "secret"}}';
+                expect(fn () => $this->service->validateJson($json))
+                    ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected: \'api_key\'');
+            });
+
+            test('allows numeric array values containing forbidden strings', function (): void {
+                // Numeric indices should be fine, even if values contain forbidden strings
+                $json = '{"items": ["api_key", "password", "secret"] }';
+
+                $result = $this->service->validateJson($json);
+
+                expect($result['items'])->toBe(['api_key', 'password', 'secret']);
+            });
+
+            test('detects forbidden keys in deeply nested objects', function (): void {
+                $json = '{"level1": {"level2": {"level3": {"password": "nested"}}}}';
+                expect(fn () => $this->service->validateJson($json))
+                    ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected: \'password\' at path \'level1.level2.level3.password\'');
+            });
+
+            test('reports correct path for nested forbidden keys', function (): void {
+                $json = '{"config": {"auth": {"secret_key": "hidden"}}}';
+                expect(fn () => $this->service->validateJson($json))
+                    ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected: \'secret_key\' at path \'config.auth.secret_key\'');
+            });
+
+            test('detects all forbidden key patterns', function (): void {
+                $forbiddenKeys = [
+                    'api_key', 'api_secret', 'api_token',
+                    'auth_token', 'access_token', 'bearer_token',
+                    'private_key', 'secret_key', 'client_secret',
+                    'password', 'secret', 'token',
+                ];
+
+                foreach ($forbiddenKeys as $key) {
+                    $json = json_encode([$key => 'test_value']);
+                    expect(fn () => $this->service->validateJson($json))
+                        ->toThrow(\InvalidArgumentException::class, "Forbidden key detected: '{$key}'");
+                }
+            });
+
+            test('allows safe keys that start with forbidden patterns', function (): void {
+                // Keys starting with forbidden patterns but not matching exact patterns
+                $json = '{"api_key_version": "v1", "secret_sauce_recipe": "tasty", "token_ring": "jrr"}';
+
+                $result = $this->service->validateJson($json);
+
+                expect($result)->toBe([
+                    'api_key_version' => 'v1',
+                    'secret_sauce_recipe' => 'tasty',
+                    'token_ring' => 'jrr',
+                ]);
+            });
+
+            test('allows underscores in valid keys', function (): void {
+                // Keys with underscores that are not forbidden
+                $json = '{"user_name": "john", "first_name": "John", "last_name": "Doe"}';
+
+                $result = $this->service->validateJson($json);
+
+                expect($result)->toBe(['user_name' => 'john', 'first_name' => 'John', 'last_name' => 'Doe']);
+            });
+
+            test('detects all variations of private_key', function (): void {
+                // Test underscore variations
+                $json = '{"private_key": "secret"}';
+                expect(fn () => $this->service->validateJson($json))
+                    ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected: \'private_key\'');
+
+                // Test hyphen variation
+                $json = '{"private-key": "secret"}';
+                expect(fn () => $this->service->validateJson($json))
+                    ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected: \'private-key\'');
+
+                // Test UPPERCASE
+                $json = '{"PRIVATE_KEY": "secret"}';
+                expect(fn () => $this->service->validateJson($json))
+                    ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected: \'PRIVATE_KEY\'');
+            });
+
+            test('detects all variations of api_token', function (): void {
+                // Test underscore variation
+                $json = '{"api_token": "secret"}';
+                expect(fn () => $this->service->validateJson($json))
+                    ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected: \'api_token\'');
+
+                // Test hyphen variation
+                $json = '{"api-token": "secret"}';
+                expect(fn () => $this->service->validateJson($json))
+                    ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected: \'api-token\'');
+
+                // Test camelCase
+                $json = '{"apiToken": "secret"}';
+                expect(fn () => $this->service->validateJson($json))
+                    ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected: \'apiToken\'');
+            });
+
+            test('allows empty string keys', function (): void {
+                // Empty string keys are unusual but should not trigger forbidden key detection
+                $json = '{"": "empty key value"}';
+
+                $result = $this->service->validateJson($json);
+
+                expect($result)->toBe(['' => 'empty key value']);
+            });
+
+            test('allows null values', function (): void {
+                $json = '{"name": null, "count": null}';
+
+                $result = $this->service->validateJson($json);
+
+                expect($result)->toBe(['name' => null, 'count' => null]);
+            });
+
+            test('allows boolean values', function (): void {
+                $json = '{"enabled": true, "disabled": false}';
+
+                $result = $this->service->validateJson($json);
+
+                expect($result)->toBe(['enabled' => true, 'disabled' => false]);
+            });
+
+            test('allows numeric values', function (): void {
+                $json = '{"count": 42, "pi": 3.14}';
+
+                $result = $this->service->validateJson($json);
+
+                expect($result)->toBe(['count' => 42, 'pi' => 3.14]);
+            });
+        });
     });
 
     describe('JSONC comment stripping', function (): void {
