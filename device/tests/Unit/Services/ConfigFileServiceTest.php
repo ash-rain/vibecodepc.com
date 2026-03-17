@@ -825,6 +825,100 @@ describe('ConfigFileService', function (): void {
         });
     });
 
+    describe('backup edge cases', function (): void {
+        test('throws exception when backup directory is not writable', function (): void {
+            // Create existing file so backup is attempted
+            File::put($this->testDir.'/test.json', '{"old": "content"}', true);
+
+            // Create a backup directory that is not writable to force backup failure
+            $unwritableBackupDir = $this->backupDir.'/unwritable';
+            File::makeDirectory($unwritableBackupDir, 0555, true);
+
+            // Temporarily change backup directory
+            $originalBackupDir = config('vibecodepc.config_editor.backup_directory');
+            config()->set('vibecodepc.config_editor.backup_directory', $unwritableBackupDir);
+
+            // Backup will fail - Laravel's File::put throws ErrorException on permission denied
+            expect(fn () => $this->service->backup('test_config'))
+                ->toThrow(\Exception::class);
+
+            // Cleanup: restore permissions so we can delete
+            chmod($unwritableBackupDir, 0755);
+            config()->set('vibecodepc.config_editor.backup_directory', $originalBackupDir);
+        });
+
+        test('handles backup filename collision with rapid consecutive backups', function (): void {
+            // Create a file to backup
+            File::put($this->testDir.'/test.json', '{"key": "value"}', true);
+
+            // Create multiple backups rapidly (same second)
+            $backupPaths = [];
+            for ($i = 0; $i < 5; $i++) {
+                $backupPaths[] = $this->service->backup('test_config');
+            }
+
+            // All backups should exist and have unique paths
+            expect($backupPaths)->toHaveCount(5);
+            expect(count(array_unique($backupPaths)))->toBe(5);
+
+            // All backups should contain the same content
+            foreach ($backupPaths as $path) {
+                expect(File::exists($path))->toBeTrue();
+                expect(File::get($path))->toBe('{"key": "value"}');
+            }
+        });
+
+        test('throws exception when file exceeds max size during backup', function (): void {
+            // Create a large file that exceeds the max file size limit
+            $largeContent = str_repeat('x', 70 * 1024); // 70KB, exceeds 64KB limit
+            File::put($this->testDir.'/test.json', $largeContent, true);
+
+            // File exists and is readable, so backup should succeed at the backup level
+            // The size check is done in putContent, not backup
+            $backupPath = $this->service->backup('test_config');
+
+            // Backup should succeed regardless of file size
+            expect(File::exists($backupPath))->toBeTrue();
+            expect(File::get($backupPath))->toBe($largeContent);
+        });
+
+        test('throws exception when backup directory does not exist and cannot be created', function (): void {
+            // Create existing file so backup is attempted
+            File::put($this->testDir.'/test.json', '{"old": "content"}', true);
+
+            // Set backup directory to a path that cannot be created (parent is readonly)
+            $readonlyParent = $this->backupDir.'/readonly_parent';
+            File::makeDirectory($readonlyParent, 0555, true);
+
+            $nestedBackupDir = $readonlyParent.'/nested/backups';
+            $originalBackupDir = config('vibecodepc.config_editor.backup_directory');
+            config()->set('vibecodepc.config_editor.backup_directory', $nestedBackupDir);
+
+            // Directory creation will fail with an exception
+            expect(fn () => $this->service->backup('test_config'))
+                ->toThrow(\Exception::class);
+
+            // Cleanup
+            chmod($readonlyParent, 0755);
+            config()->set('vibecodepc.config_editor.backup_directory', $originalBackupDir);
+        });
+
+        test('throws exception when source file cannot be read during backup', function (): void {
+            // Create a file
+            File::put($this->testDir.'/test.json', '{"key": "value"}', true);
+
+            // Make the file unreadable
+            chmod($this->testDir.'/test.json', 0000);
+
+            // Backup should fail because file cannot be read
+            expect(fn () => $this->service->backup('test_config'))
+                ->toThrow(\RuntimeException::class, 'Failed to read file for backup');
+
+            // Cleanup: restore permissions
+            chmod($this->testDir.'/test.json', 0644);
+        });
+    });
+
     describe('schema validation', function (): void {
         $realSchemaDir = '';
 

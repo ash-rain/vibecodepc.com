@@ -213,7 +213,8 @@ class ConfigFileService
         }
 
         $backupDir = config('vibecodepc.config_editor.backup_directory');
-        $timestamp = now()->format('Y-m-d-His');
+        // Use microsecond precision to avoid timestamp collisions
+        $timestamp = now()->format('Y-m-d-His-u');
         $projectSuffix = $project ? "-project-{$project->id}" : '';
         $backupPath = "{$backupDir}/{$key}{$projectSuffix}-{$timestamp}.json";
 
@@ -221,7 +222,12 @@ class ConfigFileService
             File::makeDirectory($backupDir, 0755, true);
         }
 
-        $content = File::get($path);
+        try {
+            $content = File::get($path);
+        } catch (\Exception $e) {
+            throw new \RuntimeException("Failed to read file for backup: {$path}");
+        }
+
         if ($content === false) {
             throw new \RuntimeException("Failed to read file for backup: {$path}");
         }

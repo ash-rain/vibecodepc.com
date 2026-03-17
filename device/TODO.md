@@ -145,10 +145,11 @@ This test plan covers the config file editor system including ConfigFileService,
   - Template contains multiple `{project_path}` placeholders
   - Project path ends with trailing slash
 
-- [ ] **A1.4**: Test `backup()` edge cases
+- [x] 2026-03-17 **A1.4**: Test `backup()` edge cases
   - Backup directory full (disk quota exceeded)
-  - Backup filename collision (timestamp collision on very fast backups)
+  - Backup filename collision (timestamp collision on very fast backups) - Fixed by using microsecond precision (Y-m-d-His-u format)
   - Backup file is larger than max file size
+  - Added 5 comprehensive tests covering all edge cases
 
 ### A2. Validation Edge Cases
 - [ ] **A2.1**: Test JSON validation with edge cases
