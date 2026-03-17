@@ -1,7 +1,6 @@
 <?php
 
 use App\Jobs\ProvisionQuickTunnelJob;
-use App\Models\QuickTunnel;
 use App\Models\TunnelConfig;
 use App\Services\DeviceRegistry\DeviceIdentityService;
 use App\Services\Tunnel\QuickTunnelService;
@@ -136,9 +135,8 @@ it('returns early in non-local env when tunnel fails', function () {
     expect(\App\Models\WizardProgress::count())->toBeGreaterThan(0);
 });
 
-it('retries URL capture when initial URL is null', function () {
+it('starts tunnel and does not block for URL discovery', function () {
     $uuid = 'test-device-uuid';
-    $tunnelUrl = 'https://delayed.trycloudflare.com';
     $cloudUrl = config('vibecodepc.cloud_url');
 
     setupIdentityForJob($uuid);
@@ -146,22 +144,14 @@ it('retries URL capture when initial URL is null', function () {
     TunnelConfig::factory()->verified()->create();
 
     $quickTunnelService = Mockery::mock(QuickTunnelService::class);
+    // startForDashboard now returns null immediately and dispatches async job
     $quickTunnelService->shouldReceive('startForDashboard')
         ->once()
         ->andReturn(null);
-    $quickTunnelService->shouldReceive('refreshUrl')
-        ->andReturn(null, null, $tunnelUrl);
+    // refreshUrl should not be called directly anymore
+    $quickTunnelService->shouldNotReceive('refreshUrl');
 
     app()->instance(QuickTunnelService::class, $quickTunnelService);
-
-    // Create a dashboard tunnel record so the retry loop has something to work with
-    QuickTunnel::create([
-        'container_name' => 'vibe-qt-dash-test',
-        'container_id' => 'abc123',
-        'local_port' => 8080,
-        'status' => 'starting',
-        'started_at' => now(),
-    ]);
 
     Http::fake([
         "{$cloudUrl}/api/devices/{$uuid}/tunnel/register" => Http::response(null, 200),
@@ -170,8 +160,9 @@ it('retries URL capture when initial URL is null', function () {
     $job = new ProvisionQuickTunnelJob;
     app()->call([$job, 'handle']);
 
-    Http::assertSent(fn ($request) => str_contains($request->url(), '/tunnel/register')
-        && $request['tunnel_url'] === $tunnelUrl);
+    // No URL was captured immediately, so no cloud registration happens
+    // PollTunnelUrlJob will handle registration asynchronously when URL is found
+    Http::assertNothingSent();
 });
 
 it('returns early when tunnel is skipped', function () {

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
-use App\Models\QuickTunnel;
 use App\Models\TunnelConfig;
 use App\Services\CloudApiClient;
 use App\Services\DeviceRegistry\DeviceIdentityService;
@@ -62,26 +61,18 @@ class ProvisionQuickTunnelJob implements ShouldBeUnique, ShouldQueue
 
         $progressService->seedProgress();
 
-        // If URL wasn't captured in the initial timeout, keep retrying
-        if (! $url) {
-            $tunnel = QuickTunnel::forDashboard();
-            if ($tunnel) {
-                for ($i = 0; $i < 15; $i++) {
-                    sleep(2);
-                    $url = $quickTunnelService->refreshUrl($tunnel);
-                    if ($url) {
-                        break;
-                    }
-                }
-            }
-        }
-
+        // URL discovery is now handled asynchronously by PollTunnelUrlJob.
+        // This job just starts the tunnel; the async job will discover
+        // the URL and broadcast events when ready.
         if ($url) {
+            // URL was captured immediately (rare, but possible)
             try {
                 $client->registerTunnelUrl($identity->getDeviceInfo()->id, $url);
             } catch (Throwable $e) {
                 Log::warning("Failed to register tunnel URL with cloud: {$e->getMessage()}");
             }
+        } else {
+            Log::info('Quick tunnel started; URL will be discovered asynchronously by PollTunnelUrlJob');
         }
     }
 }

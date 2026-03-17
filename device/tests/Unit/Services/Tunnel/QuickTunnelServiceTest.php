@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Jobs\PollTunnelUrlJob;
 use App\Models\Project;
 use App\Models\QuickTunnel;
 use App\Services\Tunnel\QuickTunnelService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Process;
 
 uses(RefreshDatabase::class);
@@ -13,6 +15,10 @@ uses(RefreshDatabase::class);
 beforeEach(function () {
     Process::fake([
         'docker rm -f*' => Process::result(output: '', errorOutput: '', exitCode: 0),
+    ]);
+
+    Bus::fake([
+        PollTunnelUrlJob::class,
     ]);
 });
 
@@ -24,11 +30,6 @@ it('creates quick tunnel record when starting', function () {
     Process::fake([
         'docker rm -f*' => Process::result(output: '', errorOutput: '', exitCode: 0),
         'docker run -d*' => Process::result(output: 'abc123def456', errorOutput: '', exitCode: 0),
-        'docker logs*' => Process::result(
-            output: 'INF Your quick tunnel is available at https://abc123.trycloudflare.com',
-            errorOutput: '',
-            exitCode: 0,
-        ),
     ]);
 
     $service = new QuickTunnelService;
@@ -39,7 +40,13 @@ it('creates quick tunnel record when starting', function () {
         ->project_id->toBeNull()
         ->local_port->toBe(8080)
         ->container_id->toBe('abc123def456')
-        ->container_name->toStartWith('vibe-qt-dash-');
+        ->container_name->toStartWith('vibe-qt-dash-')
+        ->status->toBe('starting');
+
+    // Verify async polling job was dispatched
+    Bus::assertDispatched(PollTunnelUrlJob::class, function ($job) use ($tunnel) {
+        return $job->tunnel->id === $tunnel->id;
+    });
 });
 
 it('creates project tunnel with correct association', function () {
@@ -48,11 +55,6 @@ it('creates project tunnel with correct association', function () {
     Process::fake([
         'docker rm -f*' => Process::result(output: '', errorOutput: '', exitCode: 0),
         'docker run -d*' => Process::result(output: 'xyz789uvw123', errorOutput: '', exitCode: 0),
-        'docker logs*' => Process::result(
-            output: 'INF Your quick tunnel is available at https://project456.trycloudflare.com',
-            errorOutput: '',
-            exitCode: 0,
-        ),
     ]);
 
     $service = new QuickTunnelService;
@@ -61,7 +63,11 @@ it('creates project tunnel with correct association', function () {
     expect($tunnel)
         ->project_id->toBe($project->id)
         ->local_port->toBe(3000)
-        ->container_name->toContain("p{$project->id}");
+        ->container_name->toContain("p{$project->id}")
+        ->status->toBe('starting');
+
+    // Verify async polling job was dispatched
+    Bus::assertDispatched(PollTunnelUrlJob::class);
 });
 
 it('removes existing dashboard tunnel before starting new one', function () {
@@ -127,28 +133,34 @@ it('throws exception when docker run fails', function () {
         ->toThrow(RuntimeException::class, 'Failed to start quick tunnel container');
 });
 
-it('sets running status when url is captured', function () {
+it('dispatches async polling job instead of blocking for url', function () {
     Process::fake([
         'docker rm -f*' => Process::result(output: '', errorOutput: '', exitCode: 0),
         'docker run -d*' => Process::result(output: 'container123', errorOutput: '', exitCode: 0),
-        'docker logs*' => Process::result(
-            output: 'INF Your quick tunnel is available at https://test.trycloudflare.com',
-            errorOutput: '',
-            exitCode: 0,
-        ),
     ]);
 
     $service = new QuickTunnelService;
     $tunnel = $service->start(8080, null);
 
-    expect($tunnel->status)->toBe('running')
-        ->and($tunnel->tunnel_url)->toBe('https://test.trycloudflare.com');
+    // Tunnel is created with starting status (URL not yet discovered)
+    expect($tunnel->status)->toBe('starting')
+        ->and($tunnel->tunnel_url)->toBeNull();
+
+    // Async polling job is dispatched to handle URL discovery
+    Bus::assertDispatched(PollTunnelUrlJob::class, function ($job) use ($tunnel) {
+        return $job->tunnel->id === $tunnel->id
+            && $job->maxWaitSeconds === 30
+            && $job->pollIntervalSeconds === 2;
+    });
 });
 
-it('captures tunnel url from docker logs', function () {
+it('sets running status via refreshUrl when url is found', function () {
+    $tunnel = QuickTunnel::factory()->starting()->create([
+        'container_name' => 'vibe-qt-dash-abc123',
+        'tunnel_url' => null,
+    ]);
+
     Process::fake([
-        'docker rm -f*' => Process::result(output: '', errorOutput: '', exitCode: 0),
-        'docker run -d*' => Process::result(output: 'container123', errorOutput: '', exitCode: 0),
         'docker logs*' => Process::result(
             output: "2025-01-15T10:30:00Z INF Your quick tunnel is available at https://capt123.trycloudflare.com\n",
             errorOutput: '',
@@ -157,9 +169,13 @@ it('captures tunnel url from docker logs', function () {
     ]);
 
     $service = new QuickTunnelService;
-    $tunnel = $service->start(8080, null);
+    $url = $service->refreshUrl($tunnel);
 
-    expect($tunnel->tunnel_url)->toBe('https://capt123.trycloudflare.com');
+    expect($url)->toBe('https://capt123.trycloudflare.com');
+
+    $tunnel->refresh();
+    expect($tunnel->tunnel_url)->toBe('https://capt123.trycloudflare.com')
+        ->and($tunnel->status)->toBe('running');
 });
 
 // ============================================
@@ -172,32 +188,41 @@ it('starts dashboard tunnel on configured port', function () {
     Process::fake([
         'docker rm -f*' => Process::result(output: '', errorOutput: '', exitCode: 0),
         'docker run -d*' => Process::result(output: 'container123', errorOutput: '', exitCode: 0),
-        'docker logs*' => Process::result(
-            output: 'INF Your quick tunnel is available at https://dashboard.trycloudflare.com',
-            errorOutput: '',
-            exitCode: 0,
-        ),
     ]);
 
     $service = new QuickTunnelService;
     $url = $service->startForDashboard();
 
-    expect($url)->toBe('https://dashboard.trycloudflare.com');
+    // Returns null immediately (async URL discovery)
+    expect($url)->toBeNull();
+
+    // Verify tunnel was created with starting status
+    $tunnel = QuickTunnel::forDashboard();
+    expect($tunnel)
+        ->not->toBeNull()
+        ->local_port->toBe(9000)
+        ->status->toBe('starting');
+
+    // Verify polling job was dispatched
+    Bus::assertDispatched(PollTunnelUrlJob::class);
 });
 
-it('returns null when dashboard tunnel url cannot be captured', function () {
+it('returns null when dashboard tunnel url cannot be captured immediately', function () {
     config(['vibecodepc.tunnel.device_app_port' => 8080]);
 
     Process::fake([
         'docker rm -f*' => Process::result(output: '', errorOutput: '', exitCode: 0),
         'docker run -d*' => Process::result(output: 'container123', errorOutput: '', exitCode: 0),
-        'docker logs*' => Process::result(output: 'No URL here', errorOutput: '', exitCode: 0),
     ]);
 
     $service = new QuickTunnelService;
     $url = $service->startForDashboard();
 
+    // Returns null immediately - async job will handle URL discovery
     expect($url)->toBeNull();
+
+    // Verify polling job was dispatched for async discovery
+    Bus::assertDispatched(PollTunnelUrlJob::class);
 });
 
 // ============================================
