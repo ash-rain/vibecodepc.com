@@ -106,6 +106,10 @@ class ConfigFileService
             return '';
         }
 
+        if (! File::isFile($path)) {
+            throw new \RuntimeException("Configuration file is not readable: {$path}");
+        }
+
         if (! File::isReadable($path)) {
             throw new \RuntimeException("Configuration file is not readable: {$path}");
         }

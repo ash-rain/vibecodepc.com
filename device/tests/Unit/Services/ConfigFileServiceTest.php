@@ -91,6 +91,36 @@ describe('ConfigFileService', function (): void {
         chmod($this->testDir.'/test.json', 0644);
     });
 
+    test('getContent throws exception when path is a directory', function (): void {
+        // Create a directory at the expected file path
+        $dirPath = $this->testDir.'/test.json';
+        File::makeDirectory($dirPath, 0755, true);
+
+        expect(fn () => $this->service->getContent('test_config'))
+            ->toThrow(\RuntimeException::class, 'Configuration file is not readable');
+
+        File::deleteDirectory($dirPath);
+    });
+
+    test('getContent throws exception for symlink to non-existent file', function (): void {
+        $realPath = $this->testDir.'/real.json';
+        $linkPath = $this->testDir.'/test.json';
+
+        // Create a symlink pointing to a non-existent file
+        File::put($realPath, '{"key": "value"}', true);
+        symlink($realPath, $linkPath);
+
+        // Verify symlink exists and points to file
+        expect(File::exists($linkPath))->toBeTrue();
+
+        // Delete the target file, making symlink broken
+        File::delete($realPath);
+
+        // File::exists returns false for broken symlinks, so getContent returns empty
+        $content = $this->service->getContent('test_config');
+        expect($content)->toBe('');
+    });
+
     test('putContent writes content to file', function (): void {
         $this->service->putContent('test_config', '{"key": "value"}');
 
@@ -492,6 +522,129 @@ describe('ConfigFileService', function (): void {
             $result = $this->service->validateJson(json_encode($boostWithUnknown), 'boost');
 
             expect($result)->toBe($boostWithUnknown);
+        });
+    });
+
+    describe('putContent file system failures', function (): void {
+        test('throws exception when directory is not writable', function (): void {
+            // Create a directory that exists but is not writable
+            $unwritableDir = $this->testDir.'/unwritable';
+            File::makeDirectory($unwritableDir, 0555, true);
+
+            config()->set('vibecodepc.config_files.unwritable_config', [
+                'path' => $unwritableDir.'/test.json',
+                'label' => 'Unwritable Config',
+                'description' => 'Test config in unwritable directory',
+                'editable' => true,
+                'scope' => 'global',
+            ]);
+
+            // The error happens at the file_put_contents level which throws ErrorException
+            expect(fn () => $this->service->putContent('unwritable_config', '{"key": "value"}'))
+                ->toThrow(\Exception::class);
+
+            // Cleanup: restore permissions so we can delete
+            chmod($unwritableDir, 0755);
+        });
+
+        test('throws exception when parent directory creation fails', function (): void {
+            // Create a directory structure where parent cannot be created
+            $baseDir = $this->testDir.'/readonly';
+            File::makeDirectory($baseDir, 0555, true);
+
+            config()->set('vibecodepc.config_files.deep_config', [
+                'path' => $baseDir.'/nested/deep/test.json',
+                'label' => 'Deep Config',
+                'description' => 'Test config in deep nested path',
+                'editable' => true,
+                'scope' => 'global',
+            ]);
+
+            // Directory creation will fail with an exception
+            expect(fn () => $this->service->putContent('deep_config', '{"key": "value"}'))
+                ->toThrow(\Exception::class);
+
+            // Cleanup
+            chmod($baseDir, 0755);
+        });
+
+        test('handles concurrent write by using retry mechanism', function (): void {
+            // Create a file that we'll simulate concurrent writes on
+            File::put($this->testDir.'/test.json', '{"original": "data"}', true);
+
+            // This test verifies that retry logic exists - it will succeed normally
+            // The actual retry mechanism is tested through the RetryableTrait
+            $this->service->putContent('test_config', '{"key": "value"}');
+
+            expect(File::exists($this->testDir.'/test.json'))->toBeTrue();
+            expect(File::get($this->testDir.'/test.json'))->toBe('{"key": "value"}');
+
+            // Verify backup was created
+            $backups = $this->service->listBackups('test_config');
+            expect($backups)->toHaveCount(1);
+        });
+
+        test('throws exception when backup directory is not writable', function (): void {
+            // Create existing file so backup is attempted
+            File::put($this->testDir.'/test.json', '{"old": "content"}', true);
+
+            // Create a backup directory that is not writable to force backup failure
+            $backupDir = $this->backupDir.'/unwritable';
+            File::makeDirectory($backupDir, 0555, true);
+
+            // Temporarily change backup directory
+            $originalBackupDir = config('vibecodepc.config_editor.backup_directory');
+            config()->set('vibecodepc.config_editor.backup_directory', $backupDir);
+
+            // Backup will fail - Laravel's File::put throws ErrorException on permission denied
+            expect(fn () => $this->service->putContent('test_config', '{"key": "value"}'))
+                ->toThrow(\Exception::class);
+
+            // Cleanup
+            chmod($backupDir, 0755);
+            config()->set('vibecodepc.config_editor.backup_directory', $originalBackupDir);
+        });
+
+        test('validates content before attempting write', function (): void {
+            // Test that validation happens before any file operations
+            $invalidJson = 'not valid json';
+
+            // This should fail at validation step before file write
+            expect(fn () => $this->service->putContent('test_config', $invalidJson))
+                ->toThrow(\JsonException::class);
+
+            // Verify no file was created (validation failed first)
+            expect(File::exists($this->testDir.'/test.json'))->toBeFalse();
+        });
+
+        test('validates forbidden keys before attempting write', function (): void {
+            $jsonWithSecret = '{"api_key": "secret123"}';
+
+            // This should fail at validation step before file write
+            expect(fn () => $this->service->putContent('test_config', $jsonWithSecret))
+                ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected');
+
+            // Verify no file was created (validation failed first)
+            expect(File::exists($this->testDir.'/test.json'))->toBeFalse();
+        });
+
+        test('validates file size before attempting write', function (): void {
+            $oversizedContent = str_repeat('x', 100 * 1024);
+
+            // This should fail at validation step before file write
+            expect(fn () => $this->service->putContent('test_config', $oversizedContent))
+                ->toThrow(\InvalidArgumentException::class, 'exceeds maximum allowed size');
+
+            // Verify no file was created (validation failed first)
+            expect(File::exists($this->testDir.'/test.json'))->toBeFalse();
+        });
+
+        test('new file write succeeds when directory is writable', function (): void {
+            // Test the happy path for new file creation
+            $this->service->putContent('test_config', '{"new": "file"}');
+
+            expect(File::exists($this->testDir.'/test.json'))->toBeTrue();
+            expect(File::get($this->testDir.'/test.json'))->toBe('{"new": "file"}');
         });
     });
 

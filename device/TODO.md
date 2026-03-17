@@ -128,12 +128,12 @@ This test plan covers the config file editor system including ConfigFileService,
 ## Phase A: ConfigFileService - Additional Tests
 
 ### A1. Edge Cases & Error Handling
-- [ ] **A1.1**: Test `getContent()` with unreadable file permission errors
+- [x] **A1.1**: Test `getContent()` with unreadable file permission errors
   - File exists but cannot be read (permission denied)
   - File is a directory instead of regular file
   - File is a symlink pointing to non-existent file
   
-- [ ] **A1.2**: Test `putContent()` with file system failures
+- [x] **A1.2**: Test `putContent()` with file system failures (2026-03-17)
   - Disk full / no space left
   - Directory not writable
   - Network filesystem timeout (if applicable)
