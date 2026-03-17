@@ -17,12 +17,12 @@ class AiToolConfigService
     private function getHomeDir(): string
     {
         if (isset($_SERVER['HOME']) && is_string($_SERVER['HOME'])) {
-            return $_SERVER['HOME'];
+            return rtrim($_SERVER['HOME'], '/');
         }
 
         $info = posix_getpwuid(posix_geteuid());
 
-        return is_array($info) ? $info['dir'] : '/root';
+        return is_array($info) ? rtrim($info['dir'], '/') : '/root';
     }
 
     public function getBashrcPath(): string

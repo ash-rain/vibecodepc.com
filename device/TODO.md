@@ -375,10 +375,21 @@ This test plan covers the config file editor system including ConfigFileService,
     - Updating encrypted values
 
 ### D2. Configuration File Paths
-- [ ] **D2.1**: Test path resolution
+- [x] **D2.1**: Test path resolution (2026-03-17)
   - Get home directory reliably
   - Handle missing HOME environment variable
   - Handle different user contexts (root vs user)
+  - Added 15 comprehensive tests covering:
+    - HOME variable retrieval from $_SERVER
+    - posix_getpwuid fallback when HOME missing
+    - Path consistency across multiple calls
+    - OpenCode config and auth path resolution
+    - HOME with trailing slashes (now normalized via rtrim)
+    - HOME with spaces, unicode, special characters
+    - Empty HOME string
+    - Relative HOME paths
+    - Very long home directory paths
+    - Different service instances with different HOME values
 
 ### D3. OpenCode Configuration
 - [ ] **D3.1**: Test OpenCode config management

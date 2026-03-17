@@ -889,3 +889,161 @@ describe('encryption and decryption', function () {
         expect($vars['GEMINI_API_KEY'])->toBe('new-secret');
     });
 });
+
+describe('path resolution', function () {
+    it('gets home directory from SERVER HOME variable', function () {
+        $customHome = '/custom/home/dir';
+        $_SERVER['HOME'] = $customHome;
+
+        $service = new AiToolConfigService;
+
+        // bashrc path should use the custom home directory
+        expect($service->getBashrcPath())->toBe($customHome.'/.bashrc');
+    });
+
+    it('falls back to posix_getpwuid when HOME is not set', function () {
+        // Remove HOME from server variables
+        $originalHome = $_SERVER['HOME'] ?? null;
+        unset($_SERVER['HOME']);
+
+        // Create service instance - should fall back to posix_getpwuid
+        $service = new AiToolConfigService;
+        $bashrcPath = $service->getBashrcPath();
+
+        // Should still return a valid path (from posix_getpwuid or /root fallback)
+        expect($bashrcPath)->toEndWith('/.bashrc');
+
+        // Restore original HOME
+        if ($originalHome !== null) {
+            $_SERVER['HOME'] = $originalHome;
+        }
+    });
+
+    it('returns consistent paths across multiple calls', function () {
+        $_SERVER['HOME'] = '/test/home';
+
+        $service = new AiToolConfigService;
+
+        $path1 = $service->getBashrcPath();
+        $path2 = $service->getBashrcPath();
+        $path3 = $service->getOpencodeConfigPath();
+
+        // Multiple calls should return same results
+        expect($path1)->toBe($path2)
+            ->and($path1)->toBe('/test/home/.bashrc')
+            ->and($path3)->toBe('/test/home/.config/opencode/opencode.json');
+    });
+
+    it('resolves opencode config path relative to home', function () {
+        $_SERVER['HOME'] = '/users/john';
+
+        $service = new AiToolConfigService;
+
+        expect($service->getOpencodeConfigPath())
+            ->toBe('/users/john/.config/opencode/opencode.json');
+    });
+
+    it('resolves opencode auth path relative to home', function () {
+        $_SERVER['HOME'] = '/users/john';
+
+        $service = new AiToolConfigService;
+
+        expect($service->getOpencodeAuthPath())
+            ->toBe('/users/john/.local/share/opencode/auth.json');
+    });
+
+    it('handles HOME with trailing slash', function () {
+        $_SERVER['HOME'] = '/home/test/';
+
+        $service = new AiToolConfigService;
+
+        // Should not create double slashes
+        expect($service->getBashrcPath())->toBe('/home/test/.bashrc');
+        expect($service->getOpencodeConfigPath())
+            ->toBe('/home/test/.config/opencode/opencode.json');
+    });
+
+    it('handles HOME with spaces in path', function () {
+        $_SERVER['HOME'] = '/home/My User/Documents';
+
+        $service = new AiToolConfigService;
+
+        // Paths should include spaces correctly
+        expect($service->getBashrcPath())
+            ->toBe('/home/My User/Documents/.bashrc');
+    });
+
+    it('handles HOME with unicode characters', function () {
+        $_SERVER['HOME'] = '/home/用户/home';
+
+        $service = new AiToolConfigService;
+
+        expect($service->getBashrcPath())
+            ->toBe('/home/用户/home/.bashrc');
+    });
+
+    it('handles HOME as empty string', function () {
+        $_SERVER['HOME'] = '';
+
+        $service = new AiToolConfigService;
+
+        // Empty string should trigger posix fallback or /root
+        $path = $service->getBashrcPath();
+        expect($path)->toEndWith('/.bashrc');
+    });
+
+    it('handles HOME set to relative path', function () {
+        $_SERVER['HOME'] = 'relative/path';
+
+        $service = new AiToolConfigService;
+
+        // Relative paths should still be used as-is
+        expect($service->getBashrcPath())->toBe('relative/path/.bashrc');
+    });
+
+    it('returns bashrc path with correct structure', function () {
+        $_SERVER['HOME'] = '/home/user';
+
+        $service = new AiToolConfigService;
+
+        $path = $service->getBashrcPath();
+
+        expect($path)
+            ->toStartWith('/home/user')
+            ->toEndWith('.bashrc')
+            ->not->toContain('//');
+    });
+
+    it('creates different service instances with different HOME values', function () {
+        $_SERVER['HOME'] = '/home/user1';
+        $service1 = new AiToolConfigService;
+        $path1 = $service1->getBashrcPath();
+
+        $_SERVER['HOME'] = '/home/user2';
+        $service2 = new AiToolConfigService;
+        $path2 = $service2->getBashrcPath();
+
+        // Each service should reflect its HOME at time of instantiation
+        expect($path1)->toBe('/home/user1/.bashrc');
+        expect($path2)->toBe('/home/user2/.bashrc');
+    });
+
+    it('handles HOME with special characters in path', function () {
+        $_SERVER['HOME'] = '/home/user@domain.com';
+
+        $service = new AiToolConfigService;
+
+        expect($service->getBashrcPath())
+            ->toBe('/home/user@domain.com/.bashrc');
+    });
+
+    it('handles very long home directory paths', function () {
+        $longPath = '/home/'.str_repeat('a', 200);
+        $_SERVER['HOME'] = $longPath;
+
+        $service = new AiToolConfigService;
+
+        expect($service->getBashrcPath())
+            ->toBe($longPath.'/.bashrc');
+    });
+});
