@@ -356,11 +356,23 @@ This test plan covers the config file editor system including ConfigFileService,
   - Handle single quotes (escaped by addslashes)
   - Handle updating/removing _extra_path
 
-- [ ] **D1.3**: Test encryption/decryption
-  - Encrypt sensitive keys
-  - Decrypt with prefix
-  - Decrypt without prefix (plain text)
-  - Corrupted encrypted value handling
+- [x] **D1.3**: Test encryption/decryption (2026-03-17)
+  - Encrypt sensitive keys (API_KEY, TOKEN, SECRET, PASSWORD, AUTH patterns)
+  - Decrypt with ENC: prefix
+  - Decrypt without prefix (plain text returns as-is)
+  - Corrupted encrypted value handling (invalid base64, empty ENC: prefix)
+  - Added 18 comprehensive tests covering:
+    - All sensitive key patterns (API_KEY, TOKEN, SECRET, PASSWORD, AUTH)
+    - Non-sensitive keys remain unencrypted
+    - Round-trip encryption/decryption
+    - Corrupted encrypted data (malformed base64, empty prefix)
+    - Unicode values
+    - Long values (12KB)
+    - Special characters
+    - Multiple encrypted values
+    - Mixed encrypted and non-encrypted values
+    - Preserving values across multiple writes
+    - Updating encrypted values
 
 ### D2. Configuration File Paths
 - [ ] **D2.1**: Test path resolution

@@ -683,3 +683,209 @@ describe('setOpencodeAuth', function () {
         expect($data['anthropic']['key'])->toBe('sk-ant-test');
     });
 });
+
+describe('encryption and decryption', function () {
+    it('encrypts values for API_KEY pattern', function () {
+        $this->service->setEnvVars(['GEMINI_API_KEY' => 'secret-key']);
+
+        $content = file_get_contents($this->tmpDir.'/.bashrc');
+
+        expect($content)->toContain('ENC:');
+        expect($content)->not->toContain('secret-key');
+    });
+
+    it('encrypts values for TOKEN pattern', function () {
+        $this->service->setEnvVars(['MY_TOKEN' => 'bearer-token-123']);
+
+        $content = file_get_contents($this->tmpDir.'/.bashrc');
+
+        expect($content)->toContain('ENC:');
+        expect($content)->not->toContain('bearer-token-123');
+    });
+
+    it('encrypts values for SECRET pattern', function () {
+        $this->service->setEnvVars(['MY_SECRET' => 'super-secret-value']);
+
+        $content = file_get_contents($this->tmpDir.'/.bashrc');
+
+        expect($content)->toContain('ENC:');
+        expect($content)->not->toContain('super-secret-value');
+    });
+
+    it('encrypts values for PASSWORD pattern', function () {
+        $this->service->setEnvVars(['DB_PASSWORD' => 'my-password-123']);
+
+        $content = file_get_contents($this->tmpDir.'/.bashrc');
+
+        expect($content)->toContain('ENC:');
+        expect($content)->not->toContain('my-password-123');
+    });
+
+    it('encrypts values for AUTH pattern', function () {
+        $this->service->setEnvVars(['GITHUB_AUTH' => 'auth-token-value']);
+
+        $content = file_get_contents($this->tmpDir.'/.bashrc');
+
+        expect($content)->toContain('ENC:');
+        expect($content)->not->toContain('auth-token-value');
+    });
+
+    it('does not encrypt non-sensitive keys', function () {
+        $this->service->setEnvVars([
+            'REGULAR_VAR' => 'plain-value',
+            'MY_SETTING' => 'another-plain',
+        ]);
+
+        $content = file_get_contents($this->tmpDir.'/.bashrc');
+
+        expect($content)->toContain('export REGULAR_VAR="plain-value"');
+        expect($content)->toContain('export MY_SETTING="another-plain"');
+        expect($content)->not->toContain('ENC:');
+    });
+
+    it('decrypts values with ENC: prefix correctly', function () {
+        $this->service->setEnvVars(['GEMINI_API_KEY' => 'original-secret']);
+
+        $vars = $this->service->getEnvVars();
+
+        expect($vars['GEMINI_API_KEY'])->toBe('original-secret');
+    });
+
+    it('returns plain text value when no ENC: prefix exists', function () {
+        // Create bashrc with plain text value (no encryption)
+        $content = "# === VibeCodePC AI Tools ===\nexport PLAIN_VAR=\"plain-text-value\"\n# === END VibeCodePC AI Tools ===\n";
+        file_put_contents($this->tmpDir.'/.bashrc', $content);
+
+        $vars = $this->service->getEnvVars();
+
+        expect($vars['PLAIN_VAR'])->toBe('plain-text-value');
+    });
+
+    it('handles corrupted encrypted values gracefully', function () {
+        // Create bashrc with invalid encrypted data
+        $content = "# === VibeCodePC AI Tools ===\nexport GEMINI_API_KEY=\"ENC:invalid-encrypted-data-that-cannot-be-decrypted\"\n# === END VibeCodePC AI Tools ===\n";
+        file_put_contents($this->tmpDir.'/.bashrc', $content);
+
+        $vars = $this->service->getEnvVars();
+
+        // Returns the encrypted string as-is when decryption fails
+        expect($vars['GEMINI_API_KEY'])->toBe('ENC:invalid-encrypted-data-that-cannot-be-decrypted');
+    });
+
+    it('handles corrupted encrypted values with malformed base64', function () {
+        // Create bashrc with malformed base64 that cannot be decoded
+        $content = "# === VibeCodePC AI Tools ===\nexport GEMINI_API_KEY=\"ENC:!!!not-valid-base64!!!\"\n# === END VibeCodePC AI Tools ===\n";
+        file_put_contents($this->tmpDir.'/.bashrc', $content);
+
+        $vars = $this->service->getEnvVars();
+
+        // Returns the encrypted string as-is when decryption fails
+        expect($vars['GEMINI_API_KEY'])->toBe('ENC:!!!not-valid-base64!!!');
+    });
+
+    it('handles empty encrypted value', function () {
+        // Create bashrc with empty ENC: prefix
+        $content = "# === VibeCodePC AI Tools ===\nexport GEMINI_API_KEY=\"ENC:\"\n# === END VibeCodePC AI Tools ===\n";
+        file_put_contents($this->tmpDir.'/.bashrc', $content);
+
+        $vars = $this->service->getEnvVars();
+
+        // Returns the value as-is when decryption fails
+        expect($vars['GEMINI_API_KEY'])->toBe('ENC:');
+    });
+
+    it('encrypts and decrypts unicode values correctly', function () {
+        $unicodeValue = 'Hello 世界 🌍 café';
+        $this->service->setEnvVars(['API_KEY' => $unicodeValue]);
+
+        $vars = $this->service->getEnvVars();
+
+        expect($vars['API_KEY'])->toBe($unicodeValue);
+    });
+
+    it('encrypts and decrypts long values correctly', function () {
+        $longValue = str_repeat('secret-data-', 1000);
+        $this->service->setEnvVars(['API_KEY' => $longValue]);
+
+        $vars = $this->service->getEnvVars();
+
+        expect($vars['API_KEY'])->toBe($longValue);
+    });
+
+    it('encrypts values with special characters correctly', function () {
+        $specialValue = 'key with $ymbols @nd sp@ces!@#$%^&*()';
+        $this->service->setEnvVars(['API_KEY' => $specialValue]);
+
+        $vars = $this->service->getEnvVars();
+
+        expect($vars['API_KEY'])->toBe($specialValue);
+    });
+
+    it('handles multiple encrypted values in same section', function () {
+        $this->service->setEnvVars([
+            'GEMINI_API_KEY' => 'gemini-secret',
+            'CLAUDE_API_KEY' => 'claude-secret',
+            'OPENAI_API_KEY' => 'openai-secret',
+        ]);
+
+        $vars = $this->service->getEnvVars();
+
+        expect($vars['GEMINI_API_KEY'])->toBe('gemini-secret')
+            ->and($vars['CLAUDE_API_KEY'])->toBe('claude-secret')
+            ->and($vars['OPENAI_API_KEY'])->toBe('openai-secret');
+    });
+
+    it('handles mixed encrypted and non-encrypted values', function () {
+        $this->service->setEnvVars([
+            'MY_API_KEY' => 'sk-test-12345-abc',
+            'REGULAR_VAR' => 'plain-value',
+            'MY_AUTH_TOKEN' => 'bearer-xyz-789',
+            'NORMAL_SETTING' => 'another-plain',
+        ]);
+
+        $content = file_get_contents($this->tmpDir.'/.bashrc');
+        $vars = $this->service->getEnvVars();
+
+        // Check encrypted values don't appear in plain text
+        expect($content)->not->toContain('sk-test-12345-abc');
+        expect($content)->not->toContain('bearer-xyz-789');
+
+        // Check plain values do appear
+        expect($content)->toContain('export REGULAR_VAR="plain-value"');
+        expect($content)->toContain('export NORMAL_SETTING="another-plain"');
+
+        // Check all values decrypt correctly
+        expect($vars['MY_API_KEY'])->toBe('sk-test-12345-abc')
+            ->and($vars['REGULAR_VAR'])->toBe('plain-value')
+            ->and($vars['MY_AUTH_TOKEN'])->toBe('bearer-xyz-789')
+            ->and($vars['NORMAL_SETTING'])->toBe('another-plain');
+    });
+
+    it('preserves encrypted values across multiple writes', function () {
+        // First write with encrypted value
+        $this->service->setEnvVars(['GEMINI_API_KEY' => 'first-secret']);
+
+        // Second write with different values
+        $this->service->setEnvVars([
+            'GEMINI_API_KEY' => 'first-secret',
+            'NEW_VAR' => 'new-value',
+        ]);
+
+        $vars = $this->service->getEnvVars();
+
+        expect($vars['GEMINI_API_KEY'])->toBe('first-secret')
+            ->and($vars['NEW_VAR'])->toBe('new-value');
+    });
+
+    it('updates encrypted value when changed', function () {
+        // First write
+        $this->service->setEnvVars(['GEMINI_API_KEY' => 'old-secret']);
+
+        // Update with new value
+        $this->service->setEnvVars(['GEMINI_API_KEY' => 'new-secret']);
+
+        $vars = $this->service->getEnvVars();
+
+        expect($vars['GEMINI_API_KEY'])->toBe('new-secret');
+    });
+});
