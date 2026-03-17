@@ -584,7 +584,7 @@ describe('ConfigFileService', function (): void {
 
     describe('JSONC comment stripping', function (): void {
         test('strips single-line comments', function (): void {
-            $jsonc = "{\n  // This is a comment\n  \"key\": \"value\"\n}";
+            $jsonc = "{\n // This is a comment\n \"key\": \"value\"\n}";
 
             $result = $this->service->validateJson($jsonc);
 
@@ -592,7 +592,7 @@ describe('ConfigFileService', function (): void {
         });
 
         test('strips multi-line comments', function (): void {
-            $jsonc = "{\n  /* Multi-line\n     comment */\n  \"key\": \"value\"\n}";
+            $jsonc = "{\n /* Multi-line\n comment */\n \"key\": \"value\"\n}";
 
             $result = $this->service->validateJson($jsonc);
 
@@ -608,380 +608,755 @@ describe('ConfigFileService', function (): void {
         });
 
         test('strips multiple comment types', function (): void {
-            $jsonc = "{\n  // Single line\n  /* Multi-line */\n  \"key\": \"value\",\n  // Another comment\n  \"other\": 123\n}";
+            $jsonc = "{\n // Single line\n /* Multi-line */\n \"key\": \"value\",\n // Another comment\n \"other\": 123\n}";
 
             $result = $this->service->validateJson($jsonc);
 
             expect($result)->toBe(['key' => 'value', 'other' => 123]);
         });
-    });
 
-    describe('boost.json validation', function (): void {
-        beforeEach(function (): void {
-            config()->set('vibecodepc.config_files.boost', [
-                'path' => $this->testDir.'/boost.json',
-                'label' => 'Boost',
-                'description' => 'Boost configuration',
-                'editable' => true,
-                'scope' => 'global',
-            ]);
-        });
+        describe('JSONC comment stripping edge cases', function (): void {
+            test('preserves comments inside string values', function (): void {
+                // Comments inside strings should be preserved, not stripped
+                $jsonc = '{"key": "value // not a comment", "other": "value /* also not a comment */ "}';
 
-        test('validates skills must be an array', function (): void {
-            $invalidBoost = ['skills' => 'not an array'];
+                $result = $this->service->validateJson($jsonc);
 
-            expect(fn () => $this->service->validateJson(json_encode($invalidBoost), 'boost'))
-                ->toThrow(\InvalidArgumentException::class, 'skills" must be an array');
-        });
+                expect($result['key'])->toBe('value // not a comment');
+                expect($result['other'])->toBe('value /* also not a comment */ ');
+            });
 
-        test('validates empty boost.json', function (): void {
-            $result = $this->service->validateJson('{}', 'boost');
+            test('handles nested multi-line comments', function (): void {
+                // Nested /* /* */ */ - outer should still be stripped
+                $jsonc = '{"key": /* outer /* inner */ still outer */ "value"}';
 
-            expect($result)->toBe([]);
-        });
+                // This test documents current behavior - the first */ closes the comment
+                // even if nested. This is consistent with most JSONC parsers.
+                // After stripping: {"key":  still outer */ "value"}
+                // This will cause a JSON parse error because "still outer" is not valid JSON
+                expect(fn () => $this->service->validateJson($jsonc))
+                    ->toThrow(\JsonException::class);
+            });
 
-        test('validates complete boost.json structure', function (): void {
-            $validBoost = [
-                'agents' => ['claude_code', 'copilot'],
-                'skills' => ['livewire-development', 'pest-testing'],
-                'guidelines' => true,
-                'herd_mcp' => [],
-                'mcp' => [],
-                'nightwatch_mcp' => [],
-                'sail' => [],
-            ];
+            test('handles unclosed multi-line comment at EOF', function (): void {
+                // Comment opened but never closed - should be stripped to end of file
+                $jsonc = '{"key": "value" /* unclosed comment';
 
-            $result = $this->service->validateJson(json_encode($validBoost), 'boost');
+                // The unclosed comment consumes everything after it
+                // Result: {"key": "value" (incomplete)
+                expect(fn () => $this->service->validateJson($jsonc))
+                    ->toThrow(\JsonException::class);
+            });
 
-            expect($result)->toBe($validBoost);
-        });
+            test('handles single-line comment at EOF without newline', function (): void {
+                // Comment at end of file with no trailing newline
+                $jsonc = '{"key": "value"} // comment at EOF';
 
-        test('allows unknown keys with warning', function (): void {
-            $boostWithUnknown = [
-                'agents' => [],
-                'unknown_field' => 'value',
-            ];
+                $result = $this->service->validateJson($jsonc);
 
-            $result = $this->service->validateJson(json_encode($boostWithUnknown), 'boost');
+                expect($result)->toBe(['key' => 'value']);
+            });
 
-            expect($result)->toBe($boostWithUnknown);
-        });
-    });
+            test('handles unicode characters in comments', function (): void {
+                // Comments with various unicode characters
+                $jsonc = "{\n // Comment with unicode: 你好 🚀 émojis\n \"key\": \"value\",\n /* Multi-line with\n unicode: 日本語 */\n \"other\": 123\n}";
 
-    describe('putContent file system failures', function (): void {
-        test('throws exception when directory is not writable', function (): void {
-            // Create a directory that exists but is not writable
-            $unwritableDir = $this->testDir.'/unwritable';
-            File::makeDirectory($unwritableDir, 0555, true);
+                $result = $this->service->validateJson($jsonc);
 
-            config()->set('vibecodepc.config_files.unwritable_config', [
-                'path' => $unwritableDir.'/test.json',
-                'label' => 'Unwritable Config',
-                'description' => 'Test config in unwritable directory',
-                'editable' => true,
-                'scope' => 'global',
-            ]);
+                expect($result)->toBe(['key' => 'value', 'other' => 123]);
+            });
 
-            // The error happens at the file_put_contents level which throws ErrorException
-            expect(fn () => $this->service->putContent('unwritable_config', '{"key": "value"}'))
-                ->toThrow(\Exception::class);
+            test('preserves quotes inside comments', function (): void {
+                // Comments containing quote characters should not affect parsing
+                $jsonc = "{\n // Comment with \"quotes\" and 'single quotes'\n \"key\": \"value\",\n /* Multi-line comment\n with \"quotes\" inside */\n \"other\": 123\n}";
 
-            // Cleanup: restore permissions so we can delete
-            chmod($unwritableDir, 0755);
-        });
+                $result = $this->service->validateJson($jsonc);
 
-        test('throws exception when parent directory creation fails', function (): void {
-            // Create a directory structure where parent cannot be created
-            $baseDir = $this->testDir.'/readonly';
-            File::makeDirectory($baseDir, 0555, true);
+                expect($result)->toBe(['key' => 'value', 'other' => 123]);
+            });
 
-            config()->set('vibecodepc.config_files.deep_config', [
-                'path' => $baseDir.'/nested/deep/test.json',
-                'label' => 'Deep Config',
-                'description' => 'Test config in deep nested path',
-                'editable' => true,
-                'scope' => 'global',
-            ]);
+            test('handles multiple consecutive single-line comments', function (): void {
+                $jsonc = "{\n // Comment 1\n // Comment 2\n // Comment 3\n \"key\": \"value\"\n}";
 
-            // Directory creation will fail with an exception
-            expect(fn () => $this->service->putContent('deep_config', '{"key": "value"}'))
-                ->toThrow(\Exception::class);
+                $result = $this->service->validateJson($jsonc);
 
-            // Cleanup
-            chmod($baseDir, 0755);
-        });
+                expect($result)->toBe(['key' => 'value']);
+            });
 
-        test('handles concurrent write by using retry mechanism', function (): void {
-            // Create a file that we'll simulate concurrent writes on
-            File::put($this->testDir.'/test.json', '{"original": "data"}', true);
+            test('handles comment immediately after opening brace', function (): void {
+                $jsonc = '{/* comment */"key": "value"}';
 
-            // This test verifies that retry logic exists - it will succeed normally
-            // The actual retry mechanism is tested through the RetryableTrait
-            $this->service->putContent('test_config', '{"key": "value"}');
+                $result = $this->service->validateJson($jsonc);
 
-            expect(File::exists($this->testDir.'/test.json'))->toBeTrue();
-            expect(File::get($this->testDir.'/test.json'))->toBe('{"key": "value"}');
+                expect($result)->toBe(['key' => 'value']);
+            });
 
-            // Verify backup was created
-            $backups = $this->service->listBackups('test_config');
-            expect($backups)->toHaveCount(1);
-        });
+            test('handles comment immediately before closing brace', function (): void {
+                $jsonc = '{"key": "value"/* comment */}';
 
-        test('throws exception when backup directory is not writable', function (): void {
-            // Create existing file so backup is attempted
-            File::put($this->testDir.'/test.json', '{"old": "content"}', true);
+                $result = $this->service->validateJson($jsonc);
 
-            // Create a backup directory that is not writable to force backup failure
-            $backupDir = $this->backupDir.'/unwritable';
-            File::makeDirectory($backupDir, 0555, true);
+                expect($result)->toBe(['key' => 'value']);
+            });
 
-            // Temporarily change backup directory
-            $originalBackupDir = config('vibecodepc.config_editor.backup_directory');
-            config()->set('vibecodepc.config_editor.backup_directory', $backupDir);
+            test('handles empty multi-line comment', function (): void {
+                $jsonc = '{"key": /**/ "value"}';
 
-            // Backup will fail - Laravel's File::put throws ErrorException on permission denied
-            expect(fn () => $this->service->putContent('test_config', '{"key": "value"}'))
-                ->toThrow(\Exception::class);
+                $result = $this->service->validateJson($jsonc);
 
-            // Cleanup
-            chmod($backupDir, 0755);
-            config()->set('vibecodepc.config_editor.backup_directory', $originalBackupDir);
-        });
+                expect($result)->toBe(['key' => 'value']);
+            });
 
-        test('validates content before attempting write', function (): void {
-            // Test that validation happens before any file operations
-            $invalidJson = 'not valid json';
+            test('handles comment-only lines', function (): void {
+                $jsonc = "{\n // Just a comment\n\"key\": \"value\",\n/* Another comment */\n\"other\": 123\n}";
 
-            // This should fail at validation step before file write
-            expect(fn () => $this->service->putContent('test_config', $invalidJson))
-                ->toThrow(\JsonException::class);
+                $result = $this->service->validateJson($jsonc);
 
-            // Verify no file was created (validation failed first)
-            expect(File::exists($this->testDir.'/test.json'))->toBeFalse();
-        });
+                expect($result)->toBe(['key' => 'value', 'other' => 123]);
+            });
 
-        test('validates forbidden keys before attempting write', function (): void {
-            $jsonWithSecret = '{"api_key": "secret123"}';
+            test('handles escaped slashes in strings', function (): void {
+                // String containing escaped slash should not trigger comment parsing
+                // In JSON: \/ becomes / after parsing (escaped forward slash)
+                // In PHP string: "https:\/\/example.com" becomes https://example.com
+                $jsonc = '{"path": "value", "url": "https:\/\/example.com"}';
 
-            // This should fail at validation step before file write
-            expect(fn () => $this->service->putContent('test_config', $jsonWithSecret))
-                ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected');
+                $result = $this->service->validateJson($jsonc);
 
-            // Verify no file was created (validation failed first)
-            expect(File::exists($this->testDir.'/test.json'))->toBeFalse();
-        });
+                expect($result['path'])->toBe('value');
+                expect($result['url'])->toBe('https://example.com');
+            });
 
-        test('validates file size before attempting write', function (): void {
-            $oversizedContent = str_repeat('x', 100 * 1024);
+            test('handles comment characters in keys', function (): void {
+                // Keys containing comment-like sequences should work
+                $jsonc = '{"key//name": "value", "key/*name*/": "value2"}';
 
-            // This should fail at validation step before file write
-            expect(fn () => $this->service->putContent('test_config', $oversizedContent))
-                ->toThrow(\InvalidArgumentException::class, 'exceeds maximum allowed size');
+                $result = $this->service->validateJson($jsonc);
 
-            // Verify no file was created (validation failed first)
-            expect(File::exists($this->testDir.'/test.json'))->toBeFalse();
-        });
+                expect($result['key//name'])->toBe('value');
+                expect($result['key/*name*/'])->toBe('value2');
+            });
 
-        test('new file write succeeds when directory is writable', function (): void {
-            // Test the happy path for new file creation
-            $this->service->putContent('test_config', '{"new": "file"}');
+            test('handles mixed line endings', function (): void {
+                // File with mixed \n and \r\n line endings
+                $jsonc = "{\r\n // Windows line ending\r\n \"key\": \"value\",\n // Unix line ending\n \"other\": 123\n}";
 
-            expect(File::exists($this->testDir.'/test.json'))->toBeTrue();
-            expect(File::get($this->testDir.'/test.json'))->toBe('{"new": "file"}');
+                $result = $this->service->validateJson($jsonc);
+
+                expect($result)->toBe(['key' => 'value', 'other' => 123]);
+            });
+
+            test('handles comments at start of file', function (): void {
+                $jsonc = "// Header comment\n{\"key\": \"value\"}";
+
+                $result = $this->service->validateJson($jsonc);
+
+                expect($result)->toBe(['key' => 'value']);
+            });
+
+            test('handles multi-line comment spanning multiple lines', function (): void {
+                $jsonc = "{\n \"key\": /* line 1\n line 2\n line 3 */ \"value\"\n}";
+
+                $result = $this->service->validateJson($jsonc);
+
+                expect($result)->toBe(['key' => 'value']);
+            });
+
+            test('handles comment immediately after comma', function (): void {
+                $jsonc = '{"key1": "value1", /* comment */ "key2": "value2"}';
+
+                $result = $this->service->validateJson($jsonc);
+
+                expect($result)->toBe(['key1' => 'value1', 'key2' => 'value2']);
+            });
         });
     });
 
-    describe('cleanupOldBackups', function (): void {
-        test('removes backups older than retention period', function (): void {
-            // Set retention to 1 day for testing (applies to the entire test)
-            config()->set('vibecodepc.config_editor.backup_retention_days', 1);
+    test('strips multi-line comments', function (): void {
+        $jsonc = "{\n  /* Multi-line\n     comment */\n  \"key\": \"value\"\n}";
 
-            File::put($this->testDir.'/test.json', 'old', true);
+        $result = $this->service->validateJson($jsonc);
 
-            $backupPath = $this->service->backup('test_config');
-
-            // Set the file modification time to 2 days ago (older than retention period)
-            touch($backupPath, time() - (2 * 24 * 60 * 60));
-
-            // Verify the file exists with old timestamp
-            expect(File::exists($backupPath))->toBeTrue();
-            expect(File::lastModified($backupPath))->toBeLessThan(time() - (24 * 60 * 60));
-
-            // Create a new backup by saving - this triggers cleanup via backup()
-            File::put($this->testDir.'/test.json', 'new', true);
-            $this->service->putContent('test_config', '{"trigger": "cleanup"}');
-
-            // Check that the OLD backup was deleted during cleanup
-            // Note: listBackups uses the CURRENT config value, so we need to verify directly
-            $files = File::glob($this->backupDir.'/*');
-            $oldBackupStillExists = false;
-            foreach ($files as $file) {
-                if (File::lastModified($file) < time() - (24 * 60 * 60)) {
-                    $oldBackupStillExists = true;
-                    break;
-                }
-            }
-            expect($oldBackupStillExists)->toBeFalse('Old backups should be cleaned up');
-        });
+        expect($result)->toBe(['key' => 'value']);
     });
 
-    describe('backup edge cases', function (): void {
-        test('throws exception when backup directory is not writable', function (): void {
-            // Create existing file so backup is attempted
-            File::put($this->testDir.'/test.json', '{"old": "content"}', true);
+    test('strips inline multi-line comments', function (): void {
+        $jsonc = '{"key": /* inline */ "value"}';
 
-            // Create a backup directory that is not writable to force backup failure
-            $unwritableBackupDir = $this->backupDir.'/unwritable';
-            File::makeDirectory($unwritableBackupDir, 0555, true);
+        $result = $this->service->validateJson($jsonc);
 
-            // Temporarily change backup directory
-            $originalBackupDir = config('vibecodepc.config_editor.backup_directory');
-            config()->set('vibecodepc.config_editor.backup_directory', $unwritableBackupDir);
-
-            // Backup will fail - Laravel's File::put throws ErrorException on permission denied
-            expect(fn () => $this->service->backup('test_config'))
-                ->toThrow(\Exception::class);
-
-            // Cleanup: restore permissions so we can delete
-            chmod($unwritableBackupDir, 0755);
-            config()->set('vibecodepc.config_editor.backup_directory', $originalBackupDir);
-        });
-
-        test('handles backup filename collision with rapid consecutive backups', function (): void {
-            // Create a file to backup
-            File::put($this->testDir.'/test.json', '{"key": "value"}', true);
-
-            // Create multiple backups rapidly (same second)
-            $backupPaths = [];
-            for ($i = 0; $i < 5; $i++) {
-                $backupPaths[] = $this->service->backup('test_config');
-            }
-
-            // All backups should exist and have unique paths
-            expect($backupPaths)->toHaveCount(5);
-            expect(count(array_unique($backupPaths)))->toBe(5);
-
-            // All backups should contain the same content
-            foreach ($backupPaths as $path) {
-                expect(File::exists($path))->toBeTrue();
-                expect(File::get($path))->toBe('{"key": "value"}');
-            }
-        });
-
-        test('throws exception when file exceeds max size during backup', function (): void {
-            // Create a large file that exceeds the max file size limit
-            $largeContent = str_repeat('x', 70 * 1024); // 70KB, exceeds 64KB limit
-            File::put($this->testDir.'/test.json', $largeContent, true);
-
-            // File exists and is readable, so backup should succeed at the backup level
-            // The size check is done in putContent, not backup
-            $backupPath = $this->service->backup('test_config');
-
-            // Backup should succeed regardless of file size
-            expect(File::exists($backupPath))->toBeTrue();
-            expect(File::get($backupPath))->toBe($largeContent);
-        });
-
-        test('throws exception when backup directory does not exist and cannot be created', function (): void {
-            // Create existing file so backup is attempted
-            File::put($this->testDir.'/test.json', '{"old": "content"}', true);
-
-            // Set backup directory to a path that cannot be created (parent is readonly)
-            $readonlyParent = $this->backupDir.'/readonly_parent';
-            File::makeDirectory($readonlyParent, 0555, true);
-
-            $nestedBackupDir = $readonlyParent.'/nested/backups';
-            $originalBackupDir = config('vibecodepc.config_editor.backup_directory');
-            config()->set('vibecodepc.config_editor.backup_directory', $nestedBackupDir);
-
-            // Directory creation will fail with an exception
-            expect(fn () => $this->service->backup('test_config'))
-                ->toThrow(\Exception::class);
-
-            // Cleanup
-            chmod($readonlyParent, 0755);
-            config()->set('vibecodepc.config_editor.backup_directory', $originalBackupDir);
-        });
-
-        test('throws exception when source file cannot be read during backup', function (): void {
-            // Create a file
-            File::put($this->testDir.'/test.json', '{"key": "value"}', true);
-
-            // Make the file unreadable
-            chmod($this->testDir.'/test.json', 0000);
-
-            // Backup should fail because file cannot be read
-            expect(fn () => $this->service->backup('test_config'))
-                ->toThrow(\RuntimeException::class, 'Failed to read file for backup');
-
-            // Cleanup: restore permissions
-            chmod($this->testDir.'/test.json', 0644);
-        });
+        expect($result)->toBe(['key' => 'value']);
     });
 
-    describe('schema validation', function (): void {
-        $realSchemaDir = '';
+    test('strips multiple comment types', function (): void {
+        $jsonc = "{\n  // Single line\n  /* Multi-line */\n  \"key\": \"value\",\n  // Another comment\n  \"other\": 123\n}";
 
-        beforeEach(function () use (&$realSchemaDir): void {
-            $realSchemaDir = storage_path('schemas');
-            if (! File::isDirectory($realSchemaDir)) {
-                File::makeDirectory($realSchemaDir, 0755, true);
+        $result = $this->service->validateJson($jsonc);
+
+        expect($result)->toBe(['key' => 'value', 'other' => 123]);
+    });
+});
+
+describe('boost.json validation', function (): void {
+    beforeEach(function (): void {
+        config()->set('vibecodepc.config_files.boost', [
+            'path' => $this->testDir.'/boost.json',
+            'label' => 'Boost',
+            'description' => 'Boost configuration',
+            'editable' => true,
+            'scope' => 'global',
+        ]);
+    });
+
+    test('validates skills must be an array', function (): void {
+        $invalidBoost = ['skills' => 'not an array'];
+
+        expect(fn () => $this->service->validateJson(json_encode($invalidBoost), 'boost'))
+            ->toThrow(\InvalidArgumentException::class, 'skills" must be an array');
+    });
+
+    test('validates empty boost.json', function (): void {
+        $result = $this->service->validateJson('{}', 'boost');
+
+        expect($result)->toBe([]);
+    });
+
+    test('validates complete boost.json structure', function (): void {
+        $validBoost = [
+            'agents' => ['claude_code', 'copilot'],
+            'skills' => ['livewire-development', 'pest-testing'],
+            'guidelines' => true,
+            'herd_mcp' => [],
+            'mcp' => [],
+            'nightwatch_mcp' => [],
+            'sail' => [],
+        ];
+
+        $result = $this->service->validateJson(json_encode($validBoost), 'boost');
+
+        expect($result)->toBe($validBoost);
+    });
+
+    test('allows unknown keys with warning', function (): void {
+        $boostWithUnknown = [
+            'agents' => [],
+            'unknown_field' => 'value',
+        ];
+
+        $result = $this->service->validateJson(json_encode($boostWithUnknown), 'boost');
+
+        expect($result)->toBe($boostWithUnknown);
+    });
+});
+
+describe('putContent file system failures', function (): void {
+    test('throws exception when directory is not writable', function (): void {
+        // Create a directory that exists but is not writable
+        $unwritableDir = $this->testDir.'/unwritable';
+        File::makeDirectory($unwritableDir, 0555, true);
+
+        config()->set('vibecodepc.config_files.unwritable_config', [
+            'path' => $unwritableDir.'/test.json',
+            'label' => 'Unwritable Config',
+            'description' => 'Test config in unwritable directory',
+            'editable' => true,
+            'scope' => 'global',
+        ]);
+
+        // The error happens at the file_put_contents level which throws ErrorException
+        expect(fn () => $this->service->putContent('unwritable_config', '{"key": "value"}'))
+            ->toThrow(\Exception::class);
+
+        // Cleanup: restore permissions so we can delete
+        chmod($unwritableDir, 0755);
+    });
+
+    test('throws exception when parent directory creation fails', function (): void {
+        // Create a directory structure where parent cannot be created
+        $baseDir = $this->testDir.'/readonly';
+        File::makeDirectory($baseDir, 0555, true);
+
+        config()->set('vibecodepc.config_files.deep_config', [
+            'path' => $baseDir.'/nested/deep/test.json',
+            'label' => 'Deep Config',
+            'description' => 'Test config in deep nested path',
+            'editable' => true,
+            'scope' => 'global',
+        ]);
+
+        // Directory creation will fail with an exception
+        expect(fn () => $this->service->putContent('deep_config', '{"key": "value"}'))
+            ->toThrow(\Exception::class);
+
+        // Cleanup
+        chmod($baseDir, 0755);
+    });
+
+    test('handles concurrent write by using retry mechanism', function (): void {
+        // Create a file that we'll simulate concurrent writes on
+        File::put($this->testDir.'/test.json', '{"original": "data"}', true);
+
+        // This test verifies that retry logic exists - it will succeed normally
+        // The actual retry mechanism is tested through the RetryableTrait
+        $this->service->putContent('test_config', '{"key": "value"}');
+
+        expect(File::exists($this->testDir.'/test.json'))->toBeTrue();
+        expect(File::get($this->testDir.'/test.json'))->toBe('{"key": "value"}');
+
+        // Verify backup was created
+        $backups = $this->service->listBackups('test_config');
+        expect($backups)->toHaveCount(1);
+    });
+
+    test('throws exception when backup directory is not writable', function (): void {
+        // Create existing file so backup is attempted
+        File::put($this->testDir.'/test.json', '{"old": "content"}', true);
+
+        // Create a backup directory that is not writable to force backup failure
+        $backupDir = $this->backupDir.'/unwritable';
+        File::makeDirectory($backupDir, 0555, true);
+
+        // Temporarily change backup directory
+        $originalBackupDir = config('vibecodepc.config_editor.backup_directory');
+        config()->set('vibecodepc.config_editor.backup_directory', $backupDir);
+
+        // Backup will fail - Laravel's File::put throws ErrorException on permission denied
+        expect(fn () => $this->service->putContent('test_config', '{"key": "value"}'))
+            ->toThrow(\Exception::class);
+
+        // Cleanup
+        chmod($backupDir, 0755);
+        config()->set('vibecodepc.config_editor.backup_directory', $originalBackupDir);
+    });
+
+    test('validates content before attempting write', function (): void {
+        // Test that validation happens before any file operations
+        $invalidJson = 'not valid json';
+
+        // This should fail at validation step before file write
+        expect(fn () => $this->service->putContent('test_config', $invalidJson))
+            ->toThrow(\JsonException::class);
+
+        // Verify no file was created (validation failed first)
+        expect(File::exists($this->testDir.'/test.json'))->toBeFalse();
+    });
+
+    test('validates forbidden keys before attempting write', function (): void {
+        $jsonWithSecret = '{"api_key": "secret123"}';
+
+        // This should fail at validation step before file write
+        expect(fn () => $this->service->putContent('test_config', $jsonWithSecret))
+            ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected');
+
+        // Verify no file was created (validation failed first)
+        expect(File::exists($this->testDir.'/test.json'))->toBeFalse();
+    });
+
+    test('validates file size before attempting write', function (): void {
+        $oversizedContent = str_repeat('x', 100 * 1024);
+
+        // This should fail at validation step before file write
+        expect(fn () => $this->service->putContent('test_config', $oversizedContent))
+            ->toThrow(\InvalidArgumentException::class, 'exceeds maximum allowed size');
+
+        // Verify no file was created (validation failed first)
+        expect(File::exists($this->testDir.'/test.json'))->toBeFalse();
+    });
+
+    test('new file write succeeds when directory is writable', function (): void {
+        // Test the happy path for new file creation
+        $this->service->putContent('test_config', '{"new": "file"}');
+
+        expect(File::exists($this->testDir.'/test.json'))->toBeTrue();
+        expect(File::get($this->testDir.'/test.json'))->toBe('{"new": "file"}');
+    });
+});
+
+describe('cleanupOldBackups', function (): void {
+    test('removes backups older than retention period', function (): void {
+        // Set retention to 1 day for testing (applies to the entire test)
+        config()->set('vibecodepc.config_editor.backup_retention_days', 1);
+
+        File::put($this->testDir.'/test.json', 'old', true);
+
+        $backupPath = $this->service->backup('test_config');
+
+        // Set the file modification time to 2 days ago (older than retention period)
+        touch($backupPath, time() - (2 * 24 * 60 * 60));
+
+        // Verify the file exists with old timestamp
+        expect(File::exists($backupPath))->toBeTrue();
+        expect(File::lastModified($backupPath))->toBeLessThan(time() - (24 * 60 * 60));
+
+        // Create a new backup by saving - this triggers cleanup via backup()
+        File::put($this->testDir.'/test.json', 'new', true);
+        $this->service->putContent('test_config', '{"trigger": "cleanup"}');
+
+        // Check that the OLD backup was deleted during cleanup
+        // Note: listBackups uses the CURRENT config value, so we need to verify directly
+        $files = File::glob($this->backupDir.'/*');
+        $oldBackupStillExists = false;
+        foreach ($files as $file) {
+            if (File::lastModified($file) < time() - (24 * 60 * 60)) {
+                $oldBackupStillExists = true;
+                break;
             }
+        }
+        expect($oldBackupStillExists)->toBeFalse('Old backups should be cleaned up');
+    });
+});
 
-            config()->set('vibecodepc.config_files.opencode_global', [
-                'path' => $this->testDir.'/opencode.json',
-                'label' => 'OpenCode',
-                'description' => 'OpenCode configuration',
-                'editable' => true,
-                'scope' => 'global',
-            ]);
-        });
+describe('backup edge cases', function (): void {
+    test('throws exception when backup directory is not writable', function (): void {
+        // Create existing file so backup is attempted
+        File::put($this->testDir.'/test.json', '{"old": "content"}', true);
 
-        afterEach(function () use (&$realSchemaDir): void {
-            // Clean up any test schema files we created
-            $testSchemas = ['opencode.json', 'claude.json', 'boost.json'];
-            foreach ($testSchemas as $schema) {
-                $path = $realSchemaDir.'/'.$schema;
-                if (File::exists($path)) {
-                    File::delete($path);
-                }
+        // Create a backup directory that is not writable to force backup failure
+        $unwritableBackupDir = $this->backupDir.'/unwritable';
+        File::makeDirectory($unwritableBackupDir, 0555, true);
+
+        // Temporarily change backup directory
+        $originalBackupDir = config('vibecodepc.config_editor.backup_directory');
+        config()->set('vibecodepc.config_editor.backup_directory', $unwritableBackupDir);
+
+        // Backup will fail - Laravel's File::put throws ErrorException on permission denied
+        expect(fn () => $this->service->backup('test_config'))
+            ->toThrow(\Exception::class);
+
+        // Cleanup: restore permissions so we can delete
+        chmod($unwritableBackupDir, 0755);
+        config()->set('vibecodepc.config_editor.backup_directory', $originalBackupDir);
+    });
+
+    test('handles backup filename collision with rapid consecutive backups', function (): void {
+        // Create a file to backup
+        File::put($this->testDir.'/test.json', '{"key": "value"}', true);
+
+        // Create multiple backups rapidly (same second)
+        $backupPaths = [];
+        for ($i = 0; $i < 5; $i++) {
+            $backupPaths[] = $this->service->backup('test_config');
+        }
+
+        // All backups should exist and have unique paths
+        expect($backupPaths)->toHaveCount(5);
+        expect(count(array_unique($backupPaths)))->toBe(5);
+
+        // All backups should contain the same content
+        foreach ($backupPaths as $path) {
+            expect(File::exists($path))->toBeTrue();
+            expect(File::get($path))->toBe('{"key": "value"}');
+        }
+    });
+
+    test('throws exception when file exceeds max size during backup', function (): void {
+        // Create a large file that exceeds the max file size limit
+        $largeContent = str_repeat('x', 70 * 1024); // 70KB, exceeds 64KB limit
+        File::put($this->testDir.'/test.json', $largeContent, true);
+
+        // File exists and is readable, so backup should succeed at the backup level
+        // The size check is done in putContent, not backup
+        $backupPath = $this->service->backup('test_config');
+
+        // Backup should succeed regardless of file size
+        expect(File::exists($backupPath))->toBeTrue();
+        expect(File::get($backupPath))->toBe($largeContent);
+    });
+
+    test('throws exception when backup directory does not exist and cannot be created', function (): void {
+        // Create existing file so backup is attempted
+        File::put($this->testDir.'/test.json', '{"old": "content"}', true);
+
+        // Set backup directory to a path that cannot be created (parent is readonly)
+        $readonlyParent = $this->backupDir.'/readonly_parent';
+        File::makeDirectory($readonlyParent, 0555, true);
+
+        $nestedBackupDir = $readonlyParent.'/nested/backups';
+        $originalBackupDir = config('vibecodepc.config_editor.backup_directory');
+        config()->set('vibecodepc.config_editor.backup_directory', $nestedBackupDir);
+
+        // Directory creation will fail with an exception
+        expect(fn () => $this->service->backup('test_config'))
+            ->toThrow(\Exception::class);
+
+        // Cleanup
+        chmod($readonlyParent, 0755);
+        config()->set('vibecodepc.config_editor.backup_directory', $originalBackupDir);
+    });
+
+    test('throws exception when source file cannot be read during backup', function (): void {
+        // Create a file
+        File::put($this->testDir.'/test.json', '{"key": "value"}', true);
+
+        // Make the file unreadable
+        chmod($this->testDir.'/test.json', 0000);
+
+        // Backup should fail because file cannot be read
+        expect(fn () => $this->service->backup('test_config'))
+            ->toThrow(\RuntimeException::class, 'Failed to read file for backup');
+
+        // Cleanup: restore permissions
+        chmod($this->testDir.'/test.json', 0644);
+    });
+});
+
+describe('JSON validation edge cases', function (): void {
+    test('validateJson accepts empty JSON object', function (): void {
+        $result = $this->service->validateJson('{}');
+
+        expect($result)->toBe([]);
+    });
+
+    test('validateJson accepts empty JSON array', function (): void {
+        $result = $this->service->validateJson('[]');
+
+        expect($result)->toBe([]);
+    });
+
+    test('validateJson throws exception for JSON with only whitespace', function (): void {
+        expect(fn () => $this->service->validateJson('   '))
+            ->toThrow(\JsonException::class);
+    });
+
+    test('validateJson throws exception for JSON with only newlines and tabs', function (): void {
+        expect(fn () => $this->service->validateJson("\n\t\r\n  \t  "))
+            ->toThrow(\JsonException::class);
+    });
+
+    test('validateJson throws exception for JSON with BOM marker', function (): void {
+        // BOM at the start of JSON is a syntax error
+        $jsonWithBom = "\xEF\xBB\xBF{\"key\": \"value\"}";
+
+        expect(fn () => $this->service->validateJson($jsonWithBom))
+            ->toThrow(\JsonException::class);
+    });
+
+    test('validateJson throws exception for JSON with BOM and comments', function (): void {
+        // BOM at the start causes a syntax error
+        $jsonWithBom = "\xEF\xBB\xBF{\n // comment\n \"key\": \"value\"\n}";
+
+        expect(fn () => $this->service->validateJson($jsonWithBom))
+            ->toThrow(\JsonException::class);
+    });
+
+    test('validateJson throws exception for trailing commas in arrays', function (): void {
+        $jsonWithTrailingComma = '{"items": ["a", "b",]}';
+
+        expect(fn () => $this->service->validateJson($jsonWithTrailingComma))
+            ->toThrow(\JsonException::class);
+    });
+
+    test('validateJson throws exception for trailing commas in objects', function (): void {
+        $jsonWithTrailingComma = '{"key": "value",}';
+
+        expect(fn () => $this->service->validateJson($jsonWithTrailingComma))
+            ->toThrow(\JsonException::class);
+    });
+
+    test('validateJson throws exception for single quotes instead of double quotes', function (): void {
+        $jsonWithSingleQuotes = "{'key': 'value'}";
+
+        expect(fn () => $this->service->validateJson($jsonWithSingleQuotes))
+            ->toThrow(\JsonException::class);
+    });
+
+    test('validateJson throws exception for mixed quotes', function (): void {
+        $jsonWithMixedQuotes = '{"key": \'value\'}';
+
+        expect(fn () => $this->service->validateJson($jsonWithMixedQuotes))
+            ->toThrow(\JsonException::class);
+    });
+
+    test('validateJson handles deeply nested JSON up to 512 levels', function (): void {
+        // Create nested structure with 100 levels (well within default limit)
+        $nested = [];
+        $current = &$nested;
+        for ($i = 0; $i < 100; $i++) {
+            $current['level'] = [];
+            $current = &$current['level'];
+        }
+        $current['end'] = true;
+
+        $json = json_encode($nested);
+        $result = $this->service->validateJson($json);
+
+        expect($result)->toBeArray();
+
+        // Verify depth by traversing
+        $depth = 0;
+        $check = $result;
+        while (isset($check['level'])) {
+            $depth++;
+            $check = $check['level'];
+        }
+        expect($depth)->toBe(100);
+        expect($check['end'])->toBeTrue();
+    });
+
+    test('validateJson throws exception for JSON exceeding depth limit', function (): void {
+        // Create nested structure exceeding 512 levels (json_decode default limit)
+        $nested = [];
+        $current = &$nested;
+        for ($i = 0; $i < 600; $i++) {
+            $current['level'] = [];
+            $current = &$current['level'];
+        }
+        $current['end'] = true;
+
+        $json = json_encode($nested);
+
+        // PHP may throw JsonException, TypeError, or InvalidArgumentException when depth is exceeded
+        // depending on the version and how json_decode handles the depth limit
+        try {
+            $this->service->validateJson($json);
+            // If we get here, the test should fail
+            $this->fail('Expected exception was not thrown');
+        } catch (\JsonException|\TypeError|\InvalidArgumentException $e) {
+            // These are all acceptable outcomes
+            expect(true)->toBeTrue();
+        }
+    });
+
+    test('validateJson handles extremely long string values under 64KB', function (): void {
+        // Create a string just under the 64KB file size limit
+        $longString = str_repeat('x', 50000); // 50KB string
+        $json = json_encode(['data' => $longString]);
+
+        $result = $this->service->validateJson($json);
+
+        expect($result['data'])->toBe($longString);
+        expect(strlen($result['data']))->toBe(50000);
+    });
+
+    test('putContent throws exception for JSON with string exceeding file size limit', function (): void {
+        // Create a string that will make total JSON exceed 64KB
+        $longString = str_repeat('x', 70000); // 70KB string
+        $json = json_encode(['data' => $longString]);
+
+        expect(fn () => $this->service->putContent('test_config', $json))
+            ->toThrow(\InvalidArgumentException::class, 'exceeds maximum allowed size');
+    });
+
+    test('validateJson handles JSON with unicode escape sequences', function (): void {
+        $json = '{"text": "Hello \\u0041\\u0042\\u0043"}';
+
+        $result = $this->service->validateJson($json);
+
+        expect($result['text'])->toBe('Hello ABC');
+    });
+
+    test('validateJson handles JSON with special unicode characters', function (): void {
+        $json = '{"emoji": "🚀", "chinese": "中文", "arabic": "عربي"}';
+
+        $result = $this->service->validateJson($json);
+
+        expect($result['emoji'])->toBe('🚀');
+        expect($result['chinese'])->toBe('中文');
+        expect($result['arabic'])->toBe('عربي');
+    });
+
+    test('validateJson handles JSON with null values', function (): void {
+        $json = '{"null_value": null, "empty_string": ""}';
+
+        $result = $this->service->validateJson($json);
+
+        expect($result['null_value'])->toBeNull();
+        expect($result['empty_string'])->toBe('');
+    });
+
+    test('validateJson handles JSON with numeric string keys', function (): void {
+        $json = '{"123": "numeric key", "0": "zero key"}';
+
+        $result = $this->service->validateJson($json);
+
+        expect($result['123'])->toBe('numeric key');
+        expect($result['0'])->toBe('zero key');
+    });
+
+    test('validateJson throws exception for incomplete JSON', function (): void {
+        $incompleteJson = '{"key": "value"';
+
+        expect(fn () => $this->service->validateJson($incompleteJson))
+            ->toThrow(\JsonException::class);
+    });
+
+    test('validateJson throws exception for JSON with unclosed array', function (): void {
+        $invalidJson = '{"items": ["a", "b"}';
+
+        expect(fn () => $this->service->validateJson($invalidJson))
+            ->toThrow(\JsonException::class);
+    });
+
+    test('validateJson throws exception for JSON with unclosed string', function (): void {
+        $invalidJson = '{"key": "unclosed value}';
+
+        expect(fn () => $this->service->validateJson($invalidJson))
+            ->toThrow(\JsonException::class);
+    });
+});
+
+describe('schema validation', function (): void {
+    $realSchemaDir = '';
+
+    beforeEach(function () use (&$realSchemaDir): void {
+        $realSchemaDir = storage_path('schemas');
+        if (! File::isDirectory($realSchemaDir)) {
+            File::makeDirectory($realSchemaDir, 0755, true);
+        }
+
+        config()->set('vibecodepc.config_files.opencode_global', [
+            'path' => $this->testDir.'/opencode.json',
+            'label' => 'OpenCode',
+            'description' => 'OpenCode configuration',
+            'editable' => true,
+            'scope' => 'global',
+        ]);
+    });
+
+    afterEach(function () use (&$realSchemaDir): void {
+        // Clean up any test schema files we created
+        $testSchemas = ['opencode.json', 'claude.json', 'boost.json'];
+        foreach ($testSchemas as $schema) {
+            $path = $realSchemaDir.'/'.$schema;
+            if (File::exists($path)) {
+                File::delete($path);
             }
-        });
+        }
+    });
 
-        test('getSchemaUrl returns null for unknown key', function (): void {
-            $url = $this->service->getSchemaUrl('unknown_key');
+    test('getSchemaUrl returns null for unknown key', function (): void {
+        $url = $this->service->getSchemaUrl('unknown_key');
 
-            expect($url)->toBeNull();
-        });
+        expect($url)->toBeNull();
+    });
 
-        test('getSchemaUrl returns null when schema file does not exist', function (): void {
-            // Ensure opencode schema file does NOT exist
-            $schemaPath = storage_path('schemas/opencode.json');
-            if (File::exists($schemaPath)) {
-                File::delete($schemaPath);
-            }
+    test('getSchemaUrl returns null when schema file does not exist', function (): void {
+        // Ensure opencode schema file does NOT exist
+        $schemaPath = storage_path('schemas/opencode.json');
+        if (File::exists($schemaPath)) {
+            File::delete($schemaPath);
+        }
 
-            $url = $this->service->getSchemaUrl('opencode_global');
+        $url = $this->service->getSchemaUrl('opencode_global');
 
-            expect($url)->toBeNull();
-        });
+        expect($url)->toBeNull();
+    });
 
-        test('getSchemaUrl returns URL when schema file exists', function () use (&$realSchemaDir): void {
-            File::put($realSchemaDir.'/opencode.json', '{}', true);
+    test('getSchemaUrl returns URL when schema file exists', function () use (&$realSchemaDir): void {
+        File::put($realSchemaDir.'/opencode.json', '{}', true);
 
-            $this->service = new ConfigFileService;
-            $url = $this->service->getSchemaUrl('opencode_global');
+        $this->service = new ConfigFileService;
+        $url = $this->service->getSchemaUrl('opencode_global');
 
-            expect($url)->not->toBeNull();
-            expect($url)->toContain('schemas/opencode.json');
-        });
+        expect($url)->not->toBeNull();
+        expect($url)->toContain('schemas/opencode.json');
+    });
 
-        test('validateJsonSchema returns empty array when no schema exists', function (): void {
-            $data = ['key' => 'value'];
+    test('validateJsonSchema returns empty array when no schema exists', function (): void {
+        $data = ['key' => 'value'];
 
-            $errors = $this->service->validateJsonSchema($data, 'unknown_key');
+        $errors = $this->service->validateJsonSchema($data, 'unknown_key');
 
-            expect($errors)->toBe([]);
-        });
+        expect($errors)->toBe([]);
     });
 });

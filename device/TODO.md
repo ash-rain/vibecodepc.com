@@ -152,21 +152,23 @@ This test plan covers the config file editor system including ConfigFileService,
   - Added 5 comprehensive tests covering all edge cases
 
 ### A2. Validation Edge Cases
-- [ ] **A2.1**: Test JSON validation with edge cases
-  - Empty JSON `{}` should be valid
-  - JSON with only whitespace
-  - JSON with BOM (Byte Order Mark)
-  - JSON with trailing commas (invalid)
-  - JSON with single quotes instead of double quotes (invalid)
-  - Very deeply nested JSON (100+ levels)
-  - JSON with extremely long string values (>64KB)
+- [x] 2026-03-17 **A2.1**: Test JSON validation with edge cases
+- Empty JSON `{}` should be valid
+- JSON with only whitespace
+- JSON with BOM (Byte Order Mark)
+- JSON with trailing commas (invalid)
+- JSON with single quotes instead of double quotes (invalid)
+- Very deeply nested JSON (100+ levels)
+- JSON with extremely long string values (>64KB)
 
-- [ ] **A2.2**: Test JSONC comment stripping edge cases
+- [x] **A2.2**: Test JSONC comment stripping edge cases (2026-03-17)
   - Comments inside string values (should be preserved)
   - Nested comments `/* /* */ */`
   - Comments without closing `/*` or `//` at EOF
   - Unicode in comments
   - Comments containing quotes
+  - Fixed JSONC parser to properly handle strings and escape sequences
+  - Added 17 comprehensive edge case tests (all passing)
 
 - [ ] **A2.3**: Test forbidden key detection
   - Keys that partially match patterns (e.g., `api_key_name` should NOT trigger)

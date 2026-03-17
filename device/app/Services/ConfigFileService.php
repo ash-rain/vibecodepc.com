@@ -467,53 +467,87 @@ class ConfigFileService
 
     /**
      * Strip JSONC comments from content before validation.
+     * Properly handles comments inside strings and escape sequences.
      *
      * @param  string  $content  The JSONC content
      * @return string The content with comments removed
      */
     private function stripJsoncComments(string $content): string
     {
-        $lines = explode("\n", $content);
-        $result = [];
-
+        $result = '';
+        $length = strlen($content);
+        $i = 0;
+        $inString = false;
         $inMultilineComment = false;
-        foreach ($lines as $line) {
-            $processedLine = '';
-            $length = strlen($line);
-            $i = 0;
+        $escapeNext = false;
 
-            while ($i < $length) {
-                if (! $inMultilineComment) {
-                    if ($i < $length - 1 && $line[$i] === '/' && $line[$i + 1] === '/') {
-                        break;
+        while ($i < $length) {
+            $char = $content[$i];
+
+            if ($escapeNext) {
+                // Previous character was an escape, include this character
+                $result .= $char;
+                $escapeNext = false;
+                $i++;
+
+                continue;
+            }
+
+            if ($char === '\\') {
+                // Escape character - include it and mark next char as escaped
+                $result .= $char;
+                $escapeNext = true;
+                $i++;
+
+                continue;
+            }
+
+            if (! $inMultilineComment) {
+                if (! $inString) {
+                    // Not in string, not in comment - check for comment start
+                    if ($i < $length - 1 && $char === '/' && $content[$i + 1] === '/') {
+                        // Single-line comment - skip to end of line
+                        // Find next newline or end of content
+                        while ($i < $length && $content[$i] !== "\n") {
+                            $i++;
+                        }
+                        // Keep the newline if present
+                        if ($i < $length && $content[$i] === "\n") {
+                            $result .= "\n";
+                            $i++;
+                        }
+
+                        continue;
                     }
 
-                    if ($i < $length - 1 && $line[$i] === '/' && $line[$i + 1] === '*') {
+                    if ($i < $length - 1 && $char === '/' && $content[$i + 1] === '*') {
+                        // Multi-line comment start
                         $inMultilineComment = true;
                         $i += 2;
 
                         continue;
                     }
-
-                    $processedLine .= $line[$i];
-                    $i++;
-                } else {
-                    if ($i < $length - 1 && $line[$i] === '*' && $line[$i + 1] === '/') {
-                        $inMultilineComment = false;
-                        $i += 2;
-
-                        continue;
-                    }
-                    $i++;
                 }
-            }
 
-            if (! $inMultilineComment || trim($processedLine) !== '') {
-                $result[] = $processedLine;
+                if ($char === '"') {
+                    $inString = ! $inString;
+                }
+
+                $result .= $char;
+                $i++;
+            } else {
+                // In multi-line comment, look for end
+                if ($i < $length - 1 && $char === '*' && $content[$i + 1] === '/') {
+                    $inMultilineComment = false;
+                    $i += 2;
+
+                    continue;
+                }
+                $i++;
             }
         }
 
-        return implode("\n", $result);
+        return $result;
     }
 
     /**
