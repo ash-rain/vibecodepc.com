@@ -39,6 +39,67 @@ describe('ConfigReloadService', function (): void {
         expect($services)->toBe([]);
     });
 
+    test('getAffectedServices is case sensitive for config keys', function (): void {
+        // Original key works
+        $servicesLower = $this->service->getAffectedServices('boost');
+        expect($servicesLower)->toHaveCount(1);
+
+        // Different case returns empty
+        $servicesUpper = $this->service->getAffectedServices('BOOST');
+        expect($servicesUpper)->toBe([]);
+
+        $servicesMixed = $this->service->getAffectedServices('Boost');
+        expect($servicesMixed)->toBe([]);
+
+        // Test with other keys
+        expect($this->service->getAffectedServices('Opencode_Global'))->toBe([]);
+        expect($this->service->getAffectedServices('OPENCODE_GLOBAL'))->toBe([]);
+        expect($this->service->getAffectedServices('opencode_GLOBAL'))->toBe([]);
+    });
+
+    test('getAffectedServices returns multiple service types for opencode_global', function (): void {
+        $services = $this->service->getAffectedServices('opencode_global');
+
+        expect($services)->toHaveCount(2);
+
+        // First service is CLI
+        expect($services[0]['name'])->toBe('OpenCode CLI');
+        expect($services[0]['type'])->toBe('cli');
+
+        // Second service is VSCode
+        expect($services[1]['name'])->toBe('VS Code Extensions');
+        expect($services[1]['type'])->toBe('vscode');
+    });
+
+    test('getAffectedServices handles all known config keys', function (): void {
+        $knownKeys = [
+            'boost',
+            'opencode_global',
+            'opencode_project',
+            'claude_global',
+            'claude_project',
+            'copilot_instructions',
+        ];
+
+        foreach ($knownKeys as $key) {
+            $services = $this->service->getAffectedServices($key);
+            expect($services)->not->toBeEmpty("Config key '{$key}' should have associated services");
+            expect($services)->toBeArray();
+
+            // Each service should have required keys
+            foreach ($services as $service) {
+                expect($service)->toHaveKeys(['name', 'type', 'description']);
+            }
+        }
+    });
+
+    test('getAffectedServices returns empty for null-like string keys', function (): void {
+        // These should all return empty as they don't match any config key
+        expect($this->service->getAffectedServices(''))->toBe([]);
+        expect($this->service->getAffectedServices(' '))->toBe([]);
+        expect($this->service->getAffectedServices('  '))->toBe([]);
+    });
+
     test('requiresManualReload returns true for MCP and CLI services', function (): void {
         expect($this->service->requiresManualReload('boost'))->toBeTrue();
         expect($this->service->requiresManualReload('opencode_global'))->toBeTrue();

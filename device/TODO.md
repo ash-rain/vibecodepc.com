@@ -219,10 +219,12 @@ This test plan covers the config file editor system including ConfigFileService,
 ## Phase B: ConfigReloadService - Additional Tests
 
 ### B1. Service Detection & Reload Logic
-- [ ] **B1.1**: Test `getAffectedServices()` edge cases
+- [x] **B1.1**: Test `getAffectedServices()` edge cases (2026-03-17)
   - Unknown config key returns empty array
-  - Config key with multiple service types
-  - Case sensitivity in config keys
+  - Config key with multiple service types (opencode_global has cli + vscode)
+  - Case sensitivity in config keys (BOOST, Boost don't match boost)
+  - All known config keys have associated services with required structure
+  - Empty/null-like string keys return empty array
 
 - [ ] **B1.2**: Test `requiresManualReload()` variations
   - All service type combinations (mcp, cli, vscode)
