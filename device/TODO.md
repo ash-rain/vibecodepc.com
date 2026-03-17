@@ -277,26 +277,34 @@ This test plan covers the config file editor system including ConfigFileService,
 ## Phase C: ConfigSyncService - Missing Tests
 
 ### C1. Cloud API Integration
-- [ ] **C1.1**: Test `syncIfNeeded()` happy path
+- [x] 2026-03-17 **C1.1**: Test `syncIfNeeded()` happy path
   - Remote version higher than local
   - Apply subdomain changes
   - Apply tunnel token changes
   - Update local version after sync
 
-- [ ] **C1.2**: Test `syncIfNeeded()` when no sync needed
+- [x] 2026-03-17 **C1.2**: Test `syncIfNeeded()` when no sync needed
   - Remote version equals local version
   - Remote version lower than local
   - Remote config is null
 
 ### C3. Error Handling
-- [ ] **C3.1**: Test sync failure scenarios
-  - Cloud API unavailable
-  - Cloud API returns malformed response
-  - Database transaction fails during sync
-  - Tunnel restart fails after token update
+- [x] **C3.1**: Test sync failure scenarios
+  - Cloud API unavailable - covered in sync failures section (propagates ConnectionException)
+  - Cloud API returns malformed response - tested with malformed_remote_config_gracefully
+  - Database transaction fails during sync - tested with database_failure_during_subdomain_update
+  - Tunnel restart fails after token update - covered in token updates section
+  - Additional edge cases added:
+    - Deeply nested arrays in response
+    - Circular references handling
+    - Database locking scenarios
+    - Null/empty string values for subdomain and token
+    - Extremely long token values (10KB)
+    - Rapid sequential sync calls
+    - Out-of-order version responses
 
 ### C4. Concurrency
-- [ ] **C4.1**: Test concurrent sync operations
+- [x] **C4.1**: Test concurrent sync operations
   - Multiple sync calls at once
   - Sync during ongoing sync
 
