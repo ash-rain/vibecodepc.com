@@ -634,6 +634,11 @@ class ConfigFileService
             return [];
         }
 
+        // Ensure schema is an array/object
+        if (! is_array($schema)) {
+            return [];
+        }
+
         $errors = [];
         $this->validateSchemaRecursive($data, $schema, '', $errors);
 
@@ -669,7 +674,7 @@ class ConfigFileService
                 return;
             }
 
-            if ($type === 'object' && $dataType !== 'array') {
+            if ($type === 'object' && $dataType !== 'object') {
                 $errors[] = "{$path}: must be an object";
 
                 return;

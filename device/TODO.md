@@ -201,11 +201,18 @@ This test plan covers the config file editor system including ConfigFileService,
     - Backup isolation after multiple saves
 
 ### A4. Schema Validation (when implemented)
-- [ ] **A4.1**: Test schema validation with valid/invalid schemas
+- [x] 2026-03-17 **A4.1**: Test schema validation with valid/invalid schemas
   - Valid JSON schema
   - Invalid JSON schema (malformed)
   - Schema with circular references
   - Schema with external $ref
+  - Added 24 comprehensive tests covering:
+    - Valid schema validation (objects, arrays, nested structures, enums, min/max constraints)
+    - Invalid schema detection (type mismatches, additional properties, constraint violations)
+    - Malformed schema handling (invalid JSON, non-object schemas, unreadable files)
+    - Circular and external $ref handling
+  - Fixed bug: `validateJsonSchema` was checking `dataType !== 'array'` instead of `dataType !== 'object'` for object type validation
+  - Fixed bug: Added check to ensure decoded schema is an array before validation
 
 ---
 

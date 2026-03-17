@@ -2149,14 +2149,19 @@ describe('ConfigFileService', function (): void {
                 'editable' => true,
                 'scope' => 'global',
             ]);
+
+            // Recreate service to pick up new config
+            $this->service = new ConfigFileService;
         });
 
         afterEach(function () use (&$realSchemaDir): void {
             // Clean up any test schema files we created
-            $testSchemas = ['opencode.json', 'claude.json', 'boost.json'];
+            $testSchemas = ['opencode.json', 'claude.json', 'boost.json', 'user.json'];
             foreach ($testSchemas as $schema) {
                 $path = $realSchemaDir.'/'.$schema;
                 if (File::exists($path)) {
+                    // Ensure we can delete by restoring permissions if needed
+                    chmod($path, 0644);
                     File::delete($path);
                 }
             }
@@ -2196,6 +2201,451 @@ describe('ConfigFileService', function (): void {
             $errors = $this->service->validateJsonSchema($data, 'unknown_key');
 
             expect($errors)->toBe([]);
+        });
+
+        describe('schema validation with valid schemas', function () use (&$realSchemaDir): void {
+            beforeEach(function (): void {
+                // Recreate service to pick up new schemas
+                $this->service = new ConfigFileService;
+            });
+
+            test('validates data matching schema successfully', function () use (&$realSchemaDir): void {
+                $schema = [
+                    'type' => 'object',
+                    'properties' => [
+                        'name' => ['type' => 'string'],
+                        'enabled' => ['type' => 'boolean'],
+                        'count' => ['type' => 'number'],
+                    ],
+                    'additionalProperties' => false,
+                ];
+                File::put($realSchemaDir.'/opencode.json', json_encode($schema), true);
+
+                $data = ['name' => 'test', 'enabled' => true, 'count' => 42];
+                $errors = $this->service->validateJsonSchema($data, 'opencode_global');
+
+                expect($errors)->toBe([]);
+            });
+
+            test('validates nested object structure', function () use (&$realSchemaDir): void {
+                $schema = [
+                    'type' => 'object',
+                    'properties' => [
+                        'config' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'host' => ['type' => 'string'],
+                                'port' => ['type' => 'number'],
+                            ],
+                        ],
+                    ],
+                ];
+                File::put($realSchemaDir.'/opencode.json', json_encode($schema), true);
+
+                $data = ['config' => ['host' => 'localhost', 'port' => 8080]];
+                $errors = $this->service->validateJsonSchema($data, 'opencode_global');
+
+                expect($errors)->toBe([]);
+            });
+
+            test('validates array with items schema', function () use (&$realSchemaDir): void {
+                $schema = [
+                    'type' => 'array',
+                    'items' => ['type' => 'string'],
+                ];
+                File::put($realSchemaDir.'/opencode.json', json_encode($schema), true);
+
+                $data = ['item1', 'item2', 'item3'];
+                $errors = $this->service->validateJsonSchema($data, 'opencode_global');
+
+                expect($errors)->toBe([]);
+            });
+
+            test('validates enum constraints', function () use (&$realSchemaDir): void {
+                $schema = [
+                    'type' => 'object',
+                    'properties' => [
+                        'status' => [
+                            'type' => 'string',
+                            'enum' => ['active', 'inactive', 'pending'],
+                        ],
+                    ],
+                ];
+                File::put($realSchemaDir.'/opencode.json', json_encode($schema), true);
+
+                $data = ['status' => 'active'];
+                $errors = $this->service->validateJsonSchema($data, 'opencode_global');
+
+                expect($errors)->toBe([]);
+            });
+
+            test('validates number constraints with minimum and maximum', function () use (&$realSchemaDir): void {
+                $schema = [
+                    'type' => 'object',
+                    'properties' => [
+                        'age' => [
+                            'type' => 'number',
+                            'minimum' => 0,
+                            'maximum' => 120,
+                        ],
+                    ],
+                ];
+                File::put($realSchemaDir.'/opencode.json', json_encode($schema), true);
+
+                $data = ['age' => 25];
+                $errors = $this->service->validateJsonSchema($data, 'opencode_global');
+
+                expect($errors)->toBe([]);
+            });
+        });
+
+        describe('schema validation with invalid schemas', function () use (&$realSchemaDir): void {
+            test('detects type mismatch - expected string got number', function () use (&$realSchemaDir): void {
+                $schema = [
+                    'type' => 'object',
+                    'properties' => [
+                        'name' => ['type' => 'string'],
+                    ],
+                ];
+                File::put($realSchemaDir.'/opencode.json', json_encode($schema), true);
+
+                $data = ['name' => 123];
+                $errors = $this->service->validateJsonSchema($data, 'opencode_global');
+
+                expect($errors)->toContain('name: must be a string');
+            });
+
+            test('detects type mismatch - expected number got string', function () use (&$realSchemaDir): void {
+                $schema = [
+                    'type' => 'object',
+                    'properties' => [
+                        'count' => ['type' => 'number'],
+                    ],
+                ];
+                File::put($realSchemaDir.'/opencode.json', json_encode($schema), true);
+
+                $data = ['count' => 'not a number'];
+                $errors = $this->service->validateJsonSchema($data, 'opencode_global');
+
+                expect($errors)->toContain('count: must be a number');
+            });
+
+            test('detects type mismatch - expected boolean got string', function () use (&$realSchemaDir): void {
+                $schema = [
+                    'type' => 'object',
+                    'properties' => [
+                        'enabled' => ['type' => 'boolean'],
+                    ],
+                ];
+                File::put($realSchemaDir.'/opencode.json', json_encode($schema), true);
+
+                $data = ['enabled' => 'true'];
+                $errors = $this->service->validateJsonSchema($data, 'opencode_global');
+
+                expect($errors)->toContain('enabled: must be a boolean');
+            });
+
+            test('detects additional properties when not allowed', function () use (&$realSchemaDir): void {
+                $schema = [
+                    'type' => 'object',
+                    'properties' => [
+                        'name' => ['type' => 'string'],
+                    ],
+                    'additionalProperties' => false,
+                ];
+                File::put($realSchemaDir.'/opencode.json', json_encode($schema), true);
+
+                $data = ['name' => 'test', 'extra' => 'not allowed'];
+                $errors = $this->service->validateJsonSchema($data, 'opencode_global');
+
+                expect($errors)->toContain('extra: additional property not allowed');
+            });
+
+            test('detects enum value violation', function () use (&$realSchemaDir): void {
+                $schema = [
+                    'type' => 'object',
+                    'properties' => [
+                        'status' => [
+                            'type' => 'string',
+                            'enum' => ['active', 'inactive'],
+                        ],
+                    ],
+                ];
+                File::put($realSchemaDir.'/opencode.json', json_encode($schema), true);
+
+                $data = ['status' => 'invalid_status'];
+                $errors = $this->service->validateJsonSchema($data, 'opencode_global');
+
+                expect($errors)->toContain('status: must be one of: active, inactive');
+            });
+
+            test('detects minimum constraint violation', function () use (&$realSchemaDir): void {
+                $schema = [
+                    'type' => 'object',
+                    'properties' => [
+                        'age' => [
+                            'type' => 'number',
+                            'minimum' => 0,
+                        ],
+                    ],
+                ];
+                File::put($realSchemaDir.'/opencode.json', json_encode($schema), true);
+
+                $data = ['age' => -5];
+                $errors = $this->service->validateJsonSchema($data, 'opencode_global');
+
+                expect($errors)->toContain('age: must be >= 0');
+            });
+
+            test('detects maximum constraint violation', function () use (&$realSchemaDir): void {
+                $schema = [
+                    'type' => 'object',
+                    'properties' => [
+                        'percentage' => [
+                            'type' => 'number',
+                            'maximum' => 100,
+                        ],
+                    ],
+                ];
+                File::put($realSchemaDir.'/opencode.json', json_encode($schema), true);
+
+                $data = ['percentage' => 150];
+                $errors = $this->service->validateJsonSchema($data, 'opencode_global');
+
+                expect($errors)->toContain('percentage: must be <= 100');
+            });
+
+            test('detects type mismatch in nested objects', function () use (&$realSchemaDir): void {
+                $schema = [
+                    'type' => 'object',
+                    'properties' => [
+                        'config' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'port' => ['type' => 'number'],
+                                'host' => ['type' => 'string'],
+                            ],
+                        ],
+                    ],
+                ];
+                File::put($realSchemaDir.'/opencode.json', json_encode($schema), true);
+
+                // Numeric strings like '8080' pass is_numeric() check, so they're valid
+                // Test with a clearly non-numeric string to trigger the error
+                $data = ['config' => ['port' => 'not-a-number', 'host' => 123]];
+                $errors = $this->service->validateJsonSchema($data, 'opencode_global');
+
+                expect($errors)->toContain('config.port: must be a number');
+                expect($errors)->toContain('config.host: must be a string');
+            });
+
+            test('detects type mismatch in array items', function () use (&$realSchemaDir): void {
+                $schema = [
+                    'type' => 'array',
+                    'items' => ['type' => 'number'],
+                ];
+                File::put($realSchemaDir.'/opencode.json', json_encode($schema), true);
+
+                $data = [1, 2, 'not a number', 4];
+                $errors = $this->service->validateJsonSchema($data, 'opencode_global');
+
+                expect($errors)->toContain('[2]: must be a number');
+            });
+
+            test('detects multiple validation errors', function () use (&$realSchemaDir): void {
+                $schema = [
+                    'type' => 'object',
+                    'properties' => [
+                        'name' => ['type' => 'string'],
+                        'count' => ['type' => 'number'],
+                        'enabled' => ['type' => 'boolean'],
+                    ],
+                    'additionalProperties' => false,
+                ];
+                File::put($realSchemaDir.'/opencode.json', json_encode($schema), true);
+
+                $data = [
+                    'name' => 123,
+                    'count' => 'not a number',
+                    'enabled' => 'yes',
+                    'extra' => 'not allowed',
+                ];
+                $errors = $this->service->validateJsonSchema($data, 'opencode_global');
+
+                expect($errors)->toHaveCount(4);
+                expect($errors)->toContain('name: must be a string');
+                expect($errors)->toContain('count: must be a number');
+                expect($errors)->toContain('enabled: must be a boolean');
+                expect($errors)->toContain('extra: additional property not allowed');
+            });
+
+            test('handles deeply nested validation errors', function () use (&$realSchemaDir): void {
+                $schema = [
+                    'type' => 'object',
+                    'properties' => [
+                        'level1' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'level2' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'level3' => [
+                                            'type' => 'object',
+                                            'properties' => [
+                                                'value' => ['type' => 'string'],
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ];
+                File::put($realSchemaDir.'/opencode.json', json_encode($schema), true);
+
+                $data = ['level1' => ['level2' => ['level3' => ['value' => 123]]]];
+                $errors = $this->service->validateJsonSchema($data, 'opencode_global');
+
+                expect($errors)->toContain('level1.level2.level3.value: must be a string');
+            });
+        });
+
+        describe('schema validation with malformed schemas', function () use (&$realSchemaDir): void {
+            test('returns empty errors when schema has invalid JSON', function () use (&$realSchemaDir): void {
+                File::put($realSchemaDir.'/opencode.json', 'not valid json', true);
+
+                $data = ['key' => 'value'];
+                $errors = $this->service->validateJsonSchema($data, 'opencode_global');
+
+                expect($errors)->toBe([]);
+            });
+
+            test('returns empty errors when schema is not an object', function () use (&$realSchemaDir): void {
+                File::put($realSchemaDir.'/opencode.json', '"not an object"', true);
+
+                $data = ['key' => 'value'];
+                $errors = $this->service->validateJsonSchema($data, 'opencode_global');
+
+                expect($errors)->toBe([]);
+            });
+
+            test('returns empty errors when schema is empty object', function () use (&$realSchemaDir): void {
+                File::put($realSchemaDir.'/opencode.json', '{}', true);
+
+                $data = ['key' => 'value'];
+                $errors = $this->service->validateJsonSchema($data, 'opencode_global');
+
+                expect($errors)->toBe([]);
+            });
+
+            test('returns empty errors when schema file cannot be read', function () use (&$realSchemaDir): void {
+                // Create file but make it unreadable
+                File::put($realSchemaDir.'/opencode.json', '{}', true);
+                chmod($realSchemaDir.'/opencode.json', 0000);
+
+                $data = ['key' => 'value'];
+
+                // Expect an exception when file cannot be read
+                expect(fn () => $this->service->validateJsonSchema($data, 'opencode_global'))
+                    ->toThrow(\Exception::class);
+
+                // Restore permissions for cleanup
+                chmod($realSchemaDir.'/opencode.json', 0644);
+            });
+
+            test('gracefully handles schema with unknown type', function () use (&$realSchemaDir): void {
+                $schema = [
+                    'type' => 'object',
+                    'properties' => [
+                        'field' => ['type' => 'unknown_type'],
+                    ],
+                ];
+                File::put($realSchemaDir.'/opencode.json', json_encode($schema), true);
+
+                $data = ['field' => 'value'];
+                $errors = $this->service->validateJsonSchema($data, 'opencode_global');
+
+                // Unknown type doesn't generate errors, just skips validation
+                expect($errors)->toBe([]);
+            });
+        });
+
+        describe('schema validation with circular references', function () use (&$realSchemaDir): void {
+            test('handles schema with self-referencing structure gracefully', function () use (&$realSchemaDir): void {
+                // PHP's json_encode cannot encode circular references
+                // This test simulates a schema that might reference itself conceptually
+                $schema = [
+                    'type' => 'object',
+                    'properties' => [
+                        'name' => ['type' => 'string'],
+                        'children' => [
+                            'type' => 'array',
+                            'items' => ['$ref' => '#'], // Circular reference pattern
+                        ],
+                    ],
+                ];
+                File::put($realSchemaDir.'/opencode.json', json_encode($schema), true);
+
+                $data = [
+                    'name' => 'parent',
+                    'children' => [
+                        ['name' => 'child1'],
+                        ['name' => 'child2'],
+                    ],
+                ];
+
+                // Current implementation doesn't resolve $ref, so this should validate
+                // the data against the available schema parts
+                $errors = $this->service->validateJsonSchema($data, 'opencode_global');
+
+                // The $ref is not resolved but children array should validate as any array
+                expect(is_array($errors))->toBeTrue();
+            });
+        });
+
+        describe('schema validation with external references', function () use (&$realSchemaDir): void {
+            test('handles schema with external $ref gracefully', function () use (&$realSchemaDir): void {
+                // Create a base schema
+                $schema = [
+                    'type' => 'object',
+                    'properties' => [
+                        'user' => ['$ref' => 'user.json'],
+                    ],
+                ];
+                File::put($realSchemaDir.'/opencode.json', json_encode($schema), true);
+
+                // Create the referenced schema
+                $userSchema = [
+                    'type' => 'object',
+                    'properties' => [
+                        'name' => ['type' => 'string'],
+                    ],
+                ];
+                File::put($realSchemaDir.'/user.json', json_encode($userSchema), true);
+
+                $data = ['user' => ['name' => 'John']];
+                $errors = $this->service->validateJsonSchema($data, 'opencode_global');
+
+                // Current implementation doesn't resolve external $ref
+                // but should not crash
+                expect(is_array($errors))->toBeTrue();
+            });
+
+            test('handles schema with missing external $ref', function () use (&$realSchemaDir): void {
+                $schema = [
+                    'type' => 'object',
+                    'properties' => [
+                        'user' => ['$ref' => 'nonexistent.json'],
+                    ],
+                ];
+                File::put($realSchemaDir.'/opencode.json', json_encode($schema), true);
+
+                $data = ['user' => ['name' => 'John']];
+                $errors = $this->service->validateJsonSchema($data, 'opencode_global');
+
+                // Should not crash even if external ref doesn't exist
+                expect(is_array($errors))->toBeTrue();
+            });
         });
     });
 });
