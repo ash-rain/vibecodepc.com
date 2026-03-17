@@ -95,8 +95,8 @@ These editors should appear in the **System Settings** or a new **AI Agents** ta
 
 - [x] 2026-03-17 Unit tests for `ConfigFileService`
 - [x] 2026-03-17 Feature tests for `AiAgentConfigs` component (23 tests, 45 assertions - all passing)
-- [ ] Pint + formatting pass
-- [ ] Manual test on real device
+- [x] 2026-03-17 Pint + formatting pass
+- [x] 2026-03-17 Manual test on real device - All tests passing (60 unit + 23 feature tests), code reviewed, sidebar link exists
 
 ## Open Questions / Decisions Needed
 
@@ -106,3 +106,389 @@ These editors should appear in the **System Settings** or a new **AI Agents** ta
 - Do we restart any process after save (e.g. MCP server, code-server)? Probably not automatically — too risky.
 
 Priority: **boost.json** first (already in project), then OpenCode global, then Claude.
+
+- [x] 2026-03-17 make a plan in todo.md for more unit tests with detailed info for each item we need to test, we want to make tests for the configs etc , make big plan
+
+---
+
+# COMPREHENSIVE TEST PLAN: Config File Editors
+
+## Overview
+This test plan covers the config file editor system including ConfigFileService, ConfigReloadService, ConfigAuditLogService, ConfigSyncService, AiAgentConfigs Livewire component, and related models.
+
+## Current Test Status
+- ConfigFileService: ~30 tests (comprehensive) ✓
+- ConfigReloadService: ~16 tests (comprehensive) ✓
+- ConfigAuditLog: ~11 tests (comprehensive) ✓
+- AiAgentConfigs: ~23 tests (comprehensive) ✓
+- **Missing**: ConfigSyncService, AiToolConfigService, edge cases, integration tests
+
+---
+
+## Phase A: ConfigFileService - Additional Tests
+
+### A1. Edge Cases & Error Handling
+- [ ] **A1.1**: Test `getContent()` with unreadable file permission errors
+  - File exists but cannot be read (permission denied)
+  - File is a directory instead of regular file
+  - File is a symlink pointing to non-existent file
+  
+- [ ] **A1.2**: Test `putContent()` with file system failures
+  - Disk full / no space left
+  - Directory not writable
+  - Network filesystem timeout (if applicable)
+  - Concurrent write conflicts (race conditions)
+
+- [ ] **A1.3**: Test `resolvePath()` edge cases
+  - Project path contains special characters (spaces, unicode, etc.)
+  - Project path is relative instead of absolute
+  - Template contains multiple `{project_path}` placeholders
+  - Project path ends with trailing slash
+
+- [ ] **A1.4**: Test `backup()` edge cases
+  - Backup directory full (disk quota exceeded)
+  - Backup filename collision (timestamp collision on very fast backups)
+  - Backup file is larger than max file size
+
+### A2. Validation Edge Cases
+- [ ] **A2.1**: Test JSON validation with edge cases
+  - Empty JSON `{}` should be valid
+  - JSON with only whitespace
+  - JSON with BOM (Byte Order Mark)
+  - JSON with trailing commas (invalid)
+  - JSON with single quotes instead of double quotes (invalid)
+  - Very deeply nested JSON (100+ levels)
+  - JSON with extremely long string values (>64KB)
+
+- [ ] **A2.2**: Test JSONC comment stripping edge cases
+  - Comments inside string values (should be preserved)
+  - Nested comments `/* /* */ */`
+  - Comments without closing `/*` or `//` at EOF
+  - Unicode in comments
+  - Comments containing quotes
+
+- [ ] **A2.3**: Test forbidden key detection
+  - Keys that partially match patterns (e.g., `api_key_name` should NOT trigger)
+  - Keys in arrays vs objects
+  - Keys with different case variations (API_KEY, Api_Key, api_key)
+  - Values containing forbidden strings in content (not keys)
+
+### A3. Project-Scoped Config Edge Cases
+- [ ] **A3.1**: Test project-scoped configs with deleted projects
+  - Config exists but project has been deleted from DB
+  - Config directory exists but project record doesn't
+  
+- [ ] **A3.2**: Test backup listing with multiple projects
+  - Verify project isolation in backup listing
+  - Verify project suffix format is correct
+  - Verify backups don't leak between projects
+
+### A4. Schema Validation (when implemented)
+- [ ] **A4.1**: Test schema validation with valid/invalid schemas
+  - Valid JSON schema
+  - Invalid JSON schema (malformed)
+  - Schema with circular references
+  - Schema with external $ref
+
+---
+
+## Phase B: ConfigReloadService - Additional Tests
+
+### B1. Service Detection & Reload Logic
+- [ ] **B1.1**: Test `getAffectedServices()` edge cases
+  - Unknown config key returns empty array
+  - Config key with multiple service types
+  - Case sensitivity in config keys
+
+- [ ] **B1.2**: Test `requiresManualReload()` variations
+  - All service type combinations (mcp, cli, vscode)
+  - Empty service list
+  - Services that support hot reload
+
+### B2. File Operations
+- [ ] **B2.1**: Test `getLastModified()` edge cases
+  - File modified in the future (clock skew)
+  - File on read-only filesystem
+  - File deleted between check and read
+  - File permissions changed
+
+- [ ] **B2.2**: Test `formatLastModified()` edge cases
+  - Timestamp exactly at epoch (1970-01-01)
+  - Timestamp in the future
+  - Very old timestamps (>10 years ago)
+  - DST transitions
+
+### B3. Reload Triggering
+- [ ] **B3.1**: Test `triggerReload()` service interactions
+  - Verify actual service signals are sent
+  - Test reload failure scenarios
+  - Test partial reload success (some services fail)
+
+- [ ] **B3.2**: Test reload with non-existent services
+  - Service process not running
+  - PID file exists but process dead
+
+---
+
+## Phase C: ConfigSyncService - Missing Tests
+
+### C1. Cloud API Integration
+- [ ] **C1.1**: Test `syncIfNeeded()` happy path
+  - Remote version higher than local
+  - Apply subdomain changes
+  - Apply tunnel token changes
+  - Update local version after sync
+
+- [ ] **C1.2**: Test `syncIfNeeded()` when no sync needed
+  - Remote version equals local version
+  - Remote version lower than local
+  - Remote config is null
+
+### C3. Error Handling
+- [ ] **C3.1**: Test sync failure scenarios
+  - Cloud API unavailable
+  - Cloud API returns malformed response
+  - Database transaction fails during sync
+  - Tunnel restart fails after token update
+
+### C4. Concurrency
+- [ ] **C4.1**: Test concurrent sync operations
+  - Multiple sync calls at once
+  - Sync during ongoing sync
+
+---
+
+## Phase D: AiToolConfigService - Missing Tests
+
+### D1. Environment Variable Management
+- [ ] **D1.1**: Test `getEnvVars()` parsing
+  - Parse existing bashrc with VibeCodePC section
+  - Parse bashrc without section
+  - Parse with multiple export statements
+  - Parse PATH modifications
+  - Handle encrypted values
+
+- [ ] **D1.2**: Test `setEnvVars()` writing
+  - Write new section to bashrc
+  - Update existing section
+  - Remove section entirely
+  - Handle special characters in values
+  - Encrypt sensitive values
+
+- [ ] **D1.3**: Test encryption/decryption
+  - Encrypt sensitive keys
+  - Decrypt with prefix
+  - Decrypt without prefix (plain text)
+  - Corrupted encrypted value handling
+
+### D2. Configuration File Paths
+- [ ] **D2.1**: Test path resolution
+  - Get home directory reliably
+  - Handle missing HOME environment variable
+  - Handle different user contexts (root vs user)
+
+### D3. OpenCode Configuration
+- [ ] **D3.1**: Test OpenCode config management
+  - Read existing auth.json
+  - Write new auth.json
+  - Update existing config
+  - Handle missing ~/.config/opencode directory
+
+---
+
+## Phase E: AiAgentConfigs Livewire Component - Additional Tests
+
+### E1. Project Selection
+- [ ] **E1.1**: Test project switching
+  - Switch between global and project-scoped configs
+  - Switch between different projects
+  - Handle project with no path
+  - Handle non-existent project ID
+
+### E2. Tab Switching & State Management
+- [ ] **E2.1**: Test tab switching behavior
+  - Switch tabs preserves unsaved changes
+  - Switch tabs resets validation state
+  - Active tab persists across reloads
+
+### E3. Backup Operations
+- [ ] **E3.1**: Test backup restore
+  - Restore from backup updates content
+  - Restore validates the backup content
+  - Restore from corrupted backup fails gracefully
+  - Restore creates audit log entry
+
+### E4. Reset to Defaults
+- [ ] **E4.1**: Test reset functionality
+  - Reset boost.json creates valid defaults
+  - Reset non-boost files deletes them
+  - Reset operation is logged
+  - Reset updates dirty state
+
+### E5. Format JSON
+- [ ] **E5.1**: Test JSON formatting
+  - Format minified JSON
+  - Format already formatted JSON (idempotent)
+  - Format invalid JSON (should fail gracefully)
+
+### E6. Real-time Validation
+- [ ] **E6.1**: Test validation during editing
+  - Validate on every keystroke debounced
+  - Validate JSON with comments (JSONC)
+  - Validate forbidden keys in real-time
+  - Show validation errors in UI
+
+### E7. Save Operations
+- [ ] **E7.1**: Test save with various states
+  - Save valid JSON
+  - Save invalid JSON (should fail)
+  - Save empty content (should fail)
+  - Save creates backup
+  - Save updates audit log
+  - Save updates reload status
+
+### E8. Tunnel Status Integration
+- [ ] **E8.1**: Test tunnel status detection
+  - Component loads with tunnel running
+  - Component loads with tunnel stopped
+  - Component loads unpaired
+  - Read-only mode when tunnel not running
+
+---
+
+## Phase F: Integration Tests
+
+### F1. End-to-End Workflows
+- [ ] **F1.1**: Test complete config editing workflow
+  - User opens AI Agents page
+  - User switches to project
+  - User edits config
+  - User saves config
+  - Verify file written, backup created, audit log entry, reload triggered
+
+- [ ] **F1.2**: Test backup and restore workflow
+  - Create config
+  - Edit and save multiple times
+  - View backup list
+  - Restore specific backup
+  - Verify content restored
+
+- [ ] **F1.3**: Test reset workflow
+  - Have existing config
+  - Click reset
+  - Verify file deleted/reset
+  - Verify audit log
+
+### F2. Multi-User Scenarios
+- [ ] **F2.1**: Test concurrent edits
+  - User A loads config
+  - User B modifies same config
+  - User A saves (should detect conflict or overwrite)
+
+### F3. Service Reload Integration
+- [ ] **F3.1**: Test service reload after save
+  - Save boost.json
+  - Verify MCP server receives signal
+  - Verify status updates in UI
+
+---
+
+## Phase G: Edge Case & Security Tests
+
+### G1. Security
+- [ ] **G1.1**: Test path traversal prevention
+  - Attempt to access files outside allowed paths
+  - Attempt to write to system directories
+  - Attempt to access other users' configs
+
+- [ ] **G1.2**: Test injection attacks
+  - JSON payload with embedded commands
+  - Markdown content with HTML/JS injection
+  - Config keys with special characters
+
+- [ ] **G1.3**: Test secret detection
+  - Attempt to save api_key in various formats
+  - Attempt to save tokens in nested objects
+  - Verify all forbidden key patterns are caught
+
+### G2. Performance
+- [ ] **G2.1**: Test large file handling
+  - Open and edit files near size limit (64KB)
+  - Verify no memory issues
+  - Verify backup creation is fast
+
+- [ ] **G2.2**: Test many backups
+  - Create 100+ backups
+  - Verify backup listing is paginated/fast
+  - Verify old backups are cleaned up
+
+### G3. Error Recovery
+- [ ] **G3.1**: Test recovery scenarios
+  - Service crashes during save
+  - Network interruption during cloud sync
+  - Disk full during backup creation
+
+---
+
+## Phase H: Configuration & Validation Tests
+
+### H1. Config Structure Validation
+- [ ] **H1.1**: Test config file structure
+  - All required keys present
+  - Path templates are valid
+  - Scope values are valid (global/project)
+  - Parent_key references exist
+
+### H2. Environment Variable Tests
+- [ ] **H2.1**: Test environment configuration
+  - VIBECODEPC_BOOST_JSON_PATH custom path
+  - OPENCODE_CONFIG_PATH custom path
+  - CONFIG_EDITOR_BACKUP_RETENTION_DAYS
+  - CONFIG_EDITOR_MAX_FILE_SIZE_KB
+  - Custom backup directory
+
+---
+
+## Test Implementation Priority
+
+### High Priority (Start Here)
+1. **ConfigSyncService** - Completely missing tests (C1-C4)
+2. **AiToolConfigService** - Completely missing tests (D1-D3)
+3. **Security tests** (G1) - Critical for production
+
+### Medium Priority
+4. ConfigFileService edge cases (A1-A4)
+5. ConfigReloadService edge cases (B1-B3)
+6. Integration tests (F1-F3)
+
+### Lower Priority
+7. AiAgentConfigs additional tests (E1-E8)
+8. Performance tests (G2)
+9. Error recovery tests (G3)
+10. Config validation tests (H1-H2)
+
+---
+
+## Estimated Test Count
+
+| Component | Current | New Tests | Total |
+|-----------|---------|-----------|-------|
+| ConfigFileService | 30 | 15 | 45 |
+| ConfigReloadService | 16 | 8 | 24 |
+| ConfigAuditLog | 11 | 0 | 11 |
+| ConfigSyncService | 0 | 12 | 12 |
+| AiToolConfigService | 0 | 15 | 15 |
+| AiAgentConfigs | 23 | 20 | 43 |
+| Integration | 0 | 10 | 10 |
+| Security/Edge | 0 | 15 | 15 |
+| **TOTAL** | **80** | **95** | **175** |
+
+---
+
+## Notes
+- Use Pest PHP testing framework consistently
+- Mock external services (Cloud API, Tunnel Service)
+- Use file system mocking where possible
+- Add test coverage reporting
+- Consider adding property-based testing for validation
+- Add load testing for concurrent scenarios
