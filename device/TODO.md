@@ -94,7 +94,7 @@ These editors should appear in the **System Settings** or a new **AI Agents** ta
 ### Phase 4 – Testing & Polish
 
 - [x] 2026-03-17 Unit tests for `ConfigFileService`
-- [ ] Feature tests for `AiAgentConfigs` component
+- [x] 2026-03-17 Feature tests for `AiAgentConfigs` component (23 tests, 45 assertions - all passing)
 - [ ] Pint + formatting pass
 - [ ] Manual test on real device
 
