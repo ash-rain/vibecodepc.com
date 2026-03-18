@@ -493,13 +493,27 @@ This test plan covers the config file editor system including ConfigFileService,
     - Error message display verification
 
 ### E7. Save Operations
-- [ ] **E7.1**: Test save with various states
-  - Save valid JSON
-  - Save invalid JSON (should fail)
-  - Save empty content (should fail)
-  - Save creates backup
-  - Save updates audit log
-  - Save updates reload status
+- [x] 2026-03-18 **E7.1**: Test save with various states
+- Save valid JSON ✓
+- Save invalid JSON (should fail) ✓
+- Save empty content (should fail) ✓
+- Save creates backup ✓
+- Save updates audit log ✓
+- Save updates reload status ✓
+- Added 13 comprehensive tests covering:
+- Save valid JSON content successfully
+- Fail to save invalid JSON with proper error message
+- Fail to save empty content
+- Create backup before saving (verified file system)
+- Create audit log entry on save (verified in database)
+- Update reload status after save
+- Mark content as not dirty after successful save
+- Update fileExists to true after saving new file
+- Handle save failure gracefully with error message
+- Preserve isSaving state during save operation
+- Save project-scoped config successfully
+- Show success message with config label after save
+- Handle unchanged content (backup still created)
 
 ### E8. Tunnel Status Integration
 - [ ] **E8.1**: Test tunnel status detection

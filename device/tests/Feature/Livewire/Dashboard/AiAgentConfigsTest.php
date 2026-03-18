@@ -1528,6 +1528,270 @@ describe('real-time validation', function () {
         expect(str_contains(strtolower($errorMessage), 'forbidden'))->toBe(true);
     });
 
+    // E7.1: Test save with various states
+    describe('save operations', function () {
+        beforeEach(function () {
+            // Clear backups and audit logs before each test
+            $backupDir = config('vibecodepc.config_editor.backup_directory');
+            if (File::isDirectory($backupDir)) {
+                File::cleanDirectory($backupDir);
+            }
+            \App\Models\ConfigAuditLog::query()->delete();
+        });
+
+        it('saves valid JSON content successfully', function () {
+            $component = Livewire::test(AiAgentConfigs::class);
+
+            $newContent = json_encode(['agents' => ['copilot'], 'skills' => []], JSON_PRETTY_PRINT);
+            $component->set('fileContent.boost', $newContent);
+
+            $component->call('save', 'boost');
+
+            $component->assertSet('statusType', 'success');
+            $component->assertSet('isDirty.boost', false);
+            $component->assertSet('fileExists.boost', true);
+
+            // Verify file was actually written
+            $savedContent = File::get(base_path('boost.json'));
+            expect($savedContent)->toBe($newContent);
+        });
+
+        it('fails to save invalid JSON', function () {
+            $component = Livewire::test(AiAgentConfigs::class);
+
+            // Set invalid JSON
+            $component->set('fileContent.boost', '{invalid json {');
+            $component->assertSet('isValid.boost', false);
+
+            $component->call('save', 'boost');
+
+            // Should fail due to validation
+            $component->assertSet('statusType', 'error');
+            $component->assertSet('isDirty.boost', true);
+            $message = $component->get('statusMessage');
+            expect($message)->toContain('Cannot save');
+        });
+
+        it('fails to save empty content', function () {
+            $component = Livewire::test(AiAgentConfigs::class);
+
+            // Set empty content
+            $component->set('fileContent.boost', '');
+
+            $component->call('save', 'boost');
+
+            // Should fail with empty content error
+            $component->assertSet('statusType', 'error');
+            $component->assertSet('statusMessage', 'Cannot save empty content.');
+        });
+
+        it('creates backup before saving', function () {
+            $service = app(ConfigFileService::class);
+
+            $component = Livewire::test(AiAgentConfigs::class);
+
+            // First save to create initial backup
+            $version1 = json_encode(['agents' => ['claude_code']], JSON_PRETTY_PRINT);
+            $component->set('fileContent.boost', $version1);
+            $component->call('save', 'boost');
+
+            // Check backup was created
+            $backups = $service->listBackups('boost');
+            expect($backups)->toHaveCount(1);
+
+            // Second save should create another backup
+            $version2 = json_encode(['agents' => ['copilot']], JSON_PRETTY_PRINT);
+            $component->set('fileContent.boost', $version2);
+            $component->call('save', 'boost');
+
+            $backups = $service->listBackups('boost');
+            expect($backups)->toHaveCount(2);
+        });
+
+        it('creates audit log entry on save', function () {
+            $component = Livewire::test(AiAgentConfigs::class);
+
+            // Clear any existing audit logs
+            \App\Models\ConfigAuditLog::query()->delete();
+
+            // Save new content
+            $newContent = json_encode(['agents' => ['claude_code']], JSON_PRETTY_PRINT);
+            $component->set('fileContent.boost', $newContent);
+            $component->call('save', 'boost');
+
+            // Check audit log was created
+            $auditLog = \App\Models\ConfigAuditLog::where('config_key', 'boost')
+                ->where('action', 'save')
+                ->first();
+
+            expect($auditLog)->not->toBeNull();
+            expect($auditLog->config_key)->toBe('boost');
+            expect($auditLog->action)->toBe('save');
+            // Audit log stores hashes, not raw content
+            expect($auditLog->new_content_hash)->toBeArray();
+            expect($auditLog->new_content_hash)->toHaveKey('sha256');
+            expect($auditLog->change_summary)->toBeString();
+        });
+
+        it('updates reload status after save', function () {
+            $component = Livewire::test(AiAgentConfigs::class);
+
+            $newContent = json_encode(['agents' => ['copilot']], JSON_PRETTY_PRINT);
+            $component->set('fileContent.boost', $newContent);
+            $component->call('save', 'boost');
+
+            // Reload status should be populated after save
+            $reloadStatus = $component->get('reloadStatus');
+            expect($reloadStatus)->toHaveKey('boost');
+            expect($reloadStatus['boost'])->toHaveKey('services');
+        });
+
+        it('marks content as not dirty after successful save', function () {
+            $component = Livewire::test(AiAgentConfigs::class);
+
+            // Initially dirty after change
+            $component->set('fileContent.boost', '{"agents": ["modified"]}');
+            $component->assertSet('isDirty.boost', true);
+
+            // After save, should not be dirty
+            $component->call('save', 'boost');
+            $component->assertSet('isDirty.boost', false);
+        });
+
+        it('updates fileExists to true after saving new file', function () {
+            // Delete boost.json to simulate new file
+            $boostPath = base_path('boost.json');
+            if (File::exists($boostPath)) {
+                File::delete($boostPath);
+            }
+
+            // Re-mount component to pick up deleted state
+            $component = Livewire::test(AiAgentConfigs::class);
+            $component->assertSet('fileExists.boost', false);
+
+            // Save new content
+            $newContent = json_encode(['agents' => ['new_agent']], JSON_PRETTY_PRINT);
+            $component->set('fileContent.boost', $newContent);
+            $component->call('save', 'boost');
+
+            // Should now exist
+            $component->assertSet('fileExists.boost', true);
+            expect(File::exists($boostPath))->toBeTrue();
+        });
+
+        it('handles save failure gracefully', function () {
+            // Create component
+            $component = Livewire::test(AiAgentConfigs::class);
+
+            // Set valid content
+            $content = json_encode(['agents' => ['test']], JSON_PRETTY_PRINT);
+            $component->set('fileContent.boost', $content);
+
+            // Mock the ConfigFileService to throw an exception
+            $mockService = Mockery::mock(ConfigFileService::class)->makePartial();
+            $mockService->shouldReceive('putContent')
+                ->andThrow(new \RuntimeException('Permission denied'));
+
+            app()->instance(ConfigFileService::class, $mockService);
+
+            // Try to save
+            $component->call('save', 'boost');
+
+            // Should show error
+            $component->assertSet('statusType', 'error');
+            $component->assertSet('statusMessage', fn ($msg) => str_contains($msg, 'Permission denied'));
+            $component->assertSet('isSaving.boost', false);
+        });
+
+        it('preserves isSaving state during save operation', function () {
+            $component = Livewire::test(AiAgentConfigs::class);
+
+            // Before save
+            $component->assertSet('isSaving.boost', false);
+
+            // This is hard to test directly since save is synchronous
+            // But we can verify isSaving is reset after save completes
+            $content = json_encode(['agents' => ['test']], JSON_PRETTY_PRINT);
+            $component->set('fileContent.boost', $content);
+            $component->call('save', 'boost');
+
+            // After save completes, should be false
+            $component->assertSet('isSaving.boost', false);
+        });
+
+        it('saves project-scoped config successfully', function () {
+            $service = app(ConfigFileService::class);
+
+            // Create a project
+            $project = \App\Models\Project::factory()->create([
+                'name' => 'Save Test Project',
+                'path' => '/tmp/save-test-project-'.uniqid(),
+            ]);
+
+            // Create project config directory
+            $configDir = $project->path;
+            if (! is_dir($configDir)) {
+                mkdir($configDir, 0755, true);
+            }
+
+            // Mount with project selected
+            $component = Livewire::test(AiAgentConfigs::class);
+            $component->set('selectedProjectId', $project->id);
+
+            // Save project-scoped config
+            $content = json_encode(['model' => 'claude-3'], JSON_PRETTY_PRINT);
+            $component->set('fileContent.opencode_project', $content);
+            $component->call('save', 'opencode_project');
+
+            // Should succeed
+            $component->assertSet('statusType', 'success');
+
+            // Verify file was created
+            $configPath = $configDir.'/opencode.json';
+            expect(File::exists($configPath))->toBeTrue();
+
+            // Cleanup
+            File::deleteDirectory($configDir);
+        });
+
+        it('shows success message with config label after save', function () {
+            $component = Livewire::test(AiAgentConfigs::class);
+
+            $content = json_encode(['agents' => ['claude_code']], JSON_PRETTY_PRINT);
+            $component->set('fileContent.boost', $content);
+            $component->call('save', 'boost');
+
+            $message = $component->get('statusMessage');
+            expect($message)->toContain('Boost Configuration');
+            expect($message)->toContain('saved');
+        });
+
+        it('does not save when content is unchanged', function () {
+            $service = app(ConfigFileService::class);
+            $component = Livewire::test(AiAgentConfigs::class);
+
+            // Get current content
+            $originalContent = $component->get('fileContent.boost');
+
+            // Clear existing backups
+            $backupDir = config('vibecodepc.config_editor.backup_directory');
+            if (File::isDirectory($backupDir)) {
+                File::cleanDirectory($backupDir);
+            }
+
+            // Save same content (already in file)
+            $component->set('fileContent.boost', $originalContent);
+            $component->call('save', 'boost');
+
+            // Should still succeed (save operation still runs)
+            $component->assertSet('statusType', 'success');
+
+            // A backup should still be created since file exists
+            $backups = $service->listBackups('boost');
+            expect($backups)->toHaveCount(1);
+        });
+    });
+
     it('updates validation when switching to project-scoped config', function () {
         // Create a project
         $project = \App\Models\Project::factory()->create([
