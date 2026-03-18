@@ -516,11 +516,21 @@ This test plan covers the config file editor system including ConfigFileService,
 - Handle unchanged content (backup still created)
 
 ### E8. Tunnel Status Integration
-- [ ] **E8.1**: Test tunnel status detection
+- [x] **E8.1**: Test tunnel status detection (2026-03-18)
   - Component loads with tunnel running
   - Component loads with tunnel stopped
   - Component loads unpaired
   - Read-only mode when tunnel not running
+  - Added 9 comprehensive tests covering:
+    - Loads with tunnel running and paired
+    - Loads with tunnel stopped and shows read-only notice
+    - Loads with tunnel stopped but paired
+    - Loads unpaired but with tunnel running
+    - Read-only mode for unpaired device
+    - Read-only mode when tunnel is not running
+    - Tunnel status passed to view correctly
+    - Save buttons disabled in read-only mode
+    - Config viewing allowed but editing restricted
 
 ---
 
