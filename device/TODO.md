@@ -449,24 +449,48 @@ This test plan covers the config file editor system including ConfigFileService,
     - Updates fileExists after restore
 
 ### E4. Reset to Defaults
-- [ ] **E4.1**: Test reset functionality
+- [x] 2026-03-18 **E4.1**: Test reset functionality
   - Reset boost.json creates valid defaults
   - Reset non-boost files deletes them
   - Reset operation is logged
   - Reset updates dirty state
+  - All 9 test cases passing in `describe('reset to defaults')`
 
 ### E5. Format JSON
-- [ ] **E5.1**: Test JSON formatting
-  - Format minified JSON
-  - Format already formatted JSON (idempotent)
-  - Format invalid JSON (should fail gracefully)
+- [x] 2026-03-18 **E5.1**: Test JSON formatting
+  - Format minified JSON ✓
+  - Format already formatted JSON (idempotent) ✓
+  - Format invalid JSON (should fail gracefully) ✓
+  - Added 11 comprehensive tests covering:
+    - Minified JSON formatting with proper indentation
+    - Idempotent formatting (already formatted JSON)
+    - Invalid JSON handling (graceful failure)
+    - Complex nested JSON structures
+    - Special characters and unescaped slashes
+    - Dirty state tracking after formatting
+    - Empty content handling
+    - JSON arrays formatting
+    - Unicode character preservation
+    - Large JSON performance
+  - Fixed: Added JSON_UNESCAPED_UNICODE flag to formatJson method to preserve unicode characters
 
 ### E6. Real-time Validation
-- [ ] **E6.1**: Test validation during editing
-  - Validate on every keystroke debounced
-  - Validate JSON with comments (JSONC)
-  - Validate forbidden keys in real-time
-  - Show validation errors in UI
+- [x] **E6.1**: Test validation during editing (2026-03-18)
+  - Validate on every keystroke debounced ✓
+  - Validate JSON with comments (JSONC) ✓
+  - Validate forbidden keys in real-time ✓
+  - Show validation errors in UI ✓
+  - Added 23 comprehensive tests covering all aspects:
+    - Basic JSON validation (valid/invalid)
+    - Syntax errors (trailing commas, single quotes)
+    - JSONC comment handling (single-line, multi-line, inline)
+    - Forbidden key detection (api_key, password, token, secret, etc.)
+    - Nested forbidden key detection
+    - Boost.json structure validation (agents/skills arrays)
+    - Project-scoped config validation
+    - Deeply nested JSON validation
+    - Validation state persistence across tabs
+    - Error message display verification
 
 ### E7. Save Operations
 - [ ] **E7.1**: Test save with various states

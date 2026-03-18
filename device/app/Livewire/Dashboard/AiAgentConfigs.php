@@ -236,7 +236,7 @@ class AiAgentConfigs extends Component
                 $this->resetBoostJson($project);
             } else {
                 $config = config("vibecodepc.config_files.{$key}");
-                if ($config && isset($config['path'])) {
+                if ($config && (isset($config['path']) || isset($config['path_template']))) {
                     $configFileService = app(ConfigFileService::class);
                     $path = $configFileService->resolvePath($key, $project);
 
@@ -305,7 +305,7 @@ JSON;
                 return;
             }
 
-            $formatted = json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            $formatted = json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
             $this->fileContent[$key] = $formatted;
             $this->updatedFileContent($formatted, $key);
         } catch (\Exception $e) {

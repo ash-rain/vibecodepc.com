@@ -782,3 +782,787 @@ describe('backup restore', function () {
         $component->assertSet('statusType', 'success');
     });
 });
+
+// E4.1: Test reset functionality
+describe('reset to defaults', function () {
+    beforeEach(function () {
+        // Clear audit logs and ensure boost.json exists with known content
+        \App\Models\ConfigAuditLog::query()->delete();
+
+        $boostPath = base_path('boost.json');
+        File::put($boostPath, json_encode(['agents' => ['custom_agent'], 'skills' => ['custom_skill']], JSON_PRETTY_PRINT));
+    });
+
+    it('reset boost.json creates valid defaults', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Verify initial content
+        $initialContent = $component->get('fileContent.boost');
+        expect($initialContent)->toContain('custom_agent');
+
+        // Call reset
+        $component->call('resetToDefaults', 'boost');
+
+        // Check status
+        $component->assertSet('statusType', 'success');
+        $component->assertSet('statusMessage', 'Boost Configuration reset to defaults.');
+
+        // Verify content is now default
+        $content = $component->get('fileContent.boost');
+        expect($content)->toContain('"agents":');
+        expect($content)->toContain('"claude_code"');
+        expect($content)->toContain('"copilot"');
+        expect($content)->toContain('"skills":');
+        expect($content)->toContain('"coding_standards"');
+        expect($content)->toContain('"test_coverage"');
+
+        // Verify it's valid JSON
+        $decoded = json_decode($content, true);
+        expect($decoded)->toBeArray();
+        expect($decoded['agents'])->toBe(['claude_code', 'copilot']);
+        expect($decoded['skills'])->toBe(['laravel-development', 'php-development']);
+    });
+
+    it('reset boost.json marks content as dirty', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Initially not dirty
+        $component->assertSet('isDirty.boost', false);
+
+        // Reset should mark as dirty (content changed from original)
+        $component->call('resetToDefaults', 'boost');
+
+        $component->assertSet('isDirty.boost', true);
+    });
+
+    it('reset non-boost files deletes them', function () {
+        $service = app(ConfigFileService::class);
+
+        // Create an opencode_global config file
+        $configPath = config('vibecodepc.config_files.opencode_global.path');
+        File::makeDirectory(dirname($configPath), 0755, true, true);
+        File::put($configPath, json_encode(['model' => 'custom-model'], JSON_PRETTY_PRINT));
+
+        // Verify file exists
+        expect(File::exists($configPath))->toBeTrue();
+
+        $component = Livewire::test(AiAgentConfigs::class);
+        $component->assertSet('fileExists.opencode_global', true);
+
+        // Reset the file
+        $component->call('resetToDefaults', 'opencode_global');
+
+        // Verify file is deleted
+        $component->assertSet('statusType', 'success');
+        $component->assertSet('fileExists.opencode_global', false);
+        $component->assertSet('fileContent.opencode_global', '');
+        expect(File::exists($configPath))->toBeFalse();
+
+        // Cleanup
+        if (File::exists($configPath)) {
+            File::delete($configPath);
+        }
+    });
+
+    it('reset boost.json creates audit log entry', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Clear existing audit logs
+        \App\Models\ConfigAuditLog::query()->delete();
+
+        // Get initial content before reset
+        $initialContent = $component->get('fileContent.boost');
+
+        // Reset
+        $component->call('resetToDefaults', 'boost');
+
+        // Check audit log
+        $auditLog = \App\Models\ConfigAuditLog::where('action', 'reset')
+            ->where('config_key', 'boost')
+            ->first();
+
+        expect($auditLog)->not->toBeNull();
+        expect($auditLog->action)->toBe('reset');
+        expect($auditLog->config_key)->toBe('boost');
+
+        // Check change summary
+        expect($auditLog->change_summary)->toBe('Reset boost to default values');
+
+        // Check old content hash exists
+        expect($auditLog->old_content_hash)->not->toBeNull();
+        expect($auditLog->old_content_hash)->toHaveKey('sha256');
+
+        // Check new content hash exists (default content)
+        expect($auditLog->new_content_hash)->not->toBeNull();
+        expect($auditLog->new_content_hash)->toHaveKey('sha256');
+
+        // Verify hashes are different
+        expect($auditLog->old_content_hash['sha256'])->not->toBe($auditLog->new_content_hash['sha256']);
+    });
+
+    it('reset non-boost files creates audit log entry', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Create a config file
+        $configPath = config('vibecodepc.config_files.opencode_global.path');
+        File::makeDirectory(dirname($configPath), 0755, true, true);
+        File::put($configPath, json_encode(['model' => 'test-model'], JSON_PRETTY_PRINT));
+
+        // Clear existing audit logs
+        \App\Models\ConfigAuditLog::query()->delete();
+
+        // Reset
+        $component->call('resetToDefaults', 'opencode_global');
+
+        // Check audit log
+        $auditLog = \App\Models\ConfigAuditLog::where('action', 'reset')
+            ->where('config_key', 'opencode_global')
+            ->first();
+
+        expect($auditLog)->not->toBeNull();
+        expect($auditLog->action)->toBe('reset');
+
+        // Cleanup
+        if (File::exists($configPath)) {
+            File::delete($configPath);
+        }
+    });
+
+    it('reset non-existent file succeeds gracefully', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Delete boost.json
+        $boostPath = base_path('boost.json');
+        if (File::exists($boostPath)) {
+            File::delete($boostPath);
+        }
+
+        // Re-mount to pick up deleted state
+        $component = Livewire::test(AiAgentConfigs::class);
+        $component->assertSet('fileExists.boost', false);
+
+        // Reset should still work and create defaults
+        $component->call('resetToDefaults', 'boost');
+
+        $component->assertSet('statusType', 'success');
+
+        // Verify content is now the default
+        $content = $component->get('fileContent.boost');
+        expect($content)->toContain('claude_code');
+        expect($content)->toContain('copilot');
+    });
+
+    it('reset updates dirty state for non-boost files', function () {
+        // Create a config file with content
+        $configPath = config('vibecodepc.config_files.opencode_global.path');
+        File::makeDirectory(dirname($configPath), 0755, true, true);
+        File::put($configPath, json_encode(['model' => 'test'], JSON_PRETTY_PRINT));
+
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Initially not dirty
+        $component->assertSet('isDirty.opencode_global', false);
+
+        // Reset
+        $component->call('resetToDefaults', 'opencode_global');
+
+        // Reset doesn't change dirty state for deleted files (file just deleted)
+        $component->assertSet('isDirty.opencode_global', false);
+
+        // Cleanup
+        if (File::exists($configPath)) {
+            File::delete($configPath);
+        }
+    });
+
+    it('reset copilot instructions deletes the file', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Create copilot instructions file
+        $instructionsPath = config('vibecodepc.config_files.copilot_instructions.path');
+        File::makeDirectory(dirname($instructionsPath), 0755, true, true);
+        File::put($instructionsPath, "# Custom Copilot Instructions\n\nThese are custom.");
+
+        // Verify file exists
+        expect(File::exists($instructionsPath))->toBeTrue();
+
+        // Reset
+        $component->call('resetToDefaults', 'copilot_instructions');
+
+        // Verify deleted
+        $component->assertSet('statusType', 'success');
+        $component->assertSet('fileExists.copilot_instructions', false);
+        expect(File::exists($instructionsPath))->toBeFalse();
+
+        // Cleanup
+        if (File::exists($instructionsPath)) {
+            File::delete($instructionsPath);
+        }
+    });
+
+    it('reset validates boost.json defaults are valid JSON', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Reset
+        $component->call('resetToDefaults', 'boost');
+
+        // Content should be valid JSON
+        $content = $component->get('fileContent.boost');
+        $decoded = json_decode($content, true);
+        expect(json_last_error())->toBe(JSON_ERROR_NONE);
+        expect($decoded)->toBeArray();
+
+        // Component should mark it as valid
+        $component->assertSet('isValid.boost', true);
+    });
+
+    it('reset claude project config with selected project', function () {
+        // Create a project
+        $project = \App\Models\Project::factory()->create([
+            'name' => 'Test Project',
+            'path' => '/tmp/reset-test-project-'.uniqid(),
+        ]);
+
+        // Create project config directory
+        $configDir = $project->path.'/.claude';
+        File::makeDirectory($configDir, 0755, true, true);
+        File::put($configDir.'/settings.json', json_encode(['model' => 'claude-3'], JSON_PRETTY_PRINT));
+
+        // Mount with project selected
+        $component = Livewire::test(AiAgentConfigs::class);
+        $component->set('selectedProjectId', $project->id);
+
+        // Verify file exists
+        $component->assertSet('fileExists.claude_project', true);
+
+        // Reset project config
+        $component->call('resetToDefaults', 'claude_project');
+
+        // Verify deleted
+        $component->assertSet('statusType', 'success');
+        $component->assertSet('fileExists.claude_project', false);
+        expect(File::exists($configDir.'/settings.json'))->toBeFalse();
+
+        // Cleanup
+        File::deleteDirectory($project->path);
+    });
+
+    // E5.1: Test JSON formatting
+    describe('format json', function () {
+        it('formats minified JSON with proper indentation and newlines', function () {
+            $component = Livewire::test(AiAgentConfigs::class);
+
+            // Set minified JSON
+            $minified = '{"agents":["claude_code","copilot"],"skills":["laravel-development"]}';
+            $component->set('fileContent.boost', $minified);
+
+            // Call format
+            $component->call('formatJson', 'boost');
+
+            // Get formatted result
+            $formatted = $component->get('fileContent.boost');
+
+            // Should be formatted with newlines and indentation
+            expect($formatted)->toContain("\n");
+            expect($formatted)->toContain('    '); // 4 spaces for indentation
+            expect($formatted)->toContain('"agents":');
+
+            // Should be valid JSON
+            $decoded = json_decode($formatted, true);
+            expect(json_last_error())->toBe(JSON_ERROR_NONE);
+            expect($decoded)->toBe(['agents' => ['claude_code', 'copilot'], 'skills' => ['laravel-development']]);
+        });
+
+        it('is idempotent for already formatted JSON', function () {
+            $component = Livewire::test(AiAgentConfigs::class);
+
+            // Set already formatted JSON
+            $formatted = json_encode(['agents' => ['test']], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            $component->set('fileContent.boost', $formatted);
+
+            // Call format multiple times
+            $component->call('formatJson', 'boost');
+            $firstResult = $component->get('fileContent.boost');
+
+            $component->call('formatJson', 'boost');
+            $secondResult = $component->get('fileContent.boost');
+
+            // Results should be identical
+            expect($firstResult)->toBe($secondResult);
+        });
+
+        it('fails gracefully when formatting invalid JSON', function () {
+            $component = Livewire::test(AiAgentConfigs::class);
+
+            // Set invalid JSON
+            $invalidContent = '{invalid json';
+            $component->set('fileContent.boost', $invalidContent);
+
+            // Call format
+            $component->call('formatJson', 'boost');
+
+            // Content should remain unchanged
+            $result = $component->get('fileContent.boost');
+            expect($result)->toBe($invalidContent);
+        });
+
+        it('formats complex nested JSON correctly', function () {
+            $component = Livewire::test(AiAgentConfigs::class);
+
+            // Set complex nested JSON
+            $complexJson = '{"agents":["claude_code"],"config":{"skills":[{"name":"laravel","level":"expert"}]}}';
+            $component->set('fileContent.boost', $complexJson);
+
+            // Call format
+            $component->call('formatJson', 'boost');
+
+            // Get formatted result
+            $formatted = $component->get('fileContent.boost');
+
+            // Should be valid JSON with proper structure
+            $decoded = json_decode($formatted, true);
+            expect(json_last_error())->toBe(JSON_ERROR_NONE);
+            expect($decoded['config']['skills'][0]['name'])->toBe('laravel');
+
+            // Should have newlines
+            expect($formatted)->toContain("\n");
+        });
+
+        it('preserves JSON with special characters when formatting', function () {
+            $component = Livewire::test(AiAgentConfigs::class);
+
+            // Set JSON with special characters (but valid)
+            $specialJson = '{"path":"/home/user/test","url":"https://example.com","pattern":".*"}';
+            $component->set('fileContent.boost', $specialJson);
+
+            // Call format
+            $component->call('formatJson', 'boost');
+
+            // Get formatted result
+            $formatted = $component->get('fileContent.boost');
+
+            // Should preserve unescaped slashes (JSON_UNESCAPED_SLASHES)
+            expect($formatted)->toContain('/home/user/test');
+            expect($formatted)->toContain('https://example.com');
+            expect($formatted)->not->toContain('\\/');
+
+            // Should be valid JSON
+            $decoded = json_decode($formatted, true);
+            expect(json_last_error())->toBe(JSON_ERROR_NONE);
+            expect($decoded['url'])->toBe('https://example.com');
+        });
+
+        it('marks content as dirty after formatting', function () {
+            $component = Livewire::test(AiAgentConfigs::class);
+
+            // Initially not dirty
+            $component->assertSet('isDirty.boost', false);
+
+            // Set minified JSON
+            $minified = '{"agents":["test"]}';
+            $component->set('fileContent.boost', $minified);
+            $component->assertSet('isDirty.boost', true);
+
+            // Reset dirty state by "saving"
+            $component->set('fileContent.boost', $minified);
+            $component->set('originalContent.boost', $minified);
+            $component->set('isDirty.boost', false);
+
+            // Call format
+            $component->call('formatJson', 'boost');
+
+            // Content should be marked dirty since formatted != original
+            $isDirty = $component->get('isDirty.boost');
+            expect($isDirty)->toBeTrue();
+        });
+
+        it('does nothing for empty content', function () {
+            $component = Livewire::test(AiAgentConfigs::class);
+
+            // Set empty content
+            $component->set('fileContent.boost', '');
+
+            // Call format
+            $component->call('formatJson', 'boost');
+
+            // Should remain empty
+            $result = $component->get('fileContent.boost');
+            expect($result)->toBe('');
+        });
+
+        it('formats JSON arrays correctly', function () {
+            $component = Livewire::test(AiAgentConfigs::class);
+
+            // Set array JSON
+            $arrayJson = '["agent1","agent2","agent3"]';
+            $component->set('fileContent.boost', $arrayJson);
+
+            // Call format
+            $component->call('formatJson', 'boost');
+
+            // Get formatted result
+            $formatted = $component->get('fileContent.boost');
+
+            // Should be valid JSON array
+            $decoded = json_decode($formatted, true);
+            expect(json_last_error())->toBe(JSON_ERROR_NONE);
+            expect($decoded)->toBe(['agent1', 'agent2', 'agent3']);
+
+            // Should have newlines
+            expect($formatted)->toContain("\n");
+        });
+
+        it('formats JSON with unicode characters correctly', function () {
+            $component = Livewire::test(AiAgentConfigs::class);
+
+            // Set JSON with unicode
+            $unicodeJson = '{"name":"Tëst Üsér 🚀","message":"Hello \\u4e16\\u754c"}';
+            $component->set('fileContent.boost', $unicodeJson);
+
+            // Call format
+            $component->call('formatJson', 'boost');
+
+            // Get formatted result
+            $formatted = $component->get('fileContent.boost');
+
+            // Should preserve unicode
+            expect($formatted)->toContain('Tëst Üsér');
+
+            // Should be valid JSON
+            $decoded = json_decode($formatted, true);
+            expect(json_last_error())->toBe(JSON_ERROR_NONE);
+            expect($decoded['name'])->toBe('Tëst Üsér 🚀');
+        });
+
+        it('formats large JSON without memory issues', function () {
+            $component = Livewire::test(AiAgentConfigs::class);
+
+            // Create moderately large JSON (around 10KB)
+            $largeArray = [];
+            for ($i = 0; $i < 500; $i++) {
+                $largeArray[] = ['id' => $i, 'name' => "Item {$i}", 'data' => str_repeat('x', 10)];
+            }
+            $largeJson = json_encode($largeArray);
+
+            $component->set('fileContent.boost', $largeJson);
+
+            // Call format - should complete without error
+            $component->call('formatJson', 'boost');
+
+            // Get formatted result
+            $formatted = $component->get('fileContent.boost');
+
+            // Should be valid JSON
+            $decoded = json_decode($formatted, true);
+            expect(json_last_error())->toBe(JSON_ERROR_NONE);
+            expect(count($decoded))->toBe(500);
+        });
+    });
+});
+
+// E6.1: Test validation during editing
+describe('real-time validation', function () {
+    it('validates JSON content when updated', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Set valid JSON
+        $component->set('fileContent.boost', '{"valid": "json"}');
+
+        // Should be valid
+        $component->assertSet('isValid.boost', true);
+        $component->assertSet('validationErrors.boost', '');
+    });
+
+    it('marks invalid JSON when updated with malformed content', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Set invalid JSON
+        $component->set('fileContent.boost', '{invalid json}');
+
+        // Should be invalid
+        $component->assertSet('isValid.boost', false);
+        $component->assertSet('validationErrors.boost', fn ($error) => strlen($error) > 0);
+    });
+
+    it('marks JSON as invalid when syntax error detected', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Set JSON with syntax error - trailing comma
+        $component->set('fileContent.boost', '{"key": "value",}');
+
+        // Should be invalid
+        $component->assertSet('isValid.boost', false);
+        $component->assertSet('validationErrors.boost', fn ($error) => str_contains($error, 'JSON'));
+    });
+
+    it('validates JSON with single quotes as invalid', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // JSON with single quotes (invalid)
+        $component->set('fileContent.boost', "{'key': 'value'}");
+
+        // Should be invalid
+        $component->assertSet('isValid.boost', false);
+    });
+
+    it('validates empty JSON object as valid', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Empty JSON object is valid
+        $component->set('fileContent.boost', '{}');
+
+        $component->assertSet('isValid.boost', true);
+        $component->assertSet('validationErrors.boost', '');
+    });
+
+    it('validates JSON with comments for opencode configs', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Switch to opencode_global tab
+        $component->set('activeTab', 'opencode_global');
+
+        // JSON with comments (JSONC) should be valid for opencode
+        $jsoncContent = "{\n  // This is a comment\n  \"model\": \"gpt-4\"\n}";
+        $component->set('fileContent.opencode_global', $jsoncContent);
+
+        // Should be valid (comments stripped before validation)
+        $component->assertSet('isValid.opencode_global', true);
+        $component->assertSet('validationErrors.opencode_global', '');
+    });
+
+    it('validates JSON with multi-line comments for opencode configs', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        $component->set('activeTab', 'opencode_global');
+
+        // JSON with multi-line comment
+        $jsoncContent = "{\n  /* Multi-line\n     comment */\n  \"enabled\": true\n}";
+        $component->set('fileContent.opencode_global', $jsoncContent);
+
+        // Should be valid
+        $component->assertSet('isValid.opencode_global', true);
+    });
+
+    it('validates JSON with inline comments for opencode configs', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        $component->set('activeTab', 'opencode_global');
+
+        // JSON with inline comment
+        $jsoncContent = '{"setting": "value" /* inline comment */, "other": true}';
+        $component->set('fileContent.opencode_global', $jsoncContent);
+
+        // Should be valid
+        $component->assertSet('isValid.opencode_global', true);
+    });
+
+    it('detects forbidden keys in real-time', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Set JSON with forbidden key
+        $component->set('fileContent.boost', '{"api_key": "secret123"}');
+
+        // Should be invalid due to forbidden key
+        $component->assertSet('isValid.boost', false);
+        $component->assertSet('validationErrors.boost', fn ($error) => str_contains(strtolower($error), 'forbidden') ||
+            str_contains(strtolower($error), 'api_key')
+        );
+    });
+
+    it('detects forbidden keys in nested objects', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Nested object with forbidden key
+        $component->set('fileContent.boost', '{"config": {"password": "secret"}}');
+
+        // Should be invalid
+        $component->assertSet('isValid.boost', false);
+        $component->assertSet('validationErrors.boost', fn ($error) => str_contains(strtolower($error), 'forbidden') ||
+            str_contains(strtolower($error), 'password')
+        );
+    });
+
+    it('detects various forbidden key patterns in real-time', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        $forbiddenKeys = [
+            '{"api_key": "value"}' => 'api_key',
+            '{"api_secret": "value"}' => 'api_secret',
+            '{"token": "value"}' => 'token',
+            '{"password": "value"}' => 'password',
+            '{"secret": "value"}' => 'secret',
+            '{"private_key": "value"}' => 'private_key',
+            '{"access_token": "value"}' => 'access_token',
+        ];
+
+        foreach ($forbiddenKeys as $json => $expectedKey) {
+            $component->set('fileContent.boost', $json);
+
+            // Should be invalid
+            $isValid = $component->get('isValid.boost');
+            expect($isValid)->toBe(false, "Failed for key: {$expectedKey}");
+        }
+    });
+
+    it('allows values containing forbidden strings but not keys', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Values containing forbidden strings should be allowed
+        $component->set('fileContent.boost', '{"description": "This is not a password or api_key"}');
+
+        // Should be valid
+        $component->assertSet('isValid.boost', true);
+    });
+
+    it('clears validation errors when content becomes valid', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // First set invalid JSON
+        $component->set('fileContent.boost', '{invalid}');
+        $component->assertSet('isValid.boost', false);
+        $component->assertSet('validationErrors.boost', fn ($error) => strlen($error) > 0);
+
+        // Then set valid JSON
+        $component->set('fileContent.boost', '{"valid": true}');
+
+        // Should now be valid with no errors
+        $component->assertSet('isValid.boost', true);
+        $component->assertSet('validationErrors.boost', '');
+    });
+
+    it('shows validation errors in dirty state', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Set invalid content
+        $component->set('fileContent.boost', '{syntax error}');
+
+        // Should be both dirty and invalid
+        $component->assertSet('isDirty.boost', true);
+        $component->assertSet('isValid.boost', false);
+    });
+
+    it('validates boost.json structure in real-time', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Set boost.json with invalid structure (agents not an array)
+        $component->set('fileContent.boost', '{"agents": "not-an-array"}');
+
+        // Should be invalid
+        $component->assertSet('isValid.boost', false);
+        $component->assertSet('validationErrors.boost', fn ($error) => str_contains($error, 'agents') || str_contains($error, 'array')
+        );
+    });
+
+    it('validates boost.json skills field as array', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Set boost.json with invalid skills type
+        $component->set('fileContent.boost', '{"skills": "not-an-array"}');
+
+        // Should be invalid
+        $component->assertSet('isValid.boost', false);
+        $component->assertSet('validationErrors.boost', fn ($error) => str_contains($error, 'skills') || str_contains($error, 'array')
+        );
+    });
+
+    it('preserves validation state per config key', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Set invalid content in boost
+        $component->set('fileContent.boost', '{invalid}');
+
+        // Set valid content in opencode_global
+        $component->set('fileContent.opencode_global', '{"valid": true}');
+
+        // Each should have independent validation state
+        $component->assertSet('isValid.boost', false);
+        $component->assertSet('isValid.opencode_global', true);
+    });
+
+    it('allows empty content for new files as valid', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Set empty content for a file that doesn't exist
+        $component->set('fileContent.opencode_global', '');
+
+        // Empty content is considered valid
+        $component->assertSet('isValid.opencode_global', true);
+        // Note: isDirty may be true if originalContent was different from ''
+        // The important part is that empty content is valid
+    });
+
+    it('validates copilot instructions as always valid', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Switch to copilot tab
+        $component->set('activeTab', 'copilot_instructions');
+
+        // Markdown content should always be valid
+        $component->set('fileContent.copilot_instructions', "# Instructions\n\nNot JSON at all!");
+
+        // Should be valid (not JSON validated)
+        $component->assertSet('isValid.copilot_instructions', true);
+    });
+
+    it('displays validation error messages in UI for invalid JSON', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Set malformed JSON
+        $component->set('fileContent.boost', '{trailing comma,}');
+
+        // Verify error message is populated
+        $errorMessage = $component->get('validationErrors.boost');
+        expect($errorMessage)->toBeString();
+        expect(strlen($errorMessage))->toBeGreaterThan(0);
+    });
+
+    it('displays validation error messages for forbidden keys', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Set JSON with forbidden key
+        $component->set('fileContent.boost', '{"secret_key": "hidden"}');
+
+        // Verify error message mentions forbidden key
+        $errorMessage = $component->get('validationErrors.boost');
+        expect($errorMessage)->toBeString();
+        expect(str_contains(strtolower($errorMessage), 'forbidden'))->toBe(true);
+    });
+
+    it('updates validation when switching to project-scoped config', function () {
+        // Create a project
+        $project = \App\Models\Project::factory()->create([
+            'name' => 'Validation Test Project',
+            'path' => '/tmp/validation-test-project',
+        ]);
+
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Switch to project
+        $component->set('selectedProjectId', $project->id);
+
+        // Set invalid JSON in project-scoped config
+        $component->set('fileContent.opencode_project', '{invalid json}');
+
+        // Should be invalid
+        $component->assertSet('isValid.opencode_project', false);
+
+        // Cleanup
+        File::deleteDirectory($project->path);
+    });
+
+    it('validates deeply nested JSON structures', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Valid deeply nested JSON
+        $nestedJson = '{"level1": {"level2": {"level3": {"value": "deep"}}}}';
+        $component->set('fileContent.boost', $nestedJson);
+
+        $component->assertSet('isValid.boost', true);
+
+        // Invalid nested JSON with forbidden key
+        $invalidNested = '{"level1": {"level2": {"api_key": "secret"}}}';
+        $component->set('fileContent.boost', $invalidNested);
+
+        $component->assertSet('isValid.boost', false);
+    });
+});
