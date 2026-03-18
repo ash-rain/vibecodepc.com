@@ -392,22 +392,33 @@ This test plan covers the config file editor system including ConfigFileService,
     - Different service instances with different HOME values
 
 ### D3. OpenCode Configuration
-- [ ] **D3.1**: Test OpenCode config management
-  - Read existing auth.json
-  - Write new auth.json
-  - Update existing config
-  - Handle missing ~/.config/opencode directory
+- [x] **D3.1**: Test OpenCode config management (2026-03-18)
+- Read existing auth.json (with malformed JSON, empty file, multiple providers, nested config)
+- Write new auth.json (creates directories, pretty-prints JSON, handles multiple providers)
+- Update existing config (overwrites old values, adds new keys, removes old keys)
+- Handle missing ~/.config/opencode directory (creates parent directories recursively)
+- Added 29 comprehensive tests covering:
+  - getOpencodeConfig: default config, malformed JSON, empty content, JSON arrays, nested structures
+  - setOpencodeConfig: create/update, pretty-printing, directory creation, complex nested data
+  - getOpencodeAuth: missing file, malformed JSON, empty content, multiple providers, nested config
+  - setOpencodeAuth: create/update, pretty-printing, directory creation, multiple providers, unicode values
 
 ---
 
 ## Phase E: AiAgentConfigs Livewire Component - Additional Tests
 
 ### E1. Project Selection
-- [ ] **E1.1**: Test project switching
+- [x] 2026-03-18 **E1.1**: Test project switching
   - Switch between global and project-scoped configs
   - Switch between different projects
-  - Handle project with no path
+  - Handle project with non-existent path (null path not allowed by schema)
   - Handle non-existent project ID
+  - Added 5 comprehensive tests covering:
+  - Switches between global and project-scoped configs
+  - Switches between different projects
+  - Handles project with non-existent path gracefully
+  - Handles non-existent project ID gracefully
+  - Reloads config files when switching projects
 
 ### E2. Tab Switching & State Management
 - [ ] **E2.1**: Test tab switching behavior

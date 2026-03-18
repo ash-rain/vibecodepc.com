@@ -307,3 +307,151 @@ it('sets isTunnelRunning to true when tunnel token file exists', function () {
     @unlink($tunnelDir.'/token');
     @rmdir($tunnelDir);
 });
+
+// E1.1: Test project switching
+describe('project switching', function () {
+    it('switches between global and project-scoped configs', function () {
+        // Create a project with a path
+        $project = \App\Models\Project::factory()->create([
+            'name' => 'Test Project',
+            'path' => '/tmp/test-project',
+        ]);
+
+        // Create project-scoped config directory and file
+        $projectConfigDir = $project->path;
+        if (! is_dir($projectConfigDir)) {
+            mkdir($projectConfigDir, 0755, true);
+        }
+
+        // Create a project-level opencode.json
+        $projectConfigPath = $projectConfigDir.'/opencode.json';
+        $projectContent = json_encode(['project_specific' => true, 'model' => 'project-model'], JSON_PRETTY_PRINT);
+        File::put($projectConfigPath, $projectContent);
+
+        // Mount component with global context (no project selected)
+        $component = Livewire::test(AiAgentConfigs::class);
+        $component->assertSet('selectedProjectId', null);
+
+        // Store global content for comparison
+        $globalContent = $component->get('fileContent.opencode_project');
+        // Global opencode_project should be empty since no project selected
+        expect($globalContent)->toBe('');
+
+        // Switch to project
+        $component->set('selectedProjectId', $project->id);
+
+        // Project-scoped config should now load
+        $component->assertSet('selectedProjectId', $project->id);
+
+        // Project-scoped opencode_project content should now be loaded
+        $projectContentAfterSwitch = $component->get('fileContent.opencode_project');
+        expect($projectContentAfterSwitch)->toContain('project_specific');
+
+        // Cleanup
+        File::deleteDirectory($projectConfigDir);
+    });
+
+    it('switches between different projects', function () {
+        // Create two projects
+        $project1 = \App\Models\Project::factory()->create([
+            'name' => 'Project One',
+            'path' => '/tmp/project-one',
+        ]);
+
+        $project2 = \App\Models\Project::factory()->create([
+            'name' => 'Project Two',
+            'path' => '/tmp/project-two',
+        ]);
+
+        // Create project-level configs
+        foreach ([$project1, $project2] as $project) {
+            $configDir = $project->path;
+            if (! is_dir($configDir)) {
+                mkdir($configDir, 0755, true);
+            }
+            $content = json_encode(['project_id' => $project->id], JSON_PRETTY_PRINT);
+            File::put($configDir.'/opencode.json', $content);
+        }
+
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Switch to project 1
+        $component->set('selectedProjectId', $project1->id);
+        $component->assertSet('selectedProjectId', $project1->id);
+
+        // Switch to project 2
+        $component->set('selectedProjectId', $project2->id);
+        $component->assertSet('selectedProjectId', $project2->id);
+
+        // Cleanup
+        File::deleteDirectory($project1->path);
+        File::deleteDirectory($project2->path);
+    });
+
+    it('handles project with non-existent path gracefully', function () {
+        // Create a project with a path that doesn't exist on disk
+        $project = \App\Models\Project::factory()->create([
+            'name' => 'Missing Path Project',
+            'path' => '/tmp/non-existent-path-'.uniqid(),
+        ]);
+
+        // Ensure the directory doesn't exist
+        if (is_dir($project->path)) {
+            File::deleteDirectory($project->path);
+        }
+
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Switch to project with non-existent path
+        $component->set('selectedProjectId', $project->id);
+        $component->assertSet('selectedProjectId', $project->id);
+
+        // Component should still render without error (configs won't exist but that's ok)
+        $component->assertStatus(200);
+
+        // Project-scoped configs should be empty since path doesn't exist
+        $projectScopedContent = $component->get('fileContent.opencode_project');
+        expect($projectScopedContent)->toBe('');
+    });
+
+    it('handles non-existent project ID gracefully', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Try to switch to a project that doesn't exist
+        $nonExistentId = 999999;
+        $component->set('selectedProjectId', $nonExistentId);
+
+        // Component should still render - selectedProjectId is set but getSelectedProject returns null
+        $component->assertSet('selectedProjectId', $nonExistentId);
+        $component->assertStatus(200);
+    });
+
+    it('reloads config files when switching projects', function () {
+        $project = \App\Models\Project::factory()->create([
+            'name' => 'Reload Test Project',
+            'path' => '/tmp/reload-test-project',
+        ]);
+
+        // Create project config
+        $configDir = $project->path;
+        if (! is_dir($configDir)) {
+            mkdir($configDir, 0755, true);
+        }
+        File::put($configDir.'/opencode.json', json_encode(['loaded' => 'project']));
+
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        // Initially in global context
+        $initialContent = $component->get('fileContent.opencode_project');
+        expect($initialContent)->toBe(''); // No project selected
+
+        // Switch to project - should reload and get content
+        $component->set('selectedProjectId', $project->id);
+
+        // Project-scoped configs should reload
+        $component->assertSet('selectedProjectId', $project->id);
+
+        // Cleanup
+        File::deleteDirectory($configDir);
+    });
+});

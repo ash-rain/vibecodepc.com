@@ -636,6 +636,106 @@ describe('getOpencodeConfig', function () {
         expect($config['permission'])->toBe(['*' => 'deny'])
             ->and($config['provider'])->toHaveKey('ollama');
     });
+
+    it('returns empty array when file contains malformed JSON', function () {
+        $dir = $this->tmpDir.'/.config/opencode';
+        mkdir($dir, 0755, true);
+        file_put_contents($dir.'/opencode.json', 'not valid json {{{');
+
+        $config = $this->service->getOpencodeConfig();
+
+        expect($config)->toBe([]);
+    });
+
+    it('returns empty array when file contains JSON that decodes to null', function () {
+        $dir = $this->tmpDir.'/.config/opencode';
+        mkdir($dir, 0755, true);
+        file_put_contents($dir.'/opencode.json', 'null');
+
+        $config = $this->service->getOpencodeConfig();
+
+        expect($config)->toBe([]);
+    });
+
+    it('returns sequential array when file contains JSON array', function () {
+        $dir = $this->tmpDir.'/.config/opencode';
+        mkdir($dir, 0755, true);
+        file_put_contents($dir.'/opencode.json', json_encode(['item1', 'item2']));
+
+        $config = $this->service->getOpencodeConfig();
+
+        expect($config)->toBe(['item1', 'item2']);
+    });
+
+    it('returns empty array when file is empty', function () {
+        $dir = $this->tmpDir.'/.config/opencode';
+        mkdir($dir, 0755, true);
+        file_put_contents($dir.'/opencode.json', '');
+
+        $config = $this->service->getOpencodeConfig();
+
+        expect($config)->toBe([]);
+    });
+
+    it('handles nested config structures', function () {
+        $dir = $this->tmpDir.'/.config/opencode';
+        mkdir($dir, 0755, true);
+        file_put_contents($dir.'/opencode.json', json_encode([
+            'permission' => ['*' => 'deny'],
+            'provider' => [
+                'ollama' => [
+                    'name' => 'Ollama',
+                    'config' => [
+                        'host' => 'localhost',
+                        'port' => 11434,
+                    ],
+                ],
+            ],
+            'theme' => [
+                'dark' => true,
+                'accent' => 'blue',
+            ],
+        ]));
+
+        $config = $this->service->getOpencodeConfig();
+
+        expect($config['provider']['ollama']['config']['host'])->toBe('localhost')
+            ->and($config['provider']['ollama']['config']['port'])->toBe(11434)
+            ->and($config['theme']['dark'])->toBeTrue()
+            ->and($config['theme']['accent'])->toBe('blue');
+    });
+
+    it('handles config with special characters in values', function () {
+        $dir = $this->tmpDir.'/.config/opencode';
+        mkdir($dir, 0755, true);
+        file_put_contents($dir.'/opencode.json', json_encode([
+            'description' => 'Config with "quotes" and \\backslashes\\',
+            'unicode' => 'Hello 世界 🌍',
+        ]));
+
+        $config = $this->service->getOpencodeConfig();
+
+        expect($config['description'])->toBe('Config with "quotes" and \\backslashes\\')
+            ->and($config['unicode'])->toBe('Hello 世界 🌍');
+    });
+
+    it('handles deeply nested empty arrays and objects', function () {
+        $dir = $this->tmpDir.'/.config/opencode';
+        mkdir($dir, 0755, true);
+        file_put_contents($dir.'/opencode.json', json_encode([
+            'empty_array' => [],
+            'empty_object' => (object) [],
+            'nested' => [
+                'empty' => [],
+            ],
+        ]));
+
+        $config = $this->service->getOpencodeConfig();
+
+        expect($config['empty_array'])->toBe([])
+            ->and($config['nested']['empty'])->toBe([])
+            ->and($config['empty_object'])->toBe([]);
+    });
 });
 
 describe('setOpencodeConfig', function () {
@@ -649,6 +749,112 @@ describe('setOpencodeConfig', function () {
         $data = json_decode(file_get_contents($path), true);
 
         expect($data['permission'])->toBe(['*' => 'allow']);
+    });
+
+    it('updates existing config file', function () {
+        // First create initial config
+        $dir = $this->tmpDir.'/.config/opencode';
+        mkdir($dir, 0755, true);
+        file_put_contents($dir.'/opencode.json', json_encode([
+            'permission' => ['*' => 'deny'],
+            'old_key' => 'old_value',
+        ]));
+
+        // Now update it
+        $this->service->setOpencodeConfig([
+            'permission' => ['*' => 'allow'],
+            'new_key' => 'new_value',
+        ]);
+
+        $config = $this->service->getOpencodeConfig();
+
+        expect($config['permission'])->toBe(['*' => 'allow'])
+            ->and($config['new_key'])->toBe('new_value')
+            ->and($config)->not->toHaveKey('old_key');
+    });
+
+    it('writes pretty-printed JSON with unescaped slashes', function () {
+        $this->service->setOpencodeConfig([
+            'url' => 'https://example.com/path',
+            'nested' => ['key' => 'value'],
+        ]);
+
+        $path = $this->tmpDir.'/.config/opencode/opencode.json';
+        $content = file_get_contents($path);
+
+        // Should be pretty-printed (contains newlines)
+        expect($content)->toContain("\n")
+            ->and($content)->toContain('https://example.com/path') // not escaped
+            ->and($content)->toContain('"nested":');
+    });
+
+    it('creates parent directories if they do not exist', function () {
+        // Ensure directory doesn't exist
+        $dir = $this->tmpDir.'/.config/opencode';
+        expect(is_dir($dir))->toBeFalse();
+
+        $this->service->setOpencodeConfig(['key' => 'value']);
+
+        // Directory should now exist
+        expect(is_dir($dir))->toBeTrue();
+        expect(file_exists($dir.'/opencode.json'))->toBeTrue();
+    });
+
+    it('preserves complex nested structures when writing', function () {
+        $config = [
+            'providers' => [
+                'ollama' => [
+                    'name' => 'Ollama',
+                    'config' => [
+                        'host' => 'localhost',
+                        'port' => 11434,
+                    ],
+                ],
+            ],
+            'permissions' => ['*' => 'allow'],
+        ];
+
+        $this->service->setOpencodeConfig($config);
+
+        $readConfig = $this->service->getOpencodeConfig();
+
+        expect($readConfig['providers']['ollama']['config']['host'])->toBe('localhost')
+            ->and($readConfig['providers']['ollama']['config']['port'])->toBe(11434);
+    });
+
+    it('handles empty config object', function () {
+        $this->service->setOpencodeConfig([]);
+
+        $path = $this->tmpDir.'/.config/opencode/opencode.json';
+        $content = file_get_contents($path);
+
+        expect($content)->toBe("[]\n");
+    });
+
+    it('handles config with unicode values', function () {
+        $this->service->setOpencodeConfig([
+            'greeting' => 'Hello 世界 🌍',
+            'café' => 'coffee',
+        ]);
+
+        $config = $this->service->getOpencodeConfig();
+
+        expect($config['greeting'])->toBe('Hello 世界 🌍')
+            ->and($config['café'])->toBe('coffee');
+    });
+
+    it('handles config with boolean and null values', function () {
+        $this->service->setOpencodeConfig([
+            'enabled' => true,
+            'disabled' => false,
+            'null_value' => null,
+        ]);
+
+        $config = $this->service->getOpencodeConfig();
+
+        expect($config['enabled'])->toBeTrue()
+            ->and($config['disabled'])->toBeFalse()
+            ->and($config['null_value'])->toBeNull();
     });
 });
 
@@ -668,6 +874,61 @@ describe('getOpencodeAuth', function () {
 
         expect($auth['anthropic'])->toMatchArray(['type' => 'api', 'key' => 'sk-ant-test']);
     });
+
+    it('returns empty array when auth file contains malformed JSON', function () {
+        $dir = $this->tmpDir.'/.local/share/opencode';
+        mkdir($dir, 0755, true);
+        file_put_contents($dir.'/auth.json', 'not valid json {{{');
+
+        $auth = $this->service->getOpencodeAuth();
+
+        expect($auth)->toBe([]);
+    });
+
+    it('returns empty array when auth file is empty', function () {
+        $dir = $this->tmpDir.'/.local/share/opencode';
+        mkdir($dir, 0755, true);
+        file_put_contents($dir.'/auth.json', '');
+
+        $auth = $this->service->getOpencodeAuth();
+
+        expect($auth)->toBe([]);
+    });
+
+    it('handles multiple auth providers', function () {
+        $dir = $this->tmpDir.'/.local/share/opencode';
+        mkdir($dir, 0755, true);
+        file_put_contents($dir.'/auth.json', json_encode([
+            'anthropic' => ['type' => 'api', 'key' => 'sk-ant-test'],
+            'openai' => ['type' => 'api', 'key' => 'sk-openai-test'],
+            'gemini' => ['type' => 'api', 'key' => 'gemini-key'],
+        ]));
+
+        $auth = $this->service->getOpencodeAuth();
+
+        expect($auth['anthropic']['key'])->toBe('sk-ant-test')
+            ->and($auth['openai']['key'])->toBe('sk-openai-test')
+            ->and($auth['gemini']['key'])->toBe('gemini-key');
+    });
+
+    it('handles auth with nested configuration', function () {
+        $dir = $this->tmpDir.'/.local/share/opencode';
+        mkdir($dir, 0755, true);
+        file_put_contents($dir.'/auth.json', json_encode([
+            'anthropic' => [
+                'type' => 'oauth',
+                'token' => 'oauth-token-123',
+                'refresh_token' => 'refresh-456',
+                'expires_at' => 1234567890,
+            ],
+        ]));
+
+        $auth = $this->service->getOpencodeAuth();
+
+        expect($auth['anthropic']['type'])->toBe('oauth')
+            ->and($auth['anthropic']['refresh_token'])->toBe('refresh-456')
+            ->and($auth['anthropic']['expires_at'])->toBe(1234567890);
+    });
 });
 
 describe('setOpencodeAuth', function () {
@@ -681,6 +942,109 @@ describe('setOpencodeAuth', function () {
         $data = json_decode(file_get_contents($path), true);
 
         expect($data['anthropic']['key'])->toBe('sk-ant-test');
+    });
+
+    it('updates existing auth file', function () {
+        // First create initial auth
+        $dir = $this->tmpDir.'/.local/share/opencode';
+        mkdir($dir, 0755, true);
+        file_put_contents($dir.'/auth.json', json_encode([
+            'anthropic' => ['type' => 'api', 'key' => 'old-key'],
+            'openai' => ['type' => 'api', 'key' => 'openai-key'],
+        ]));
+
+        // Update anthropic auth
+        $this->service->setOpencodeAuth([
+            'anthropic' => ['type' => 'oauth', 'key' => 'new-key'],
+        ]);
+
+        $auth = $this->service->getOpencodeAuth();
+
+        expect($auth['anthropic']['key'])->toBe('new-key')
+            ->and($auth['anthropic']['type'])->toBe('oauth')
+            ->and($auth)->not->toHaveKey('openai');
+    });
+
+    it('writes pretty-printed JSON with unescaped slashes', function () {
+        $this->service->setOpencodeAuth([
+            'anthropic' => [
+                'type' => 'api',
+                'endpoint' => 'https://api.anthropic.com/v1',
+            ],
+        ]);
+
+        $path = $this->tmpDir.'/.local/share/opencode/auth.json';
+        $content = file_get_contents($path);
+
+        // Should be pretty-printed (contains newlines)
+        expect($content)->toContain("\n")
+            ->and($content)->toContain('https://api.anthropic.com/v1') // not escaped
+            ->and($content)->toContain('"endpoint":');
+    });
+
+    it('creates parent directories if they do not exist', function () {
+        // Ensure directory doesn't exist
+        $dir = $this->tmpDir.'/.local/share/opencode';
+        expect(is_dir($dir))->toBeFalse();
+
+        $this->service->setOpencodeAuth(['anthropic' => ['type' => 'api', 'key' => 'test']]);
+
+        // Directory should now exist
+        expect(is_dir($dir))->toBeTrue();
+        expect(file_exists($dir.'/auth.json'))->toBeTrue();
+    });
+
+    it('handles multiple auth providers', function () {
+        $this->service->setOpencodeAuth([
+            'anthropic' => ['type' => 'api', 'key' => 'sk-ant-test'],
+            'openai' => ['type' => 'api', 'key' => 'sk-openai-test'],
+            'gemini' => ['type' => 'api', 'key' => 'gemini-key'],
+        ]);
+
+        $auth = $this->service->getOpencodeAuth();
+
+        expect($auth['anthropic']['key'])->toBe('sk-ant-test')
+            ->and($auth['openai']['key'])->toBe('sk-openai-test')
+            ->and($auth['gemini']['key'])->toBe('gemini-key');
+    });
+
+    it('handles auth with nested configuration', function () {
+        $this->service->setOpencodeAuth([
+            'anthropic' => [
+                'type' => 'oauth',
+                'token' => 'oauth-token-123',
+                'refresh_token' => 'refresh-456',
+                'expires_at' => 1234567890,
+            ],
+        ]);
+
+        $auth = $this->service->getOpencodeAuth();
+
+        expect($auth['anthropic']['type'])->toBe('oauth')
+            ->and($auth['anthropic']['refresh_token'])->toBe('refresh-456')
+            ->and($auth['anthropic']['expires_at'])->toBe(1234567890);
+    });
+
+    it('handles empty auth object', function () {
+        $this->service->setOpencodeAuth([]);
+
+        $path = $this->tmpDir.'/.local/share/opencode/auth.json';
+        $content = file_get_contents($path);
+
+        expect($content)->toBe("[]\n");
+    });
+
+    it('handles auth with unicode values', function () {
+        $this->service->setOpencodeAuth([
+            'anthropic' => [
+                'type' => 'api',
+                'label' => 'Claude API 世界',
+            ],
+        ]);
+
+        $auth = $this->service->getOpencodeAuth();
+
+        expect($auth['anthropic']['label'])->toBe('Claude API 世界');
     });
 });
 
