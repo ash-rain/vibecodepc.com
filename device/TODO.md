@@ -421,17 +421,32 @@ This test plan covers the config file editor system including ConfigFileService,
   - Reloads config files when switching projects
 
 ### E2. Tab Switching & State Management
-- [ ] **E2.1**: Test tab switching behavior
+
+- [x] 2026-03-18 **E2.1**: Test tab switching behavior
   - Switch tabs preserves unsaved changes
   - Switch tabs resets validation state
   - Active tab persists across reloads
+  - Added 5 comprehensive tests covering:
+    - Preserves unsaved changes when switching tabs
+    - Resets validation state when switching tabs
+    - Maintains separate validation state per tab
+    - Initializes all config files dirty state to false on mount
+    - Allows switching to any valid config tab
 
 ### E3. Backup Operations
-- [ ] **E3.1**: Test backup restore
-  - Restore from backup updates content
-  - Restore validates the backup content
-  - Restore from corrupted backup fails gracefully
-  - Restore creates audit log entry
+- [x] 2026-03-18 **E3.1**: Test backup restore
+  - Restore from backup updates content ✓
+  - Restore validates the backup content ✓
+  - Restore from corrupted backup fails gracefully ✓
+  - Restore creates audit log entry ✓
+  - Added 7 comprehensive tests covering:
+    - Restores from backup and updates content
+    - Validates the backup content
+    - Fails gracefully when backup file does not exist
+    - Restore creates audit log entry
+    - Restores project-scoped config from backup
+    - Requires backup selection before restore
+    - Updates fileExists after restore
 
 ### E4. Reset to Defaults
 - [ ] **E4.1**: Test reset functionality
