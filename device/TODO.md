@@ -555,17 +555,40 @@ This test plan covers the config file editor system including ConfigFileService,
   - Fixed backup ordering by reading backup contents to identify correct version
   - Added 6 comprehensive tests covering global and project-scoped configs, isolation, error handling
 
-- [ ] **F1.3**: Test reset workflow
+- [x] 2026-03-19 **F1.3**: Test reset workflow
   - Have existing config
   - Click reset
   - Verify file deleted/reset
   - Verify audit log
+  - Added 5 comprehensive integration tests covering:
+    - Reset boost.json with existing config creates defaults and audit log
+    - Reset non-boost files deletes them and creates audit log
+    - Reset of non-existent file regenerates defaults gracefully
+    - Reset for project-scoped configs deletes file with project isolation
+    - Reset copilot instructions file deletes markdown file
 
 ### F2. Multi-User Scenarios
-- [ ] **F2.1**: Test concurrent edits
+- [x] **F2.1**: Test concurrent edits (2026-03-19)
   - User A loads config
   - User B modifies same config
   - User A saves (should detect conflict or overwrite)
+  - **Implementation**:
+    - Added `getContentHash()` method to ConfigFileService for SHA-256 hashing
+    - Modified `putContent()` to accept optional `$expectedHash` parameter
+    - Added conflict detection: throws RuntimeException if file modified since load
+    - Updated AiAgentConfigs Livewire component to track content hashes
+    - Modified save() method to pass expected hash and handle conflicts gracefully
+    - Created 10 comprehensive tests covering:
+      - Conflict detection when another user modifies file
+      - Successful saves when no conflict exists
+      - New files (no hash check required)
+      - Project-scoped config conflicts
+      - Recovery after reload
+      - Rapid successive modifications
+      - Hash updates after successful save
+      - Independent handling of different config files
+      - Helpful error messages on conflict
+      - Null hash bypass for explicit overwrite scenarios
 
 ### F3. Service Reload Integration
 - [ ] **F3.1**: Test service reload after save

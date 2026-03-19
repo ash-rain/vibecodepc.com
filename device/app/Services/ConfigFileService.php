@@ -120,16 +120,29 @@ class ConfigFileService
     }
 
     /**
+     * Get a content hash for conflict detection.
+     *
+     * @param  string  $content  The content to hash
+     * @return string The SHA-256 hash
+     */
+    public function getContentHash(string $content): string
+    {
+        return hash('sha256', $content);
+    }
+
+    /**
      * Write content to a configuration file with backup.
      *
      * @param  string  $key  The configuration key from vibecodepc.config_files
      * @param  string  $newContent  The content to write
      * @param  Project|null  $project  Project context for project-scoped configs
+     * @param  string|null  $expectedHash  Expected hash of current content for optimistic locking (null to skip)
      *
      * @throws \InvalidArgumentException If validation fails
      * @throws \RuntimeException If the file cannot be written
+     * @throws \RuntimeException If the file has been modified since expectedHash (conflict detected)
      */
-    public function putContent(string $key, string $newContent, ?Project $project = null): void
+    public function putContent(string $key, string $newContent, ?Project $project = null, ?string $expectedHash = null): void
     {
         $path = $this->resolvePath($key, $project);
 
@@ -145,6 +158,12 @@ class ConfigFileService
         }
 
         $oldContent = File::exists($path) ? File::get($path) : null;
+        $currentHash = $oldContent !== null ? $this->getContentHash($oldContent) : null;
+
+        // Check for conflicts if expected hash is provided
+        if ($expectedHash !== null && $currentHash !== $expectedHash) {
+            throw new \RuntimeException('Configuration file has been modified by another user. Please reload and try again.');
+        }
 
         $backupPath = null;
         if (File::exists($path)) {

@@ -62,6 +62,9 @@ class AiAgentConfigs extends Component
     /** @var array<string, array<string, mixed>> */
     public array $reloadStatus = [];
 
+    /** @var array<string, string> */
+    public array $contentHash = [];
+
     public function mount(ConfigFileService $configFileService, ConfigReloadService $reloadService, TunnelService $tunnelService): void
     {
         $this->isPaired = TunnelConfig::current()?->verified_at !== null;
@@ -93,6 +96,9 @@ class AiAgentConfigs extends Component
                 $this->fileExists[$key] = $configFileService->exists($key, $project);
                 $this->backups[$key] = $configFileService->listBackups($key, $project);
 
+                // Store content hash for conflict detection
+                $this->contentHash[$key] = $content !== '' ? $configFileService->getContentHash($content) : '';
+
                 // Load reload status for this config file
                 $path = $configFileService->resolvePath($key, $project);
                 $this->reloadStatus[$key] = $reloadService->getReloadStatus($key, $path);
@@ -102,6 +108,7 @@ class AiAgentConfigs extends Component
                 $this->originalContent[$key] = '';
                 $this->fileExists[$key] = false;
                 $this->backups[$key] = [];
+                $this->contentHash[$key] = '';
                 $this->reloadStatus[$key] = $reloadService->getReloadStatus($key);
             }
         }
@@ -166,7 +173,14 @@ class AiAgentConfigs extends Component
                 return;
             }
 
-            $configFileService->putContent($key, $content, $project);
+            // Pass the expected hash for conflict detection
+            $expectedHash = $this->contentHash[$key] ?? null;
+            $expectedHash = $expectedHash !== '' ? $expectedHash : null;
+
+            $configFileService->putContent($key, $content, $project, $expectedHash);
+
+            // Update content hash after successful save
+            $this->contentHash[$key] = $configFileService->getContentHash($content);
 
             $this->originalContent[$key] = $content;
             $this->isDirty[$key] = false;
@@ -187,6 +201,16 @@ class AiAgentConfigs extends Component
             }
 
             $this->statusType = 'success';
+        } catch (\RuntimeException $e) {
+            // Handle conflict detection specifically
+            if (str_contains($e->getMessage(), 'modified by another user')) {
+                $this->statusMessage = 'Conflict detected: '.$e->getMessage().' Please reload the file before saving.';
+                $this->statusType = 'error';
+            } else {
+                Log::error("Failed to save config file: {$key}", ['error' => $e->getMessage()]);
+                $this->statusMessage = 'Save failed: '.$e->getMessage();
+                $this->statusType = 'error';
+            }
         } catch (\Exception $e) {
             Log::error("Failed to save config file: {$key}", ['error' => $e->getMessage()]);
             $this->statusMessage = 'Save failed: '.$e->getMessage();
