@@ -3239,3 +3239,483 @@ describe('secret detection in save operations', function (): void {
         expect($secretRelatedBackups)->toBe([]);
     });
 });
+
+describe('many backups performance', function (): void {
+    beforeEach(function (): void {
+        // Clean up any existing backups for test_config before each test
+        $existingBackups = $this->service->listBackups('test_config');
+        foreach ($existingBackups as $backup) {
+            if (File::exists($backup['path'])) {
+                File::delete($backup['path']);
+            }
+        }
+    });
+
+    test('creates 100+ backups successfully', function (): void {
+        // Create initial config file
+        File::put($this->testDir.'/test.json', '{"initial": "data"}', true);
+
+        // Create 100+ backups
+        $backupPaths = [];
+        for ($i = 0; $i < 105; $i++) {
+            // Update file content before each backup
+            File::put($this->testDir.'/test.json', '{"version": '.$i.'}', true);
+            $backupPaths[] = $this->service->backup('test_config');
+        }
+
+        // Verify all backups were created
+        expect($backupPaths)->toHaveCount(105);
+
+        // Verify all files exist
+        foreach ($backupPaths as $path) {
+            expect(File::exists($path))->toBeTrue();
+        }
+
+        // Verify listBackups returns at least 105 (may include other test_config backups)
+        $backups = $this->service->listBackups('test_config');
+        expect(count($backups))->toBeGreaterThanOrEqual(105);
+    });
+
+    test('backup listing is fast with many backups', function (): void {
+        // Create initial config file
+        File::put($this->testDir.'/test.json', '{"test": "data"}', true);
+
+        // Create 50 backups
+        for ($i = 0; $i < 50; $i++) {
+            File::put($this->testDir.'/test.json', '{"v": '.$i.'}', true);
+            $this->service->backup('test_config');
+        }
+
+        // Measure listBackups time
+        $startTime = microtime(true);
+        $backups = $this->service->listBackups('test_config');
+        $endTime = microtime(true);
+
+        $duration = $endTime - $startTime;
+
+        // Listing should be fast (under 0.5 seconds for 50 backups)
+        expect($duration)->toBeLessThan(0.5);
+        expect($backups)->toHaveCount(50);
+
+        // Verify backups are sorted (newest first)
+        for ($i = 0; $i < count($backups) - 1; $i++) {
+            expect($backups[$i]['created_at'])->toBeGreaterThanOrEqual($backups[$i + 1]['created_at']);
+        }
+    });
+
+    test('backup listing scales to 200+ backups', function (): void {
+        // Create initial config file
+        File::put($this->testDir.'/test.json', '{"test": "data"}', true);
+
+        // Create 200 backups
+        for ($i = 0; $i < 200; $i++) {
+            File::put($this->testDir.'/test.json', '{"v": '.$i.'}', true);
+            $this->service->backup('test_config');
+        }
+
+        // Measure listBackups time
+        $startTime = microtime(true);
+        $backups = $this->service->listBackups('test_config');
+        $endTime = microtime(true);
+
+        $duration = $endTime - $startTime;
+
+        // Even with 200 backups, listing should be reasonably fast (under 1 second)
+        expect($duration)->toBeLessThan(1.0);
+        expect($backups)->toHaveCount(200);
+    });
+
+    test('old backups are cleaned up based on retention policy', function (): void {
+        // Set retention to 7 days
+        config()->set('vibecodepc.config_editor.backup_retention_days', 7);
+
+        // Create initial config file
+        File::put($this->testDir.'/test.json', '{"old": "data"}', true);
+
+        // Create backup that will be "old" (10 days ago)
+        $oldBackupPath = $this->service->backup('test_config');
+        touch($oldBackupPath, time() - (10 * 24 * 60 * 60));
+
+        // Verify old backup exists
+        expect(File::exists($oldBackupPath))->toBeTrue();
+
+        // Create a "new" backup (this triggers cleanup)
+        File::put($this->testDir.'/test.json', '{"new": "data"}', true);
+        $newBackupPath = $this->service->backup('test_config');
+
+        // Old backup should be deleted
+        expect(File::exists($oldBackupPath))->toBeFalse();
+
+        // New backup should exist
+        expect(File::exists($newBackupPath))->toBeTrue();
+
+        // List backups should only show the new one
+        $backups = $this->service->listBackups('test_config');
+        expect($backups)->toHaveCount(1);
+    });
+
+    test('cleanup preserves backups within retention period', function (): void {
+        // Set retention to 30 days
+        config()->set('vibecodepc.config_editor.backup_retention_days', 30);
+
+        File::put($this->testDir.'/test.json', '{"data": "v1"}', true);
+
+        // Create backups at different ages
+        $recentBackup = $this->service->backup('test_config');
+
+        File::put($this->testDir.'/test.json', '{"data": "v2"}', true);
+        $oldBackup = $this->service->backup('test_config');
+        touch($oldBackup, time() - (29 * 24 * 60 * 60)); // 29 days old (within retention)
+
+        File::put($this->testDir.'/test.json', '{"data": "v3"}', true);
+        $veryOldBackup = $this->service->backup('test_config');
+        touch($veryOldBackup, time() - (35 * 24 * 60 * 60)); // 35 days old (outside retention)
+
+        // Create a new backup to trigger cleanup
+        File::put($this->testDir.'/test.json', '{"data": "v4"}', true);
+        $this->service->backup('test_config');
+
+        // Recent and old (within retention) should exist
+        expect(File::exists($recentBackup))->toBeTrue();
+        expect(File::exists($oldBackup))->toBeTrue();
+
+        // Very old (outside retention) should be deleted
+        expect(File::exists($veryOldBackup))->toBeFalse();
+    });
+
+    test('cleanup runs during putContent save operation', function (): void {
+        config()->set('vibecodepc.config_editor.backup_retention_days', 7);
+
+        // Create initial file and backup
+        File::put($this->testDir.'/test.json', '{"initial": "data"}', true);
+        $oldBackup = $this->service->backup('test_config');
+        touch($oldBackup, time() - (14 * 24 * 60 * 60)); // 14 days old
+
+        // Save new content (triggers backup which triggers cleanup)
+        $this->service->putContent('test_config', '{"updated": "data"}');
+
+        // Old backup should be cleaned up
+        expect(File::exists($oldBackup))->toBeFalse();
+
+        // New backup should exist
+        $backups = $this->service->listBackups('test_config');
+        expect($backups)->toHaveCount(1);
+    });
+
+    test('many backups with cleanup maintains reasonable disk usage', function (): void {
+        config()->set('vibecodepc.config_editor.backup_retention_days', 1);
+
+        File::put($this->testDir.'/test.json', '{"test": "data"}', true);
+
+        // Create 20 backups (simulating many edits over time)
+        for ($i = 0; $i < 20; $i++) {
+            File::put($this->testDir.'/test.json', '{"v": '.$i.'}', true);
+            $backupPath = $this->service->backup('test_config');
+
+            // Make half of them very old
+            if ($i < 10) {
+                touch($backupPath, time() - (5 * 24 * 60 * 60)); // 5 days old
+            }
+        }
+
+        // Trigger cleanup by creating another backup
+        File::put($this->testDir.'/test.json', '{"trigger": "cleanup"}', true);
+        $this->service->backup('test_config');
+
+        // Only recent backups should remain (10 new + 1 just created)
+        $backups = $this->service->listBackups('test_config');
+        expect($backups)->toHaveCount(11);
+    });
+
+    test('project-scoped configs cleanup independently', function (): void {
+        config()->set('vibecodepc.config_editor.backup_retention_days', 7);
+
+        // Create two projects
+        $project1 = Project::factory()->create([
+            'name' => 'Project 1',
+            'path' => $this->testDir.'/projects/project-1',
+        ]);
+        $project2 = Project::factory()->create([
+            'name' => 'Project 2',
+            'path' => $this->testDir.'/projects/project-2',
+        ]);
+
+        File::makeDirectory($project1->path, 0755, true);
+        File::makeDirectory($project2->path, 0755, true);
+
+        // Create old backup for project 1
+        File::put($project1->path.'/config.json', '{"p1": "old"}', true);
+        $oldBackup1 = $this->service->backup('test_project_config', $project1);
+        touch($oldBackup1, time() - (14 * 24 * 60 * 60)); // 14 days old
+
+        // Create new backup for project 2
+        File::put($project2->path.'/config.json', '{"p2": "new"}', true);
+        $newBackup2 = $this->service->backup('test_project_config', $project2);
+
+        // Trigger cleanup for project 2
+        File::put($project2->path.'/config.json', '{"p2": "updated"}', true);
+        $this->service->backup('test_project_config', $project2);
+
+        // Project 1 old backup should still exist (cleanup only runs for current config key + project)
+        // Actually, cleanup in backup() is per key+project, so project 1's old backup won't be cleaned
+        // unless we backup project 1 again
+
+        // Verify isolation
+        expect(File::exists($oldBackup1))->toBeTrue();
+        expect(File::exists($newBackup2))->toBeTrue();
+
+        // Cleanup
+        File::deleteDirectory($project1->path);
+        File::deleteDirectory($project2->path);
+    });
+
+    test('backup filenames are unique even with rapid creation', function (): void {
+        File::put($this->testDir.'/test.json', '{"test": "data"}', true);
+
+        // Create 20 backups as rapidly as possible
+        $backupPaths = [];
+        for ($i = 0; $i < 20; $i++) {
+            File::put($this->testDir.'/test.json', '{"v": '.$i.'}', true);
+            $backupPaths[] = $this->service->backup('test_config');
+        }
+
+        // All paths should be unique
+        expect(count(array_unique($backupPaths)))->toBe(20);
+
+        // Verify microsecond precision is working
+        $timestamps = [];
+        foreach ($backupPaths as $path) {
+            preg_match('/-(\d{4}-\d{2}-\d{2}-\d{6}-\d+)\.json$/', $path, $matches);
+            if (isset($matches[1])) {
+                $timestamps[] = $matches[1];
+            }
+        }
+
+        // All timestamps should be unique (microsecond precision)
+        expect(count(array_unique($timestamps)))->toBe(20);
+    });
+
+    test('memory usage remains reasonable with many backups', function (): void {
+        File::put($this->testDir.'/test.json', '{"test": "data"}', true);
+
+        // Create 50 backups
+        for ($i = 0; $i < 50; $i++) {
+            File::put($this->testDir.'/test.json', '{"v": '.$i.'}', true);
+            $this->service->backup('test_config');
+        }
+
+        // Get memory before listing
+        $memoryBefore = memory_get_usage(true);
+
+        // List all backups
+        $backups = $this->service->listBackups('test_config');
+
+        // Get memory after
+        $memoryAfter = memory_get_usage(true);
+        $memoryIncrease = $memoryAfter - $memoryBefore;
+
+        // Memory increase should be reasonable (less than 10MB for 50 backups)
+        expect($memoryIncrease)->toBeLessThan(10 * 1024 * 1024);
+        expect($backups)->toHaveCount(50);
+    });
+});
+
+describe('large file handling performance', function (): void {
+    test('handles files near size limit without memory issues', function (): void {
+        // Create JSON content that is just under the 64KB limit
+        // Account for JSON structure overhead
+        $targetSize = 63 * 1024; // 63KB to stay under 64KB limit
+        $value = str_repeat('x', 100);
+        $items = [];
+        $currentSize = 2; // Account for {}
+
+        while ($currentSize < $targetSize) {
+            $key = 'key_'.count($items);
+            $item = '"'.$key.'": "'.$value.'"';
+            $items[] = $item;
+            $currentSize += strlen($item) + 2; // +2 for comma and space
+        }
+
+        $jsonContent = '{'.implode(', ', $items).'}';
+
+        // Verify content is under limit
+        expect(strlen($jsonContent))->toBeLessThan(65536);
+
+        // Should save without memory issues
+        $this->service->putContent('test_config', $jsonContent);
+
+        // Verify file was written
+        expect(File::exists($this->testDir.'/test.json'))->toBeTrue();
+        expect(strlen(File::get($this->testDir.'/test.json')))->toBe(strlen($jsonContent));
+
+        // Verify we can read it back
+        $content = $this->service->getContent('test_config');
+        expect(strlen($content))->toBe(strlen($jsonContent));
+
+        // Validate it's still valid JSON
+        $decoded = $this->service->validateJson($content);
+        expect($decoded)->toBeArray();
+        expect(count($decoded))->toBeGreaterThan(100);
+    });
+
+    test('rejects files exceeding size limit', function (): void {
+        // Create content that exceeds 64KB
+        $largeContent = str_repeat('x', 70 * 1024);
+        $jsonContent = '{"data": "'.$largeContent.'"}';
+
+        expect(strlen($jsonContent))->toBeGreaterThan(65536);
+
+        expect(fn () => $this->service->putContent('test_config', $jsonContent))
+            ->toThrow(\InvalidArgumentException::class, 'exceeds maximum allowed size');
+
+        // Verify file was not created
+        expect(File::exists($this->testDir.'/test.json'))->toBeFalse();
+    });
+
+    test('backup creation is fast for large files', function (): void {
+        // Create a file near the size limit
+        $largeContent = str_repeat('{"key": "value"},', 2000);
+        $jsonContent = '['.rtrim($largeContent, ',').']';
+
+        // Ensure it's under the limit but still large
+        if (strlen($jsonContent) > 65536) {
+            $jsonContent = substr($jsonContent, 0, 65530).'[]';
+        }
+
+        File::put($this->testDir.'/test.json', $jsonContent, true);
+
+        // Measure backup time
+        $startTime = microtime(true);
+        $backupPath = $this->service->backup('test_config');
+        $endTime = microtime(true);
+
+        $duration = $endTime - $startTime;
+
+        // Backup should complete quickly (under 1 second for a 64KB file)
+        expect($duration)->toBeLessThan(1.0);
+
+        // Verify backup exists and matches original
+        expect(File::exists($backupPath))->toBeTrue();
+        expect(strlen(File::get($backupPath)))->toBe(strlen($jsonContent));
+    });
+
+    test('validates large JSON efficiently', function (): void {
+        // Create a large but valid JSON structure
+        $items = [];
+        for ($i = 0; $i < 1000; $i++) {
+            $items[] = '{"id": '.$i.', "name": "item_'.$i.'", "enabled": true}';
+        }
+        $jsonContent = '['.implode(',', $items).']';
+
+        // Should be under 64KB
+        expect(strlen($jsonContent))->toBeLessThan(65536);
+
+        // Measure validation time
+        $startTime = microtime(true);
+        $result = $this->service->validateJson($jsonContent);
+        $endTime = microtime(true);
+
+        $duration = $endTime - $startTime;
+
+        // Validation should complete quickly
+        expect($duration)->toBeLessThan(0.5);
+        expect($result)->toBeArray();
+        expect(count($result))->toBe(1000);
+    });
+
+    test('handles deeply nested large JSON', function (): void {
+        // Create nested structure with many levels
+        $depth = 50;
+        $jsonContent = str_repeat('{"nested":', $depth).'"value"'.str_repeat('}', $depth);
+
+        expect(strlen($jsonContent))->toBeLessThan(65536);
+
+        // Should validate without stack overflow or memory issues
+        $result = $this->service->validateJson($jsonContent);
+        expect($result)->toBeArray();
+
+        // Verify depth by traversing
+        $current = $result;
+        for ($i = 0; $i < $depth; $i++) {
+            expect(isset($current['nested']))->toBeTrue();
+            $current = $current['nested'];
+        }
+        expect($current)->toBe('value');
+    });
+
+    test('putContent backup operation does not duplicate memory', function (): void {
+        // Create initial file
+        $content = str_repeat('{"key": "value"},', 1500);
+        $jsonContent = '{'.rtrim($content, ',').'}';
+
+        // Ensure size is under limit
+        if (strlen($jsonContent) > 65536) {
+            $jsonContent = '{"data": "'.str_repeat('x', 60000).'"}';
+        }
+
+        File::put($this->testDir.'/test.json', $jsonContent, true);
+
+        // Get memory usage before
+        $memoryBefore = memory_get_usage(true);
+
+        // Save new content (triggers backup + write)
+        $newContent = '{"updated": "'.str_repeat('y', 1000).'"}';
+        $this->service->putContent('test_config', $newContent);
+
+        // Get memory usage after
+        $memoryAfter = memory_get_usage(true);
+
+        // Memory increase should be reasonable (less than 10MB for this operation)
+        $memoryIncrease = $memoryAfter - $memoryBefore;
+        expect($memoryIncrease)->toBeLessThan(10 * 1024 * 1024);
+
+        // Verify backup was created
+        $backups = $this->service->listBackups('test_config');
+        expect($backups)->toHaveCount(1);
+    });
+
+    test('handles large string values efficiently', function (): void {
+        // Create JSON with large string value
+        $largeString = str_repeat('Lorem ipsum dolor sit amet. ', 1000);
+        $jsonContent = '{"description": "'.$largeString.'"}';
+
+        // Ensure it's under limit
+        expect(strlen($jsonContent))->toBeLessThan(65536);
+
+        // Save and retrieve
+        $this->service->putContent('test_config', $jsonContent);
+
+        $retrieved = $this->service->getContent('test_config');
+        expect(strlen($retrieved))->toBe(strlen($jsonContent));
+
+        $decoded = $this->service->validateJson($retrieved);
+        expect($decoded['description'])->toBe($largeString);
+    });
+
+    test('restore operation handles large files efficiently', function (): void {
+        // Create file and backup
+        $largeContent = str_repeat('{"id": 1, "data": "test"},', 1500);
+        $jsonContent = '['.rtrim($largeContent, ',').']';
+
+        if (strlen($jsonContent) > 65536) {
+            $jsonContent = '{"items": ["'.str_repeat('x', 60000).'"]}';
+        }
+
+        File::put($this->testDir.'/test.json', $jsonContent, true);
+        $backupPath = $this->service->backup('test_config');
+
+        // Overwrite with new content
+        File::put($this->testDir.'/test.json', '{"temp": "data"}', true);
+
+        // Measure restore time
+        $startTime = microtime(true);
+        $this->service->restore('test_config', $backupPath);
+        $endTime = microtime(true);
+
+        $duration = $endTime - $startTime;
+
+        // Restore should complete quickly
+        expect($duration)->toBeLessThan(1.0);
+        expect(File::get($this->testDir.'/test.json'))->toBe($jsonContent);
+    });
+});
