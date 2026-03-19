@@ -1255,9 +1255,44 @@ describe('encryption and decryption', function () {
 });
 
 describe('path resolution', function () {
+    // Store the original HOME at the start of this describe block
+    static $originalHome = null;
+
+    beforeEach(function () use (&$originalHome): void {
+        // Store original HOME on first run
+        if ($originalHome === null) {
+            $originalHome = $_SERVER['HOME'] ?? null;
+        }
+
+        // Always restore to a known safe temp directory before each test
+        $_SERVER['HOME'] = sys_get_temp_dir().'/ai-tool-config-home-test-'.uniqid();
+        if (! is_dir($_SERVER['HOME'])) {
+            mkdir($_SERVER['HOME'], 0755, true);
+        }
+    });
+
+    afterEach(function (): void {
+        // Clean up temp directory if we created one
+        if (isset($_SERVER['HOME']) && str_starts_with($_SERVER['HOME'], sys_get_temp_dir())) {
+            $files = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($_SERVER['HOME'], FilesystemIterator::SKIP_DOTS),
+                RecursiveIteratorIterator::CHILD_FIRST,
+            );
+            foreach ($files as $file) {
+                $file->isDir() ? rmdir($file->getPathname()) : unlink($file->getPathname());
+            }
+            if (is_dir($_SERVER['HOME'])) {
+                rmdir($_SERVER['HOME']);
+            }
+        }
+    });
+
     it('gets home directory from SERVER HOME variable', function () {
-        $customHome = '/custom/home/dir';
+        $customHome = sys_get_temp_dir().'/custom-home-test-'.uniqid();
         $_SERVER['HOME'] = $customHome;
+        if (! is_dir($customHome)) {
+            mkdir($customHome, 0755, true);
+        }
 
         $service = new AiToolConfigService;
 
@@ -1267,7 +1302,6 @@ describe('path resolution', function () {
 
     it('falls back to posix_getpwuid when HOME is not set', function () {
         // Remove HOME from server variables
-        $originalHome = $_SERVER['HOME'] ?? null;
         unset($_SERVER['HOME']);
 
         // Create service instance - should fall back to posix_getpwuid
@@ -1276,11 +1310,6 @@ describe('path resolution', function () {
 
         // Should still return a valid path (from posix_getpwuid or /root fallback)
         expect($bashrcPath)->toEndWith('/.bashrc');
-
-        // Restore original HOME
-        if ($originalHome !== null) {
-            $_SERVER['HOME'] = $originalHome;
-        }
     });
 
     it('returns consistent paths across multiple calls', function () {

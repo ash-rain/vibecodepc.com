@@ -11,23 +11,52 @@ use Livewire\Livewire;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    // Clear backups and audit logs before each test
-    $backupDir = config('vibecodepc.config_editor.backup_directory');
-    if (File::isDirectory($backupDir)) {
-        File::cleanDirectory($backupDir);
+    // Create isolated test directories
+    $this->testDir = storage_path('testing/concurrent-edits');
+    $this->backupDir = storage_path('testing/concurrent-edits-backups');
+    $this->userConfigDir = storage_path('testing/concurrent-edits-user-config');
+
+    // Clean up any existing test directories
+    if (File::isDirectory($this->testDir)) {
+        File::deleteDirectory($this->testDir);
     }
+    if (File::isDirectory($this->backupDir)) {
+        File::deleteDirectory($this->backupDir);
+    }
+    if (File::isDirectory($this->userConfigDir)) {
+        File::deleteDirectory($this->userConfigDir);
+    }
+
+    // Create fresh test directories
+    File::makeDirectory($this->testDir, 0755, true);
+    File::makeDirectory($this->backupDir, 0755, true);
+    File::makeDirectory($this->userConfigDir, 0755, true);
+
+    // Override config to use test directories instead of real device paths
+    config()->set('vibecodepc.config_files.boost.path', $this->testDir.'/boost.json');
+    config()->set('vibecodepc.config_files.opencode_global.path', $this->userConfigDir.'/.config/opencode/opencode.json');
+    config()->set('vibecodepc.config_files.claude_global.path', $this->userConfigDir.'/.claude/settings.json');
+    config()->set('vibecodepc.config_files.copilot_instructions.path', $this->testDir.'/.github/copilot-instructions.md');
+    config()->set('vibecodepc.config_editor.backup_directory', $this->backupDir);
+
+    // Clear backups and audit logs before each test
     \App\Models\ConfigAuditLog::query()->delete();
 
-    // Ensure boost.json exists with initial content
-    $boostPath = base_path('boost.json');
+    // Ensure boost.json exists with initial content (in test directory)
+    $boostPath = $this->testDir.'/boost.json';
     File::put($boostPath, json_encode(['agents' => ['initial_agent']], JSON_PRETTY_PRINT));
 });
 
 afterEach(function () {
-    // Clean up test files
-    $boostPath = base_path('boost.json');
-    if (File::exists($boostPath)) {
-        File::delete($boostPath);
+    // Clean up test directories
+    if (File::isDirectory($this->testDir)) {
+        File::deleteDirectory($this->testDir);
+    }
+    if (File::isDirectory($this->backupDir)) {
+        File::deleteDirectory($this->backupDir);
+    }
+    if (File::isDirectory($this->userConfigDir)) {
+        File::deleteDirectory($this->userConfigDir);
     }
 
     // Clean up project directories
@@ -59,10 +88,10 @@ describe('concurrent edits', function () {
             'skills' => ['user_b_skill'],
         ], JSON_PRETTY_PRINT);
 
-        File::put(base_path('boost.json'), $modifiedByUserB);
+        File::put(config('vibecodepc.config_files.boost.path'), $modifiedByUserB);
 
         // Verify file was actually modified
-        $currentContent = File::get(base_path('boost.json'));
+        $currentContent = File::get(config('vibecodepc.config_files.boost.path'));
         expect($currentContent)->toContain('user_b_agent');
 
         // Step 3: User A tries to save their changes
@@ -82,7 +111,7 @@ describe('concurrent edits', function () {
         expect($statusMessage)->toContain('reload');
 
         // Step 5: Verify User B's changes were preserved
-        $finalContent = File::get(base_path('boost.json'));
+        $finalContent = File::get(config('vibecodepc.config_files.boost.path'));
         expect($finalContent)->toContain('user_b_agent');
         expect($finalContent)->not->toContain('user_a_agent');
     });
@@ -110,14 +139,14 @@ describe('concurrent edits', function () {
         $component->assertSet('statusType', 'success');
 
         // Verify file was updated
-        $savedContent = File::get(base_path('boost.json'));
+        $savedContent = File::get(config('vibecodepc.config_files.boost.path'));
         expect($savedContent)->toContain('new_agent');
         expect($savedContent)->toContain('new_skill');
     });
 
     it('allows save for new files without hash check', function () {
         // Delete boost.json to simulate new file scenario
-        $boostPath = base_path('boost.json');
+        $boostPath = config('vibecodepc.config_files.boost.path');
         if (File::exists($boostPath)) {
             File::delete($boostPath);
         }
@@ -140,7 +169,7 @@ describe('concurrent edits', function () {
         $component->assertSet('statusType', 'success');
 
         // Verify file was created
-        $savedContent = File::get(base_path('boost.json'));
+        $savedContent = File::get(config('vibecodepc.config_files.boost.path'));
         expect($savedContent)->toContain('first_agent');
     });
 
@@ -207,7 +236,7 @@ describe('concurrent edits', function () {
         $componentA = Livewire::test(AiAgentConfigs::class);
 
         // Another user modifies the file
-        File::put(base_path('boost.json'), json_encode(['agents' => ['modified']], JSON_PRETTY_PRINT));
+        File::put(config('vibecodepc.config_files.boost.path'), json_encode(['agents' => ['modified']], JSON_PRETTY_PRINT));
 
         // User A tries to save and gets conflict
         $componentA->set('fileContent.boost', json_encode(['agents' => ['user-a']], JSON_PRETTY_PRINT));
@@ -224,7 +253,7 @@ describe('concurrent edits', function () {
         $componentA->assertSet('statusType', 'success');
 
         // Verify final content
-        $finalContent = File::get(base_path('boost.json'));
+        $finalContent = File::get(config('vibecodepc.config_files.boost.path'));
         expect($finalContent)->toContain('user-a-after-reload');
     });
 
@@ -310,7 +339,7 @@ describe('concurrent edits', function () {
         $componentBoost->assertSet('statusType', 'success');
 
         // Verify boost was saved
-        $boostContent = File::get(base_path('boost.json'));
+        $boostContent = File::get(config('vibecodepc.config_files.boost.path'));
         expect($boostContent)->toContain('new-agent');
 
         // Cleanup
@@ -324,7 +353,7 @@ describe('concurrent edits', function () {
         $component = Livewire::test(AiAgentConfigs::class);
 
         // Another user modifies the file
-        File::put(base_path('boost.json'), json_encode(['agents' => ['conflicting-change']], JSON_PRETTY_PRINT));
+        File::put(config('vibecodepc.config_files.boost.path'), json_encode(['agents' => ['conflicting-change']], JSON_PRETTY_PRINT));
 
         // User tries to save
         $component->set('fileContent.boost', json_encode(['agents' => ['user-change']], JSON_PRETTY_PRINT));
@@ -346,19 +375,19 @@ describe('concurrent edits', function () {
         $configFileService->putContent('boost', $content1, null, null);
 
         // Verify file was written
-        $savedContent = File::get(base_path('boost.json'));
+        $savedContent = File::get(config('vibecodepc.config_files.boost.path'));
         expect($savedContent)->toContain('first');
 
         // Now modify file externally
         $content2 = json_encode(['agents' => ['external']], JSON_PRETTY_PRINT);
-        File::put(base_path('boost.json'), $content2);
+        File::put(config('vibecodepc.config_files.boost.path'), $content2);
 
         // Save with null hash again should overwrite
         $content3 = json_encode(['agents' => ['third']], JSON_PRETTY_PRINT);
         $configFileService->putContent('boost', $content3, null, null);
 
         // Verify third content was written
-        $finalContent = File::get(base_path('boost.json'));
+        $finalContent = File::get(config('vibecodepc.config_files.boost.path'));
         expect($finalContent)->toContain('third');
     });
 });

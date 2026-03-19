@@ -189,7 +189,8 @@ class AiAgentConfigs extends Component
 
             // Trigger reload for affected services
             $reloadResult = $reloadService->triggerReload($key);
-            $this->reloadStatus[$key] = $reloadService->getReloadStatus($key);
+            $path = $configFileService->resolvePath($key, $project);
+            $this->reloadStatus[$key] = $reloadService->getReloadStatus($key, $path);
 
             // Build status message with reload info
             $baseMessage = config("vibecodepc.config_files.{$key}.label").' saved successfully.';

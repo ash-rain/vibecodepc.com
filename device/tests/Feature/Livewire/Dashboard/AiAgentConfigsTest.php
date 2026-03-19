@@ -14,13 +14,41 @@ uses(RefreshDatabase::class);
 beforeEach(function () {
     Storage::fake('local');
 
+    // Create isolated test directories
+    $this->testDir = storage_path('testing/ai-agent-configs');
+    $this->backupDir = storage_path('testing/ai-agent-configs-backups');
+    $this->userConfigDir = storage_path('testing/ai-agent-configs-user-config');
+
+    // Clean up any existing test directories
+    if (File::isDirectory($this->testDir)) {
+        File::deleteDirectory($this->testDir);
+    }
+    if (File::isDirectory($this->backupDir)) {
+        File::deleteDirectory($this->backupDir);
+    }
+    if (File::isDirectory($this->userConfigDir)) {
+        File::deleteDirectory($this->userConfigDir);
+    }
+
+    // Create fresh test directories
+    File::makeDirectory($this->testDir, 0755, true);
+    File::makeDirectory($this->backupDir, 0755, true);
+    File::makeDirectory($this->userConfigDir, 0755, true);
+
+    // Override config to use test directories instead of real device paths
+    config()->set('vibecodepc.config_files.boost.path', $this->testDir.'/boost.json');
+    config()->set('vibecodepc.config_files.opencode_global.path', $this->userConfigDir.'/.config/opencode/opencode.json');
+    config()->set('vibecodepc.config_files.claude_global.path', $this->userConfigDir.'/.claude/settings.json');
+    config()->set('vibecodepc.config_files.copilot_instructions.path', $this->testDir.'/.github/copilot-instructions.md');
+    config()->set('vibecodepc.config_editor.backup_directory', $this->backupDir);
+
     // Create a mock boost.json file
     $testContent = json_encode([
         'agents' => ['claude_code', 'copilot'],
         'skills' => ['laravel-development'],
     ], JSON_PRETTY_PRINT);
 
-    $boostPath = base_path('boost.json');
+    $boostPath = $this->testDir.'/boost.json';
     File::put($boostPath, $testContent);
 
     // Ensure tunnel token file does not exist from previous tests
@@ -30,10 +58,15 @@ beforeEach(function () {
 });
 
 afterEach(function () {
-    // Clean up test files
-    $boostPath = base_path('boost.json');
-    if (File::exists($boostPath)) {
-        File::delete($boostPath);
+    // Clean up test directories
+    if (File::isDirectory($this->testDir)) {
+        File::deleteDirectory($this->testDir);
+    }
+    if (File::isDirectory($this->backupDir)) {
+        File::deleteDirectory($this->backupDir);
+    }
+    if (File::isDirectory($this->userConfigDir)) {
+        File::deleteDirectory($this->userConfigDir);
     }
 
     // Clean up tunnel token file
@@ -798,7 +831,7 @@ describe('backup restore', function () {
         }
 
         // Ensure boost.json exists with known content for backup creation to work
-        $boostPath = base_path('boost.json');
+        $boostPath = config('vibecodepc.config_files.boost.path');
         File::put($boostPath, json_encode(['agents' => ['initial_agent']], JSON_PRETTY_PRINT));
     });
 
@@ -847,7 +880,7 @@ describe('backup restore', function () {
         $component->assertSet('isDirty.boost', false);
 
         // Verify content is now version1 (claude_code and php)
-        $restoredContent = File::get(base_path('boost.json'));
+        $restoredContent = File::get(config('vibecodepc.config_files.boost.path'));
         expect($restoredContent)->toContain('claude_code');
         expect($restoredContent)->toContain('php');
         expect($restoredContent)->toContain('skills');
@@ -1001,7 +1034,7 @@ describe('backup restore', function () {
         $backupPath = $backups[0]['path'];
 
         // Delete the config file manually
-        $boostPath = base_path('boost.json');
+        $boostPath = config('vibecodepc.config_files.boost.path');
         if (File::exists($boostPath)) {
             File::delete($boostPath);
         }
@@ -1026,7 +1059,7 @@ describe('reset to defaults', function () {
         // Clear audit logs and ensure boost.json exists with known content
         \App\Models\ConfigAuditLog::query()->delete();
 
-        $boostPath = base_path('boost.json');
+        $boostPath = config('vibecodepc.config_files.boost.path');
         File::put($boostPath, json_encode(['agents' => ['custom_agent'], 'skills' => ['custom_skill']], JSON_PRETTY_PRINT));
     });
 
@@ -1169,7 +1202,7 @@ describe('reset to defaults', function () {
         $component = Livewire::test(AiAgentConfigs::class);
 
         // Delete boost.json
-        $boostPath = base_path('boost.json');
+        $boostPath = config('vibecodepc.config_files.boost.path');
         if (File::exists($boostPath)) {
             File::delete($boostPath);
         }
@@ -1789,7 +1822,7 @@ describe('real-time validation', function () {
             $component->assertSet('fileExists.boost', true);
 
             // Verify file was actually written
-            $savedContent = File::get(base_path('boost.json'));
+            $savedContent = File::get(config('vibecodepc.config_files.boost.path'));
             expect($savedContent)->toBe($newContent);
         });
 
@@ -1897,7 +1930,7 @@ describe('real-time validation', function () {
 
         it('updates fileExists to true after saving new file', function () {
             // Delete boost.json to simulate new file
-            $boostPath = base_path('boost.json');
+            $boostPath = config('vibecodepc.config_files.boost.path');
             if (File::exists($boostPath)) {
                 File::delete($boostPath);
             }
@@ -2065,5 +2098,262 @@ describe('real-time validation', function () {
         $component->set('fileContent.boost', $invalidNested);
 
         $component->assertSet('isValid.boost', false);
+    });
+
+    // F3.1: Test service reload after save
+    describe('service reload integration', function (): void {
+        beforeEach(function (): void {
+            // Clear any previous mocks
+            Mockery::close();
+        });
+
+        afterEach(function (): void {
+            Mockery::close();
+        });
+
+        it('triggers reload for boost.json and updates reload status', function (): void {
+            // Mock ConfigReloadService to track triggerReload calls
+            $mockReloadService = Mockery::mock(\App\Services\ConfigReloadService::class)->makePartial();
+            $mockReloadService->shouldReceive('triggerReload')
+                ->with('boost')
+                ->once()
+                ->andReturn([
+                    'config_key' => 'boost',
+                    'success' => true,
+                    'services' => [
+                        ['name' => 'Laravel Boost', 'type' => 'mcp', 'reloaded' => true, 'message' => 'MCP server will detect changes automatically'],
+                    ],
+                    'message' => '',
+                ]);
+            $mockReloadService->shouldReceive('getReloadStatus')
+                ->andReturn([
+                    'services' => [['name' => 'Laravel Boost', 'type' => 'mcp', 'description' => 'MCP server']],
+                    'requires_manual_reload' => true,
+                    'instructions' => 'Laravel Boost configuration changes are detected automatically',
+                    'last_modified' => time(),
+                    'last_modified_formatted' => '1 second ago',
+                    'is_code_server_running' => false,
+                ]);
+            app()->instance(\App\Services\ConfigReloadService::class, $mockReloadService);
+
+            $component = Livewire::test(AiAgentConfigs::class);
+
+            // Save valid JSON content
+            $newContent = json_encode(['agents' => ['copilot'], 'skills' => []], JSON_PRETTY_PRINT);
+            $component->set('fileContent.boost', $newContent);
+            $component->call('save', 'boost');
+
+            // Verify save succeeded
+            $component->assertSet('statusType', 'success');
+
+            // Verify reload status was updated
+            $reloadStatus = $component->get('reloadStatus');
+            expect($reloadStatus)->toHaveKey('boost');
+            expect($reloadStatus['boost'])->toHaveKey('services');
+        });
+
+        it('triggers reload for copilot_instructions when code-server is running', function (): void {
+            // Mock CodeServerService
+            $mockCodeServer = Mockery::mock(\App\Services\CodeServer\CodeServerService::class);
+            $mockCodeServer->shouldReceive('isRunning')->andReturn(true);
+            $mockCodeServer->shouldReceive('isInstalled')->andReturn(true);
+            $mockCodeServer->shouldReceive('getPort')->andReturn(8443);
+            app()->instance(\App\Services\CodeServer\CodeServerService::class, $mockCodeServer);
+
+            // Mock ConfigReloadService
+            $mockReloadService = Mockery::mock(\App\Services\ConfigReloadService::class)->makePartial();
+            $mockReloadService->shouldReceive('triggerReload')
+                ->with('copilot_instructions')
+                ->once()
+                ->andReturn([
+                    'config_key' => 'copilot_instructions',
+                    'success' => true,
+                    'services' => [
+                        ['name' => 'GitHub Copilot', 'type' => 'vscode', 'reloaded' => true, 'message' => 'VS Code extensions will reload their configuration.'],
+                    ],
+                    'message' => '',
+                ]);
+            $mockReloadService->shouldReceive('getReloadStatus')
+                ->andReturn([
+                    'services' => [['name' => 'GitHub Copilot', 'type' => 'vscode', 'description' => 'Copilot custom instructions']],
+                    'requires_manual_reload' => false,
+                    'instructions' => 'Copilot instructions are hot-reloaded',
+                    'last_modified' => time(),
+                    'last_modified_formatted' => '1 second ago',
+                    'is_code_server_running' => true,
+                ]);
+            app()->instance(\App\Services\ConfigReloadService::class, $mockReloadService);
+
+            $component = Livewire::test(AiAgentConfigs::class);
+
+            // Save copilot instructions
+            $markdownContent = "# Copilot Instructions\n\nThese are custom instructions.";
+            $component->set('fileContent.copilot_instructions', $markdownContent);
+            $component->call('save', 'copilot_instructions');
+
+            // Verify save succeeded
+            $component->assertSet('statusType', 'success');
+        });
+
+        it('triggers reload for opencode_global with multiple service types', function (): void {
+            // Mock CodeServerService to simulate stopped state
+            $mockCodeServer = Mockery::mock(\App\Services\CodeServer\CodeServerService::class);
+            $mockCodeServer->shouldReceive('isRunning')->andReturn(false);
+            $mockCodeServer->shouldReceive('isInstalled')->andReturn(true);
+            app()->instance(\App\Services\CodeServer\CodeServerService::class, $mockCodeServer);
+
+            // Create mock reload service
+            $mockReloadService = Mockery::mock(\App\Services\ConfigReloadService::class)->makePartial();
+            $mockReloadService->shouldReceive('triggerReload')
+                ->with('opencode_global')
+                ->once()
+                ->andReturn([
+                    'config_key' => 'opencode_global',
+                    'success' => false, // Partial success - cli reloaded but vscode failed
+                    'services' => [
+                        ['name' => 'OpenCode CLI', 'type' => 'cli', 'reloaded' => false, 'message' => 'Manual restart required'],
+                        ['name' => 'VS Code Extensions', 'type' => 'vscode', 'reloaded' => false, 'message' => 'code-server is not running'],
+                    ],
+                    'message' => '',
+                ]);
+            $mockReloadService->shouldReceive('getReloadStatus')
+                ->andReturn([
+                    'services' => [
+                        ['name' => 'OpenCode CLI', 'type' => 'cli', 'description' => 'OpenCode CLI'],
+                        ['name' => 'VS Code Extensions', 'type' => 'vscode', 'description' => 'VS Code Extensions'],
+                    ],
+                    'requires_manual_reload' => true,
+                    'instructions' => 'OpenCode configuration is hot-reloaded',
+                    'last_modified' => time(),
+                    'last_modified_formatted' => '1 second ago',
+                    'is_code_server_running' => false,
+                ]);
+            app()->instance(\App\Services\ConfigReloadService::class, $mockReloadService);
+
+            $component = Livewire::test(AiAgentConfigs::class);
+
+            // Save opencode_global config
+            $newContent = json_encode(['model' => 'claude-3', 'temperature' => 0.7], JSON_PRETTY_PRINT);
+            $component->set('fileContent.opencode_global', $newContent);
+            $component->call('save', 'opencode_global');
+
+            // Verify save succeeded (file save succeeded even if reload partially failed)
+            $component->assertSet('statusType', 'success');
+        });
+
+        it('shows manual reload instructions for cli services', function (): void {
+            $component = Livewire::test(AiAgentConfigs::class);
+
+            // Save claude_global config (cli service type) with valid content
+            $newContent = json_encode(['model' => 'claude-3', 'temperature' => 0.7], JSON_PRETTY_PRINT);
+            $component->set('fileContent.claude_global', $newContent);
+            $component->call('save', 'claude_global');
+
+            // Verify save succeeded
+            $component->assertSet('statusType', 'success');
+
+            // Check that reload status contains manual reload info
+            $reloadStatus = $component->get('reloadStatus');
+            expect($reloadStatus)->toHaveKey('claude_global');
+            expect($reloadStatus['claude_global']['requires_manual_reload'] ?? null)->toBeTrue();
+        });
+
+        it('updates UI status message with reload info after save', function (): void {
+            $component = Livewire::test(AiAgentConfigs::class);
+
+            // Save config that requires manual reload (boost.json)
+            $newContent = json_encode(['agents' => ['copilot']], JSON_PRETTY_PRINT);
+            $component->set('fileContent.boost', $newContent);
+            $component->call('save', 'boost');
+
+            // Verify status message contains saved confirmation
+            $statusMessage = $component->get('statusMessage');
+            expect($statusMessage)->toContain('saved');
+        });
+
+        it('reports error when reload service throws exception', function (): void {
+            // Mock ConfigReloadService to throw exception during triggerReload
+            $mockReloadService = Mockery::mock(\App\Services\ConfigReloadService::class)->makePartial();
+            $mockReloadService->shouldReceive('triggerReload')
+                ->with('boost')
+                ->once()
+                ->andThrow(new \Exception('Service reload failed'));
+            $mockReloadService->shouldReceive('getReloadStatus')
+                ->andReturn([
+                    'services' => [],
+                    'requires_manual_reload' => false,
+                    'instructions' => 'Configuration saved. Changes may require a restart.',
+                    'last_modified' => time(),
+                    'last_modified_formatted' => '1 second ago',
+                    'is_code_server_running' => false,
+                ]);
+            $mockReloadService->shouldReceive('resolvePath')->andReturn(null);
+            app()->instance(\App\Services\ConfigReloadService::class, $mockReloadService);
+
+            $component = Livewire::test(AiAgentConfigs::class);
+
+            // Save should report error when reload fails
+            $newContent = json_encode(['agents' => ['copilot']], JSON_PRETTY_PRINT);
+            $component->set('fileContent.boost', $newContent);
+            $component->call('save', 'boost');
+
+            // Should report error when reload service throws
+            $component->assertSet('statusType', 'error');
+            $component->assertSet('statusMessage', fn ($msg) => str_contains($msg, 'Save failed') || str_contains($msg, 'Service reload failed'));
+
+            // But file was still saved before reload failed
+            $savedContent = File::get(config('vibecodepc.config_files.boost.path'));
+            expect($savedContent)->toBe($newContent);
+        });
+
+        it('reloads status after multiple consecutive saves', function (): void {
+            $component = Livewire::test(AiAgentConfigs::class);
+
+            // First save
+            $content1 = json_encode(['agents' => ['claude_code']], JSON_PRETTY_PRINT);
+            $component->set('fileContent.boost', $content1);
+            $component->call('save', 'boost');
+
+            $component->assertSet('statusType', 'success');
+
+            // Second save
+            $content2 = json_encode(['agents' => ['copilot']], JSON_PRETTY_PRINT);
+            $component->set('fileContent.boost', $content2);
+            $component->call('save', 'boost');
+
+            $component->assertSet('statusType', 'success');
+
+            // Verify reload status is still populated
+            $reloadStatus = $component->get('reloadStatus');
+            expect($reloadStatus)->toHaveKey('boost');
+        });
+
+        it('reloads project-scoped configs correctly', function (): void {
+            // Create a project
+            $project = \App\Models\Project::factory()->create([
+                'name' => 'Reload Test Project',
+                'path' => '/tmp/reload-test-project-'.uniqid(),
+            ]);
+
+            // Create project config directory
+            $configDir = $project->path;
+            if (! is_dir($configDir)) {
+                mkdir($configDir, 0755, true);
+            }
+
+            $component = Livewire::test(AiAgentConfigs::class);
+            $component->set('selectedProjectId', $project->id);
+
+            // Save project-scoped config
+            $content = json_encode(['model' => 'claude-3'], JSON_PRETTY_PRINT);
+            $component->set('fileContent.claude_project', $content);
+            $component->call('save', 'claude_project');
+
+            // Verify save succeeded
+            $component->assertSet('statusType', 'success');
+
+            // Cleanup
+            File::deleteDirectory($configDir);
+        });
     });
 });

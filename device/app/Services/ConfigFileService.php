@@ -68,6 +68,7 @@ class ConfigFileService
      * @return string The resolved file path
      *
      * @throws \InvalidArgumentException If project is required but not provided
+     * @throws \InvalidArgumentException If path contains directory traversal sequences
      */
     public function resolvePath(string $key, ?Project $project = null): string
     {
@@ -78,6 +79,9 @@ class ConfigFileService
                 throw new \InvalidArgumentException("Project is required for project-scoped config: {$key}");
             }
 
+            // Validate project path for directory traversal
+            $this->validatePathTraversal($project->path);
+
             if (isset($config['path_template'])) {
                 return str_replace('{project_path}', $project->path, $config['path_template']);
             }
@@ -87,6 +91,38 @@ class ConfigFileService
         }
 
         return $config['path'];
+    }
+
+    /**
+     * Validate that a path does not contain directory traversal sequences.
+     *
+     * @param  string  $path  The path to validate
+     *
+     * @throws \InvalidArgumentException If path contains traversal sequences
+     */
+    private function validatePathTraversal(string $path): void
+    {
+        // Check for directory traversal patterns
+        $traversalPatterns = [
+            '/\.\.\//',          // ../
+            '/\.\.\\\\/',        // ..\
+            '/^\.\.\//',         // ../ at start
+            '/^\.\.\\\\/',       // ..\ at start
+            '/%2e%2e%2f/i',      // URL-encoded ../
+            '/%2e%2e%5c/i',      // URL-encoded ..\
+            '/%252e%252e%252f/i', // Double-encoded ../
+        ];
+
+        foreach ($traversalPatterns as $pattern) {
+            if (preg_match($pattern, $path)) {
+                throw new \InvalidArgumentException('Path contains invalid directory traversal sequences: '.$path);
+            }
+        }
+
+        // Also check for null bytes which could bypass validation
+        if (strpos($path, "\x00") !== false) {
+            throw new \InvalidArgumentException('Path contains null bytes: '.$path);
+        }
     }
 
     /**
