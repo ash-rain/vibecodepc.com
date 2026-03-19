@@ -537,19 +537,23 @@ This test plan covers the config file editor system including ConfigFileService,
 ## Phase F: Integration Tests
 
 ### F1. End-to-End Workflows
-- [ ] **F1.1**: Test complete config editing workflow
-  - User opens AI Agents page
-  - User switches to project
-  - User edits config
-  - User saves config
-  - Verify file written, backup created, audit log entry, reload triggered
 
-- [ ] **F1.2**: Test backup and restore workflow
+- [x] 2026-03-18 **F1.1**: Test complete config editing workflow
+  - User opens AI Agents page ✓
+  - User switches to project ✓
+  - User edits config ✓
+  - User saves config ✓
+  - Verify file written, backup created, audit log entry, reload triggered ✓
+  - Added 8 comprehensive tests covering full workflow, global configs, multiple saves, isolation, rapid edits, validation, and tab switching
+
+- [x] 2026-03-19 **F1.2**: Test backup and restore workflow
   - Create config
   - Edit and save multiple times
   - View backup list
   - Restore specific backup
   - Verify content restored
+  - Fixed backup ordering by reading backup contents to identify correct version
+  - Added 6 comprehensive tests covering global and project-scoped configs, isolation, error handling
 
 - [ ] **F1.3**: Test reset workflow
   - Have existing config
