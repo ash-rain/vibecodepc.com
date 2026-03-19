@@ -658,10 +658,10 @@ This test plan covers the config file editor system including ConfigFileService,
     - Concurrent save with secret blocked before any file operations
 
 ### G2. Performance
-- [ ] **G2.1**: Test large file handling
-  - Open and edit files near size limit (64KB)
-  - Verify no memory issues
-  - Verify backup creation is fast
+- [x] 2026-03-19 **G2.1**: Test large file handling - COMPLETE
+  - Open and edit files near size limit (64KB) - 8 tests cover this
+  - Verify no memory issues - `putContent backup operation does not duplicate memory` test checks memory usage
+  - Verify backup creation is fast - `backup creation is fast for large files` test ensures <1s performance
 
 - [ ] **G2.2**: Test many backups
   - Create 100+ backups
