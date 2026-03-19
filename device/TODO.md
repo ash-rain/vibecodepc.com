@@ -681,19 +681,29 @@ This test plan covers the config file editor system including ConfigFileService,
 ## Phase H: Configuration & Validation Tests
 
 ### H1. Config Structure Validation
-- [ ] **H1.1**: Test config file structure
+- [x] **H1.1**: Test config file structure (2026-03-19)
   - All required keys present
   - Path templates are valid
   - Scope values are valid (global/project)
   - Parent_key references exist
+  - Created 59 comprehensive tests in `tests/Unit/Config/ConfigFileStructureTest.php`
+  - Tests cover: required keys, path templates, scope validation, parent_key references,
+    config key naming conventions, path format validation, editable flag validation,
+    label/description content, complete config entries, and config editor settings
 
 ### H2. Environment Variable Tests
-- [ ] **H2.1**: Test environment configuration
-  - VIBECODEPC_BOOST_JSON_PATH custom path
-  - OPENCODE_CONFIG_PATH custom path
-  - CONFIG_EDITOR_BACKUP_RETENTION_DAYS
-  - CONFIG_EDITOR_MAX_FILE_SIZE_KB
-  - Custom backup directory
+- [x] **H2.1**: Test environment configuration (2026-03-19)
+- Created comprehensive test file at `tests/Unit/Config/EnvironmentConfigurationTest.php`
+- Added 43 test cases covering all environment variables:
+  - `VIBECODEPC_BOOST_JSON_PATH` - default paths, custom paths, unicode, spaces, long paths
+  - `OPENCODE_CONFIG_PATH` - default paths, custom paths, relative paths
+  - `CLAUDE_CONFIG_PATH` - default paths, custom paths
+  - `CONFIG_EDITOR_BACKUP_RETENTION_DAYS` - defaults, custom values, edge cases (zero, negative, large)
+  - `CONFIG_EDITOR_MAX_FILE_SIZE_KB` - defaults, custom values, numeric conversions
+  - `CONFIG_EDITOR_BACKUP_DIR` - default paths, custom paths, unicode, spaces
+  - Environment variable interactions - multiple vars, independent overrides
+  - Validation edge cases - null bytes, floats, scientific notation, long values
+- All 43 tests passing with 50 assertions
 
 ---
 
