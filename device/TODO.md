@@ -670,10 +670,11 @@ This test plan covers the config file editor system including ConfigFileService,
   - Additional tests: project-scoped cleanup isolation, unique filenames with microsecond precision, memory usage (<10MB for 50 backups)
 
 ### G3. Error Recovery
-- [ ] **G3.1**: Test recovery scenarios
-  - Service crashes during save
-  - Network interruption during cloud sync
-  - Disk full during backup creation
+- [x] **G3.1**: Test recovery scenarios (2026-03-19)
+  - Service crashes during save - Tested recover from partial write, backup creation before modification, concurrent modification detection, and directory recreation
+  - Network interruption during cloud sync - Tested connection exceptions, partial sync failures, malformed API responses, and rapid recovery after network issues
+  - Disk full during backup creation - Tested backup resilience, write resilience with backup verification, and backup cleanup continuation
+  - Created 18 comprehensive tests covering error recovery scenarios in ConfigFileService and ConfigSyncService
 
 ---
 
