@@ -9,6 +9,7 @@ use App\Models\DeviceState;
 use App\Models\Project;
 use App\Models\QuickTunnel;
 use App\Models\TunnelConfig;
+use App\Repositories\ProjectRepository;
 use App\Services\CloudApiClient;
 use App\Services\DeviceRegistry\DeviceIdentityService;
 use App\Services\Tunnel\QuickTunnelService;
@@ -17,6 +18,8 @@ use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+
+use function app;
 
 #[Layout('layouts.dashboard', ['title' => 'Tunnels'])]
 #[Title('Tunnels — VibeCodePC')]
@@ -87,9 +90,9 @@ class TunnelManager extends Component
         $this->loadTrafficStats();
     }
 
-    public function toggleProjectTunnel(int $projectId): void
+    public function toggleProjectTunnel(int $projectId, ProjectRepository $projectRepository): void
     {
-        $project = Project::findOrFail($projectId);
+        $project = $projectRepository->findOrFail($projectId);
         $project->update([
             'tunnel_enabled' => ! $project->tunnel_enabled,
             'tunnel_subdomain_path' => ! $project->tunnel_enabled ? $project->slug : null,
@@ -99,9 +102,9 @@ class TunnelManager extends Component
         $this->refreshIngressConfig();
     }
 
-    public function editProject(int $projectId): void
+    public function editProject(int $projectId, ProjectRepository $projectRepository): void
     {
-        $project = Project::findOrFail($projectId);
+        $project = $projectRepository->findOrFail($projectId);
         $this->editingProjectId = $projectId;
         $this->editPath = $project->tunnel_subdomain_path ?? $project->slug;
         $this->editPort = $project->port;
@@ -115,7 +118,7 @@ class TunnelManager extends Component
         $this->resetValidation(['editPath', 'editPort']);
     }
 
-    public function saveProject(): void
+    public function saveProject(ProjectRepository $projectRepository): void
     {
         $this->validate([
             'editPath' => ['required', 'string', 'min:1', 'max:60', 'regex:/^[a-z0-9][a-z0-9-]*[a-z0-9]$/'],
@@ -124,7 +127,7 @@ class TunnelManager extends Component
             'editPath.regex' => 'Path must be lowercase alphanumeric and hyphens only.',
         ]);
 
-        $project = Project::findOrFail($this->editingProjectId);
+        $project = $projectRepository->findOrFail($this->editingProjectId);
         $project->update([
             'tunnel_subdomain_path' => $this->editPath,
             'port' => $this->editPort,
@@ -322,14 +325,14 @@ class TunnelManager extends Component
         }
     }
 
-    public function startQuickTunnel(?int $projectId, QuickTunnelService $service): void
+    public function startQuickTunnel(?int $projectId, QuickTunnelService $service, ProjectRepository $projectRepository): void
     {
         $this->quickTunnelError = '';
         $key = $projectId ? "project_{$projectId}" : 'dashboard';
         $this->startingQuickTunnelKey = $key;
 
         $port = $projectId
-            ? Project::find($projectId)?->port
+            ? $projectRepository->find($projectId)?->port
             : (int) config('vibecodepc.tunnel.device_app_port');
 
         if (! $port) {
@@ -379,7 +382,7 @@ class TunnelManager extends Component
 
         $projectId = $tunnel->project_id;
         $this->stopQuickTunnel($quickTunnelId, $service);
-        $this->startQuickTunnel($projectId, $service);
+        $this->startQuickTunnel($projectId, $service, app(ProjectRepository::class));
     }
 
     public function refreshQuickTunnels(QuickTunnelService $service): void
@@ -408,7 +411,8 @@ class TunnelManager extends Component
 
     private function loadProjects(): void
     {
-        $this->projects = Project::all()->map(fn (Project $p) => [
+        $projectRepository = app(ProjectRepository::class);
+        $this->projects = $projectRepository->allForTunnelDisplay()->map(fn (Project $p) => [
             'id' => $p->id,
             'name' => $p->name,
             'slug' => $p->slug,
@@ -458,6 +462,7 @@ class TunnelManager extends Component
 
     private function loadQuickTunnelApps(): void
     {
+        $projectRepository = app(ProjectRepository::class);
         $dashboardPort = (int) config('vibecodepc.tunnel.device_app_port');
         $dashboardTunnel = QuickTunnel::forDashboard();
 
@@ -475,7 +480,7 @@ class TunnelManager extends Component
             ] : null,
         ];
 
-        foreach (Project::all() as $project) {
+        foreach ($projectRepository->allForTunnelDisplay() as $project) {
             $tunnel = $project->port ? QuickTunnel::forProject($project->id) : null;
 
             $apps[] = [

@@ -20,7 +20,7 @@ class CustomProviderValidator implements AiProviderContract
 
         try {
             $response = Http::withToken($apiKey)
-                ->timeout(10)
+                ->timeout(config('vibecodepc.http_client.timeout.default'))
                 ->get(rtrim($this->baseUrl, '/').'/v1/models');
 
             if ($response->successful()) {

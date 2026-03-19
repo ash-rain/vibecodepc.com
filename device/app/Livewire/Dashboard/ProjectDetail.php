@@ -6,6 +6,7 @@ namespace App\Livewire\Dashboard;
 
 use App\Models\Project;
 use App\Models\TunnelConfig;
+use App\Repositories\ProjectRepository;
 use App\Services\Docker\ProjectContainerService;
 use App\Services\Tunnel\TunnelService;
 use Illuminate\Support\Facades\File;
@@ -86,16 +87,16 @@ class ProjectDetail extends Component
         $this->actionError = '';
     }
 
-    public function toggleTunnel(TunnelService $tunnelService): void
+    public function toggleTunnel(TunnelService $tunnelService, ProjectRepository $projectRepository): void
     {
-        $this->project->update([
+        $projectRepository->update($this->project->id, [
             'tunnel_enabled' => ! $this->project->tunnel_enabled,
             'tunnel_subdomain_path' => ! $this->project->tunnel_enabled ? $this->project->slug : null,
         ]);
 
         $this->project->refresh();
 
-        $this->updateTunnelIngress($tunnelService);
+        $this->updateTunnelIngress($tunnelService, $projectRepository);
     }
 
     public function saveEnvVars(): void
@@ -163,13 +164,9 @@ class ProjectDetail extends Component
             ->all();
     }
 
-    private function updateTunnelIngress(TunnelService $tunnelService): void
+    private function updateTunnelIngress(TunnelService $tunnelService, ProjectRepository $projectRepository): void
     {
-        $routes = Project::where('tunnel_enabled', true)
-            ->whereNotNull('tunnel_subdomain_path')
-            ->whereNotNull('port')
-            ->pluck('port', 'tunnel_subdomain_path')
-            ->all();
+        $routes = $projectRepository->getTunnelRoutes();
 
         $tunnelService->updateIngress($routes);
     }

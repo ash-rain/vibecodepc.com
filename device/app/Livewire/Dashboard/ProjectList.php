@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Dashboard;
 
 use App\Models\Project;
+use App\Repositories\ProjectRepository;
 use App\Services\Docker\ProjectContainerService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\File;
@@ -19,9 +20,9 @@ class ProjectList extends Component
     /** @var array<int, string> */
     public array $actionErrors = [];
 
-    public function startProject(int $projectId, ProjectContainerService $containerService): void
+    public function startProject(int $projectId, ProjectContainerService $containerService, ProjectRepository $projectRepository): void
     {
-        $project = Project::findOrFail($projectId);
+        $project = $projectRepository->findOrFail($projectId);
         $error = $containerService->start($project);
 
         if ($error !== null) {
@@ -31,9 +32,9 @@ class ProjectList extends Component
         }
     }
 
-    public function stopProject(int $projectId, ProjectContainerService $containerService): void
+    public function stopProject(int $projectId, ProjectContainerService $containerService, ProjectRepository $projectRepository): void
     {
-        $project = Project::findOrFail($projectId);
+        $project = $projectRepository->findOrFail($projectId);
         $error = $containerService->stop($project);
 
         if ($error !== null) {
@@ -48,9 +49,9 @@ class ProjectList extends Component
         unset($this->actionErrors[$projectId]);
     }
 
-    public function deleteProject(int $projectId, ProjectContainerService $containerService): void
+    public function deleteProject(int $projectId, ProjectContainerService $containerService, ProjectRepository $projectRepository): void
     {
-        $project = Project::findOrFail($projectId);
+        $project = $projectRepository->findOrFail($projectId);
 
         if ($project->isRunning()) {
             $containerService->stop($project);
@@ -65,17 +66,17 @@ class ProjectList extends Component
         $project->delete();
     }
 
-    public function openInVsCode(int $projectId): void
+    public function openInVsCode(int $projectId, ProjectRepository $projectRepository): void
     {
-        $project = Project::findOrFail($projectId);
+        $project = $projectRepository->findOrFail($projectId);
 
         $this->redirect(route('dashboard.code-editor', ['folder' => $project->path]), navigate: false);
     }
 
     /** @return Collection<int, Project> */
-    public function getProjectsProperty(): Collection
+    public function getProjectsProperty(ProjectRepository $projectRepository): Collection
     {
-        return Project::latest()->get();
+        return $projectRepository->getLatest();
     }
 
     public function render()

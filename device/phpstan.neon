@@ -1,0 +1,32 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - phpstan-baseline.neon
+
+parameters:
+    paths:
+        - app
+        - bootstrap
+        - config
+        - database
+        - routes
+        - tests
+
+    excludePaths:
+        - vendor
+        - storage
+        - node_modules
+        - public/build
+        - public/hot (?)
+        - bootstrap/cache
+        - storage/framework/views (?)
+
+    level: 5
+
+    ignoreErrors:
+        # Common Laravel patterns that PHPStan might not understand
+        - '#Property App\\Models\\.*::\$[a-zA-Z_]+ is never read, only written#'
+        - '#Access to an undefined property Illuminate\\Database\\Eloquent\\Model::\$[a-zA-Z_]+#'
+
+    reportUnmatchedIgnoredErrors: false
+
+    treatPhpDocTypesAsCertain: false

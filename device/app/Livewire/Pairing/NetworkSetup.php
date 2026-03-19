@@ -23,10 +23,13 @@ class NetworkSetup extends Component
 
     public bool $hasWifi = false;
 
+    public ?string $localIp = null;
+
     public function mount(NetworkService $network): void
     {
         $this->hasEthernet = $network->hasEthernet();
         $this->hasWifi = $network->hasWifi();
+        $this->localIp = $network->getLocalIp();
     }
 
     public function connect(): void
@@ -56,6 +59,50 @@ class NetworkSetup extends Component
         } else {
             $this->error = 'Failed to connect: '.implode(' ', $output);
         }
+    }
+
+    public function refreshIp(NetworkService $network): void
+    {
+        $this->localIp = $network->getLocalIp();
+    }
+
+    public function validateIp(string $ip): bool
+    {
+        return filter_var($ip, FILTER_VALIDATE_IP) !== false;
+    }
+
+    public function isPrivateIp(?string $ip): bool
+    {
+        if ($ip === null) {
+            return false;
+        }
+
+        // Use FILTER_FLAG_NO_PRIV_RANGE - if it fails this filter, it's in private range
+        return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE) === false
+            && filter_var($ip, FILTER_VALIDATE_IP) !== false;
+    }
+
+    public function isLoopbackIp(?string $ip): bool
+    {
+        if ($ip === null) {
+            return false;
+        }
+
+        // Check for IPv4 loopback (127.x.x.x) and IPv6 loopback (::1)
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+            $parts = explode('.', $ip);
+
+            return $parts[0] === '127';
+        }
+
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+            // Normalize IPv6 address and check for loopback
+            $expanded = inet_ntop(inet_pton($ip));
+
+            return $expanded === '::1' || $ip === '::1' || $ip === '0:0:0:0:0:0:0:1';
+        }
+
+        return false;
     }
 
     public function render()

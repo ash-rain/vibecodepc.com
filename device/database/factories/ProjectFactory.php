@@ -68,4 +68,11 @@ class ProjectFactory extends Factory
             'port' => $framework->defaultPort(),
         ]);
     }
+
+    public function deleted(): static
+    {
+        return $this->state(fn () => [
+            'deleted_at' => now(),
+        ]);
+    }
 }

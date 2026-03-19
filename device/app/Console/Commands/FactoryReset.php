@@ -17,16 +17,41 @@ use Illuminate\Console\Command;
 class FactoryReset extends Command
 {
     protected $signature = 'device:factory-reset
-        {--force : Skip confirmation prompt}';
+    {--force : Skip confirmation prompt}
+    {--confirm-code= : Confirmation code for non-interactive execution}';
 
     protected $description = 'Erase all settings and return the device to its initial state';
 
+    private const CONFIRMATION_LENGTH = 6;
+
     public function handle(TunnelService $tunnelService, WizardProgressService $wizardService, DeviceStateService $stateService): int
     {
-        if (! $this->option('force') && ! $this->confirm('This will erase ALL data, projects, and settings. Continue?')) {
-            $this->info('Cancelled.');
+        if ($this->option('force')) {
+            // Proceed with reset when --force is used
+        } elseif ($this->option('confirm-code')) {
+            // Non-interactive mode: verify provided confirmation code
+            if (! $this->validateConfirmationCode($this->option('confirm-code'))) {
+                $this->error('Invalid confirmation code. Factory reset aborted.');
 
-            return self::SUCCESS;
+                return self::FAILURE;
+            }
+        } else {
+            // Interactive mode: generate and require confirmation code
+            $code = $this->generateConfirmationCode();
+
+            $this->warn('⚠️  FACTORY RESET - DANGEROUS OPERATION  ⚠️');
+            $this->warn('This will permanently erase ALL data, projects, and settings.');
+            $this->warn('This action cannot be undone.');
+            $this->newLine();
+            $this->info("To proceed, type the confirmation code: {$code}");
+
+            $userInput = $this->ask('Enter confirmation code');
+
+            if ($userInput !== $code) {
+                $this->error('Confirmation code mismatch. Factory reset aborted.');
+
+                return self::FAILURE;
+            }
         }
 
         $this->info('Stopping tunnel...');
@@ -46,5 +71,23 @@ class FactoryReset extends Command
         $this->info('Factory reset complete. The setup wizard will appear on next visit.');
 
         return self::SUCCESS;
+    }
+
+    private function generateConfirmationCode(): string
+    {
+        return strtoupper(substr(str_shuffle(str_repeat('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', self::CONFIRMATION_LENGTH)), 0, self::CONFIRMATION_LENGTH));
+    }
+
+    private function validateConfirmationCode(string $code): bool
+    {
+        if (strlen($code) !== self::CONFIRMATION_LENGTH) {
+            return false;
+        }
+
+        // Must contain only allowed characters (alphanumeric, uppercase, no ambiguous chars)
+        $allowedChars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        $allowedPattern = '/^['.preg_quote($allowedChars, '/').']+$/D';
+
+        return preg_match($allowedPattern, $code) === 1;
     }
 }

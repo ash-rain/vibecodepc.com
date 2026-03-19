@@ -12,7 +12,7 @@ class OpenRouterValidator implements AiProviderContract
     {
         try {
             $response = Http::withToken($apiKey)
-                ->timeout(10)
+                ->timeout(config('vibecodepc.http_client.timeout.default'))
                 ->get('https://openrouter.ai/api/v1/auth/key');
 
             if ($response->successful()) {

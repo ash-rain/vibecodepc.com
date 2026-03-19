@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Models\Project;
+use App\Observers\ProjectObserver;
 use App\Services\AiProviders\AiProviderResolverService;
 use App\Services\CloudApiClient;
 use App\Services\CodeServer\CodeServerService;
 use App\Services\DeviceHealthService;
 use App\Services\DeviceRegistry\DeviceIdentityService;
+use App\Services\DeviceRegistry\DeviceRegistryService;
 use App\Services\DeviceStateService;
 use App\Services\Docker\ProjectContainerService;
 use App\Services\GitHub\GitHubDeviceFlowService;
@@ -31,6 +34,12 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(DeviceIdentityService::class, function () {
             return new DeviceIdentityService(
                 deviceJsonPath: config('vibecodepc.device_json_path'),
+            );
+        });
+
+        $this->app->singleton(DeviceRegistryService::class, function () {
+            return new DeviceRegistryService(
+                cloudApi: app(CloudApiClient::class),
             );
         });
 
@@ -113,6 +122,8 @@ class AppServiceProvider extends ServiceProvider
             || ! app()->environment('local')
         );
 
+        Project::observe(ProjectObserver::class);
+
         $this->ensureTunnelTokenFile();
     }
 
@@ -125,7 +136,8 @@ class AppServiceProvider extends ServiceProvider
     {
         $tokenFilePath = config('vibecodepc.tunnel.token_file_path');
 
-        if (file_exists($tokenFilePath) && filesize($tokenFilePath) > 0) {
+        $size = @filesize($tokenFilePath);
+        if ($size !== false && $size > 0) {
             return;
         }
 

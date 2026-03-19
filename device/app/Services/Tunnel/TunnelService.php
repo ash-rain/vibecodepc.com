@@ -27,7 +27,25 @@ class TunnelService
 
     public function isRunning(): bool
     {
-        return file_exists($this->tokenFilePath) && filesize($this->tokenFilePath) > 0;
+        if (! file_exists($this->tokenFilePath)) {
+            return false;
+        }
+
+        if (! is_readable($this->tokenFilePath)) {
+            return false;
+        }
+
+        $content = @file_get_contents($this->tokenFilePath);
+
+        // Handle file read failures
+        if ($content === false) {
+            return false;
+        }
+
+        // Content must be non-empty after trimming whitespace
+        $trimmed = trim($content);
+
+        return $trimmed !== '';
     }
 
     /**
@@ -71,6 +89,38 @@ class TunnelService
     }
 
     /**
+     * Poll the tunnel status and update config if token file appears after skip.
+     *
+     * @return array{detected: bool, message: string|null, error: string|null}
+     */
+    public function pollStatus(): array
+    {
+        $config = TunnelConfig::current();
+
+        // Only check if tunnel was skipped but not yet verified
+        if (! $config || ! $config->isSkipped()) {
+            return ['detected' => false, 'message' => null, 'error' => null];
+        }
+
+        // Check if tunnel token file now exists (provisioned externally)
+        if (! $this->isRunning()) {
+            return ['detected' => false, 'message' => null, 'error' => null];
+        }
+
+        // Tunnel token appeared! Update the config
+        try {
+            $config->markAsAvailable();
+            Log::info('Tunnel status auto-detected: token file appeared, tunnel marked as available');
+
+            return ['detected' => true, 'message' => 'Tunnel is now available and marked as active', 'error' => null];
+        } catch (\Throwable $e) {
+            Log::error('Failed to update tunnel status on auto-detect', ['error' => $e->getMessage()]);
+
+            return ['detected' => false, 'message' => null, 'error' => "Failed to update tunnel status: {$e->getMessage()}"];
+        }
+    }
+
+    /**
      * Check if tunnel is effectively configured and ready to use.
      * Returns true if credentials exist OR if tunnel was skipped but token is now available.
      */
@@ -107,6 +157,20 @@ class TunnelService
     }
 
     /**
+     * Check if there's sufficient disk space for token file operations.
+     *
+     * @param  int  $requiredBytes  The minimum required space in bytes
+     * @return bool True if there's sufficient space, false otherwise
+     */
+    protected function hasSufficientDiskSpace(int $requiredBytes = 1024): bool
+    {
+        $dir = dirname($this->tokenFilePath);
+        $freeSpace = disk_free_space($dir);
+
+        return $freeSpace !== false && $freeSpace >= $requiredBytes;
+    }
+
+    /**
      * Start cloudflared by writing the tunnel token to the shared volume.
      * The cloudflared container picks it up automatically via its entrypoint.
      * If already running with a different token (e.g. after re-provisioning),
@@ -135,7 +199,26 @@ class TunnelService
             return "Tunnel token directory is not writable: {$dir}";
         }
 
-        file_put_contents($this->tokenFilePath, $token);
+        if (! $this->hasSufficientDiskSpace(strlen($token) + 1024)) {
+            Log::error('Insufficient disk space for tunnel token file', [
+                'path' => $this->tokenFilePath,
+                'required' => strlen($token) + 1024,
+                'available' => disk_free_space($dir),
+            ]);
+
+            return 'Failed to write tunnel token file: insufficient disk space';
+        }
+
+        $result = file_put_contents($this->tokenFilePath, $token);
+
+        if ($result === false) {
+            Log::error('Failed to write tunnel token file', [
+                'path' => $this->tokenFilePath,
+                'error' => error_get_last()['message'] ?? 'Unknown error',
+            ]);
+
+            return "Failed to write tunnel token file: {$this->tokenFilePath}";
+        }
 
         return null;
     }
@@ -151,7 +234,25 @@ class TunnelService
             return null;
         }
 
-        file_put_contents($this->tokenFilePath, '');
+        if (! $this->hasSufficientDiskSpace(1)) {
+            Log::error('Insufficient disk space for tunnel token file truncation', [
+                'path' => $this->tokenFilePath,
+                'available' => @disk_free_space(dirname($this->tokenFilePath)),
+            ]);
+
+            return 'Failed to truncate tunnel token file: insufficient disk space';
+        }
+
+        $result = file_put_contents($this->tokenFilePath, '');
+
+        if ($result === false) {
+            Log::error('Failed to truncate tunnel token file', [
+                'path' => $this->tokenFilePath,
+                'error' => error_get_last()['message'] ?? 'Unknown error',
+            ]);
+
+            return "Failed to truncate tunnel token file: {$this->tokenFilePath}";
+        }
 
         return null;
     }
@@ -207,8 +308,23 @@ class TunnelService
         $cleaned = [];
 
         if (file_exists($this->tokenFilePath)) {
-            file_put_contents($this->tokenFilePath, '');
-            $cleaned[] = 'token file truncated';
+            if (! $this->hasSufficientDiskSpace(1)) {
+                Log::error('Insufficient disk space for tunnel token file cleanup', [
+                    'path' => $this->tokenFilePath,
+                    'available' => @disk_free_space(dirname($this->tokenFilePath)),
+                ]);
+            } else {
+                $result = file_put_contents($this->tokenFilePath, '');
+
+                if ($result === false) {
+                    Log::error('Failed to truncate tunnel token file during cleanup', [
+                        'path' => $this->tokenFilePath,
+                        'error' => error_get_last()['message'] ?? 'Unknown error',
+                    ]);
+                } else {
+                    $cleaned[] = 'token file truncated';
+                }
+            }
         }
 
         // Mark tunnel config as errored so the UI reflects the broken state

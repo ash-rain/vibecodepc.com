@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Dashboard;
 
 use App\Models\GitHubCredential;
-use App\Models\Project;
+use App\Repositories\ProjectRepository;
 use App\Services\GitHub\GitHubRepoService;
 use App\Services\Projects\ProjectCloneService;
 use App\Services\Projects\ProjectLinkService;
@@ -187,7 +187,8 @@ class ProjectCreate extends Component
                 ->label();
         }
 
-        if (Project::where('name', $this->name)->exists()) {
+        $projectRepository = app(ProjectRepository::class);
+        if ($projectRepository->existsByName($this->name)) {
             $this->addError('name', 'A project with this name already exists.');
 
             return;
@@ -195,7 +196,7 @@ class ProjectCreate extends Component
 
         $maxProjects = config('vibecodepc.projects.max_projects', 10);
 
-        if (Project::count() >= $maxProjects) {
+        if ($projectRepository->count() >= $maxProjects) {
             $this->error = "Maximum of {$maxProjects} projects reached.";
 
             return;
