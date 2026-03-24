@@ -769,3 +769,11 @@ This test plan covers the config file editor system including ConfigFileService,
 - [x] 2026-03-24 fix the flaky unit tests
 
 - [x] 2026-03-24 now after sintall make a button skip paring on the inial page
+
+- [x] 2026-03-24 Fixed flaky disk test in DiskTest.php - corrected 'includes disk metrics in JSON output' test to use BufferedOutput
+
+- [x] 2026-03-24 Created Dusk browser tests for disk functionality - added tests/Browser/DiskMetricsTest.php with 7 test cases covering health bar display, color thresholds, system settings, and error handling
+
+- [ ] Unable to find component: [wizard.github]
+
+- [ ] checll all and make dusk test for all pages loading
