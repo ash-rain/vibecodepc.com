@@ -68,12 +68,8 @@ class PollPairingStatus extends Command
                 ProvisionQuickTunnelJob::dispatch();
                 $this->info('Tunnel provisioning dispatched.');
             }
-        } catch (DeviceStatusException $e) {
-            $this->warn("Poll failed: {$e->getMessage()}");
-        } catch (PairingException $e) {
-            $this->warn("Pairing operation failed: {$e->getMessage()}");
         } catch (Throwable $e) {
-            $this->warn("Poll failed unexpectedly: {$e->getMessage()}");
+            $this->warn("Poll failed: {$e->getMessage()}");
         }
 
         return self::SUCCESS;
@@ -91,10 +87,8 @@ class PollPairingStatus extends Command
             $client->registerDevice($deviceInfo->toArray());
             Cache::put($cacheKey, true, now()->addMinute());
             $this->info('Device registered with cloud.');
-        } catch (PairingException $e) {
-            $this->warn("Failed to register device with cloud: {$e->getMessage()}");
         } catch (Throwable $e) {
-            $this->warn("Failed to register device unexpectedly: {$e->getMessage()}");
+            $this->warn("Failed to register device with cloud: {$e->getMessage()}");
         }
     }
 }

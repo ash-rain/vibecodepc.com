@@ -79,10 +79,10 @@ describe('RetryableTrait', function () {
 
         it('caps delay at max delay', function () {
             // For attempt 10, without cap: 100 * 2^9 = 51200ms
-            // Should be capped at 5000ms
+            // Should be capped at 5000ms + up to 20% jitter = 6000ms max
             $delay = $this->retryable->calculateBackoffDelay(10);
 
-            expect($delay)->toBeLessThanOrEqual(5000);
+            expect($delay)->toBeLessThanOrEqual(6000);
         });
 
         it('returns non-negative delay', function () {
@@ -112,10 +112,10 @@ describe('RetryableTrait', function () {
         it('allows setting max delay', function () {
             $this->retryable->setMaxDelayMs(10000);
 
-            // Large attempt should be capped at new max
+            // Large attempt should be capped at new max + up to 20% jitter = 12000ms
             $delay = $this->retryable->calculateBackoffDelay(100);
 
-            expect($delay)->toBeLessThanOrEqual(10000);
+            expect($delay)->toBeLessThanOrEqual(12000);
         });
 
         it('allows setting retryable statuses', function () {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Services\AiToolConfigService;
 
 beforeEach(function () {
+    $this->originalHome = $_SERVER['HOME'] ?? null;
     $this->tmpDir = sys_get_temp_dir().'/ai-tool-config-test-'.uniqid();
     mkdir($this->tmpDir, 0755, true);
     $_SERVER['HOME'] = $this->tmpDir;
@@ -21,6 +22,11 @@ afterEach(function () {
         $file->isDir() ? rmdir($file->getPathname()) : unlink($file->getPathname());
     }
     rmdir($this->tmpDir);
+
+    // Restore original HOME
+    if ($this->originalHome !== null) {
+        $_SERVER['HOME'] = $this->originalHome;
+    }
 });
 
 describe('getEnvVars', function () {
@@ -1255,36 +1261,31 @@ describe('encryption and decryption', function () {
 });
 
 describe('path resolution', function () {
-    // Store the original HOME at the start of this describe block
-    static $originalHome = null;
+    beforeEach(function (): void {
+        // Save the HOME set by the outer beforeEach so we can restore it
+        $this->outerHome = $_SERVER['HOME'];
 
-    beforeEach(function () use (&$originalHome): void {
-        // Store original HOME on first run
-        if ($originalHome === null) {
-            $originalHome = $_SERVER['HOME'] ?? null;
-        }
-
-        // Always restore to a known safe temp directory before each test
-        $_SERVER['HOME'] = sys_get_temp_dir().'/ai-tool-config-home-test-'.uniqid();
-        if (! is_dir($_SERVER['HOME'])) {
-            mkdir($_SERVER['HOME'], 0755, true);
-        }
+        // Create an isolated temp directory for this test
+        $this->pathTestHome = sys_get_temp_dir().'/ai-tool-config-home-test-'.uniqid();
+        mkdir($this->pathTestHome, 0755, true);
+        $_SERVER['HOME'] = $this->pathTestHome;
     });
 
     afterEach(function (): void {
-        // Clean up temp directory if we created one
-        if (isset($_SERVER['HOME']) && str_starts_with($_SERVER['HOME'], sys_get_temp_dir())) {
+        // Clean up the temp directory created by this describe's beforeEach
+        if (is_dir($this->pathTestHome)) {
             $files = new RecursiveIteratorIterator(
-                new RecursiveDirectoryIterator($_SERVER['HOME'], FilesystemIterator::SKIP_DOTS),
+                new RecursiveDirectoryIterator($this->pathTestHome, FilesystemIterator::SKIP_DOTS),
                 RecursiveIteratorIterator::CHILD_FIRST,
             );
             foreach ($files as $file) {
                 $file->isDir() ? rmdir($file->getPathname()) : unlink($file->getPathname());
             }
-            if (is_dir($_SERVER['HOME'])) {
-                rmdir($_SERVER['HOME']);
-            }
+            rmdir($this->pathTestHome);
         }
+
+        // Restore HOME to the outer beforeEach's tmpDir
+        $_SERVER['HOME'] = $this->outerHome;
     });
 
     it('gets home directory from SERVER HOME variable', function () {

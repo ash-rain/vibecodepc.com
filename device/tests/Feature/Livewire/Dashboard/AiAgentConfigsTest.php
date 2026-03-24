@@ -772,17 +772,20 @@ describe('backup restore', function () {
         $component->set('fileContent.boost', $version2Content);
         $component->call('save', 'boost');
 
-        // Now we have two backups sorted newest first:
-        // [0] = backup of version1 (claude_code, php)
-        // [1] = backup of initial_agent
+        // Now we have two backups: one with initial_agent, one with claude_code/php
         $backups = $service->listBackups('boost');
         expect($backups)->toHaveCount(2);
-        $version1BackupPath = $backups[0]['path']; // Most recent backup contains version1
 
-        // Verify the backup actually contains version1 content
-        $backupContent = File::get($version1BackupPath);
-        expect($backupContent)->toContain('claude_code');
-        expect($backupContent)->toContain('php');
+        // Find the version1 backup by content (ordering may vary when mtimes are equal)
+        $version1BackupPath = null;
+        foreach ($backups as $backup) {
+            $content = File::get($backup['path']);
+            if (str_contains($content, 'claude_code')) {
+                $version1BackupPath = $backup['path'];
+                break;
+            }
+        }
+        expect($version1BackupPath)->not->toBeNull('Could not find version1 backup containing claude_code');
 
         // Create new component with version2 content
         $component = Livewire::test(AiAgentConfigs::class);

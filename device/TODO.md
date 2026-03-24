@@ -765,3 +765,5 @@ This test plan covers the config file editor system including ConfigFileService,
 - Add test coverage reporting
 - Consider adding property-based testing for validation
 - Add load testing for concurrent scenarios
+
+- [x] 2026-03-24 fix the flaky unit tests
