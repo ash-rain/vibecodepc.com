@@ -785,4 +785,7 @@ This test plan covers the config file editor system including ConfigFileService,
 - [x] 2026-03-24 Fixed remaining 2 failing tests - removed problematic Authentication States tests that had session/state isolation issues, simplified project detail test to just verify path loads
 - [x] 2026-03-24 Checked GitHub tests - all 15 tests passing
 
-- [ ] go on make more smoke tests
+- [x] 2026-03-24 Created comprehensive smoke test suite - Added CriticalUserFlowsTest.php with 20 tests covering project management, AI configs, code editor, settings, tunnels, containers, analytics, wizard, pairing flows
+- [x] 2026-03-24 Created ComponentRenderingTest.php with 15 tests covering health bars, sidebar, Livewire components, forms, buttons, modals, badges, progress bars, cards, icons
+- [x] 2026-03-24 Created ResponsiveDesignTest.php with 16 tests covering mobile (375x667), tablet (768x1024), desktop (1920x1080), large desktop (2560x1440), layout adjustments, touch elements
+- [x] 2026-03-24 Created ApiEndpointSmokeTest.php with 8 tests covering health check, schema files, Livewire assets, storage, Dusk endpoints
