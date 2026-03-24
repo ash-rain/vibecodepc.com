@@ -8,9 +8,9 @@ use App\Models\AiProviderConfig;
 use App\Models\CloudCredential;
 use App\Models\GitHubCredential;
 use App\Models\ProjectLog;
-use App\Models\TunnelConfig;
 use App\Models\WizardProgress;
 use App\Repositories\ProjectRepository;
+use App\Services\DevicePairingService;
 use App\Services\Tunnel\TunnelService;
 use App\Services\WizardProgressService;
 use Livewire\Attributes\Layout;
@@ -91,10 +91,12 @@ class Overview extends Component
         $credential = CloudCredential::current();
         $this->username = $credential?->cloud_username ?? 'User';
 
+        $pairingService = app(DevicePairingService::class);
+
         $this->projectCount = $projectRepository->count();
         $this->runningCount = $projectRepository->countRunning();
         $this->tunnelRunning = $tunnelService->isRunning();
-        $this->isPaired = TunnelConfig::current()?->verified_at !== null;
+        $this->isPaired = $pairingService->isPaired() || $pairingService->isTunnelVerified();
         // tunnelAvailable is true only when tunnel was skipped but token file now exists
         $this->tunnelAvailable = $tunnelService->wasSkippedButNowAvailable();
         $this->aiProviderCount = AiProviderConfig::whereNotNull('validated_at')->count();

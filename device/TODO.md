@@ -98,6 +98,21 @@ These editors should appear in the **System Settings** or a new **AI Agents** ta
 - [x] 2026-03-17 Pint + formatting pass
 - [x] 2026-03-17 Manual test on real device - All tests passing (60 unit + 23 feature tests), code reviewed, sidebar link exists
 
+## New Task: Make device pairing optional
+
+- [x] 2026-03-24 Design and implement an option to allow devices to operate without mandatory pairing. This change should be:
+  - safe (no secrets exposed)
+  - auditable (logs for changes)
+  - configurable (global and per-project)
+  - reversible (ability to re-enable pairing)
+
+- Artifacts:
+  - Implementation plan: [PLAN/device-pairing-optional.md](PLAN/device-pairing-optional.md)
+  - Config flag: `config/vibecodepc.php` (`device.pairing_optional`)
+  - Livewire UI updates: `app/Livewire/*` (dashboard gating + read-only behavior)
+  - Tests: unit + feature updates to cover paired/unpaired flows
+
+See [PLAN/device-pairing-optional.md](PLAN/device-pairing-optional.md) for the full step-by-step plan.
 ## Open Questions / Decisions Needed
 
 - Should we allow editing **api keys** inside these files? (security risk — maybe redact / separate field)

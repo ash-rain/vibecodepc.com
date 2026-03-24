@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Livewire\Dashboard;
 
 use App\Models\Project;
-use App\Models\TunnelConfig;
 use App\Repositories\ProjectRepository;
+use App\Services\DevicePairingService;
 use App\Services\Docker\ProjectContainerService;
 use App\Services\Tunnel\TunnelService;
 use Illuminate\Support\Facades\File;
@@ -38,10 +38,10 @@ class ProjectDetail extends Component
 
     public string $actionError = '';
 
-    public function mount(Project $project, ProjectContainerService $containerService): void
+    public function mount(Project $project, ProjectContainerService $containerService, DevicePairingService $pairingService): void
     {
         $this->project = $project;
-        $this->isPaired = TunnelConfig::current()?->verified_at !== null;
+        $this->isPaired = $pairingService->isPaired() || $pairingService->isTunnelVerified();
         $this->envVars = $project->env_vars ?? [];
 
         if ($project->isProvisioning()) {

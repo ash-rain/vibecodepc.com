@@ -44,6 +44,17 @@ it('shows quick action buttons', function () {
 });
 
 it('shows not paired banner when device is not paired', function () {
+    // Override the paired credential from beforeEach with unpaired one
+    CloudCredential::query()->delete();
+    CloudCredential::create([
+        'pairing_token_encrypted' => 'test-token',
+        'cloud_username' => 'testuser',
+        'cloud_email' => 'test@example.com',
+        'cloud_url' => 'https://vibecodepc.com',
+        'is_paired' => false,
+        'paired_at' => null,
+    ]);
+
     Livewire::test(Overview::class)
         ->assertSee('Device not paired')
         ->assertSee('limited to local network')
@@ -51,6 +62,7 @@ it('shows not paired banner when device is not paired', function () {
 });
 
 it('does not show not paired banner when device is paired', function () {
+    // CloudCredential is already paired from beforeEach
     TunnelConfig::factory()->verified()->create();
 
     Livewire::test(Overview::class)
@@ -59,6 +71,17 @@ it('does not show not paired banner when device is paired', function () {
 });
 
 it('shows pair device card when device is not paired', function () {
+    // Override the paired credential from beforeEach with unpaired one
+    CloudCredential::query()->delete();
+    CloudCredential::create([
+        'pairing_token_encrypted' => 'test-token',
+        'cloud_username' => 'testuser',
+        'cloud_email' => 'test@example.com',
+        'cloud_url' => 'https://vibecodepc.com',
+        'is_paired' => false,
+        'paired_at' => null,
+    ]);
+
     Livewire::test(Overview::class)
         ->assertSee('Pair your device')
         ->assertSee('Pair Device Now')
@@ -67,6 +90,7 @@ it('shows pair device card when device is not paired', function () {
 });
 
 it('does not show pair device card when device is paired', function () {
+    // CloudCredential is already paired from beforeEach
     TunnelConfig::factory()->verified()->create();
 
     Livewire::test(Overview::class)
@@ -75,6 +99,17 @@ it('does not show pair device card when device is paired', function () {
 });
 
 it('shows continue setup button when wizard was completed with skipped tunnel step', function () {
+    // Override with unpaired credential (continue setup requires !isPaired)
+    CloudCredential::query()->delete();
+    CloudCredential::create([
+        'pairing_token_encrypted' => 'test-token',
+        'cloud_username' => 'testuser',
+        'cloud_email' => 'test@example.com',
+        'cloud_url' => 'https://vibecodepc.com',
+        'is_paired' => false,
+        'paired_at' => null,
+    ]);
+
     // Setup wizard progress with all steps completed except tunnel which is skipped
     $service = app(WizardProgressService::class);
     $service->seedProgress();

@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Livewire\Dashboard;
 
 use App\Models\Project;
-use App\Models\TunnelConfig;
 use App\Services\ConfigAuditLogService;
 use App\Services\ConfigFileService;
 use App\Services\ConfigReloadService;
+use App\Services\DevicePairingService;
 use App\Services\Tunnel\TunnelService;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
@@ -27,6 +27,12 @@ class AiAgentConfigs extends Component
     public bool $isPaired = false;
 
     public bool $isTunnelRunning = false;
+
+    public bool $isReadOnly = false;
+
+    public ?string $readOnlyReason = null;
+
+    public bool $isPairingRequired = true;
 
     /** @var array<string, string> */
     public array $fileContent = [];
@@ -65,10 +71,13 @@ class AiAgentConfigs extends Component
     /** @var array<string, string> */
     public array $contentHash = [];
 
-    public function mount(ConfigFileService $configFileService, ConfigReloadService $reloadService, TunnelService $tunnelService): void
+    public function mount(ConfigFileService $configFileService, ConfigReloadService $reloadService, TunnelService $tunnelService, DevicePairingService $pairingService): void
     {
-        $this->isPaired = TunnelConfig::current()?->verified_at !== null;
+        $this->isPaired = $pairingService->isPaired();
         $this->isTunnelRunning = $tunnelService->isRunning();
+        $this->isPairingRequired = $pairingService->isPairingRequired();
+        $this->isReadOnly = $pairingService->isReadOnly();
+        $this->readOnlyReason = $pairingService->getReadOnlyReason();
         $this->loadAllFiles($configFileService, $reloadService);
     }
 
@@ -150,11 +159,16 @@ class AiAgentConfigs extends Component
         }
     }
 
-    public function save(string $key, ConfigFileService $configFileService, ConfigReloadService $reloadService): void
+    public function save(string $key, ConfigFileService $configFileService, ConfigReloadService $reloadService, DevicePairingService $pairingService): void
     {
         $this->isSaving[$key] = true;
         $content = $this->fileContent[$key] ?? '';
         $project = $this->getSelectedProject();
+
+        // Log unpaired save actions when pairing is optional
+        if (! $pairingService->isPaired() && ! $pairingService->isPairingRequired()) {
+            $pairingService->logUnpairedAction('config_save', $project, ['config_key' => $key]);
+        }
 
         try {
             if ($content === '') {
@@ -383,6 +397,9 @@ JSON;
             'reloadStatuses' => $this->reloadStatus,
             'isPaired' => $this->isPaired,
             'isTunnelRunning' => $this->isTunnelRunning,
+            'isReadOnly' => $this->isReadOnly,
+            'readOnlyReason' => $this->readOnlyReason,
+            'isPairingRequired' => $this->isPairingRequired,
         ]);
     }
 

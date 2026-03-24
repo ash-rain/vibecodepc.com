@@ -4,8 +4,8 @@
     <p class="text-gray-400 text-sm mt-0.5">Edit configuration files for AI agents: Boost, OpenCode, Claude Code, and Copilot.</p>
   </div>
 
-  {{-- Read-Only Notice --}}
-  @if (!$isPaired || !$isTunnelRunning)
+  {{-- Read-Only Notice (only shown when pairing is required and device is not paired/verified) --}}
+  @if ($isReadOnly)
     <div class="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4">
       <div class="flex items-start gap-3">
         <div class="flex-shrink-0">
@@ -16,14 +16,28 @@
         <div class="flex-1">
           <h3 class="text-sm font-medium text-amber-400">Read-Only Mode</h3>
           <p class="text-xs text-amber-400/80 mt-1">
-            @if (!$isPaired && !$isTunnelRunning)
-              Editing is disabled because the device is not paired and the tunnel is not running.
-            @elseif (!$isPaired)
-              Editing is disabled because the device is not paired.
-            @else
-              Editing is disabled because the tunnel is not running.
-            @endif
+            {{ $readOnlyReason }}
             <a href="{{ route('dashboard.tunnels') }}" class="underline hover:text-amber-300">Go to Tunnels</a> to configure remote access.
+          </p>
+        </div>
+      </div>
+    </div>
+  @endif
+
+  {{-- Unpaired Warning (shown when pairing is optional and device is not paired) --}}
+  @if (!$isPairingRequired && !$isPaired)
+    <div class="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+      <div class="flex items-start gap-3">
+        <div class="flex-shrink-0">
+          <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div class="flex-1">
+          <h3 class="text-sm font-medium text-blue-400">Running Without Pairing</h3>
+          <p class="text-xs text-blue-400/80 mt-1">
+            This device is running without cloud pairing. Local editing is enabled, but some features (remote access, cloud sync) require pairing.
+            <a href="{{ route('pairing') }}" class="underline hover:text-blue-300">Pair your device</a> for full functionality.
           </p>
         </div>
       </div>
@@ -185,7 +199,7 @@
         <button
           @click="formatEditor('{{ $key }}')"
           type="button"
-          @disabled($isPaired && $isTunnelRunning)
+          @disabled($isReadOnly)
           class="px-3 py-1.5 bg-white/[0.06] hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed text-gray-400 hover:text-white text-xs rounded-lg transition-colors"
         >
           Format JSON
@@ -215,7 +229,7 @@
                 wire:click="restore('{{ $key }}')"
                 wire:confirm="Restore this backup? Current unsaved changes will be lost."
                 @click="open = false"
-                @disabled(!($isPaired && $isTunnelRunning))
+                @disabled($isReadOnly)
                 class="w-full text-left px-3 py-2 text-xs text-gray-400 hover:bg-white/5 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                                                 {{ \Carbon\Carbon::createFromTimestamp($backup['created_at'])->format('M j, Y g:i A') }}
@@ -233,7 +247,7 @@
           wire:click="resetToDefaults('{{ $key }}')"
           wire:confirm="Reset {{ $config['label'] }} to defaults? This cannot be undone."
           type="button"
-          @disabled(!($isPaired && $isTunnelRunning))
+          @disabled($isReadOnly)
           class="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed text-red-400 text-sm rounded-lg transition-colors"
         >
           Reset to Defaults
@@ -244,7 +258,7 @@
           wire:click="save('{{ $key }}')"
           wire:loading.attr="disabled"
           wire:target="save"
-          @disabled(!($isDirty[$key] ?? false) || !($isValid[$key] ?? true) || !($isPaired && $isTunnelRunning))
+          @disabled(!($isDirty[$key] ?? false) || !($isValid[$key] ?? true) || $isReadOnly)
           class="px-5 py-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-gray-950 text-sm font-medium rounded-xl transition-colors"
         >
           <span wire:loading.remove wire:target="save">Save Changes</span>
@@ -312,7 +326,7 @@
                 monacoReady: false,
     schemas: @json($schemas),
     selectedProjectId: @entangle('selectedProjectId'),
-    isReadOnly: {{ (!$isPaired || !$isTunnelRunning) ? 'true' : 'false' }},
+    isReadOnly: {{ $isReadOnly ? 'true' : 'false' }},
 
     init() {
                     // Load Monaco Editor

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Livewire\Dashboard;
 
 use App\Models\GitHubCredential;
-use App\Models\TunnelConfig;
 use App\Services\CodeServer\CodeServerService;
+use App\Services\DevicePairingService;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -38,7 +38,7 @@ class CodeEditor extends Component
 
     public string $extensionMessage = '';
 
-    public function mount(CodeServerService $codeServerService): void
+    public function mount(CodeServerService $codeServerService, DevicePairingService $pairingService): void
     {
         $this->folder = request()->query('folder');
         $this->isInstalled = $codeServerService->isInstalled();
@@ -48,7 +48,7 @@ class CodeEditor extends Component
         $github = GitHubCredential::current();
         $this->hasCopilot = $github?->hasCopilot() ?? false;
 
-        $this->isPaired = TunnelConfig::current()?->verified_at !== null;
+        $this->isPaired = $pairingService->isPaired() || $pairingService->isTunnelVerified();
 
         $this->loadExtensions($codeServerService);
     }

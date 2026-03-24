@@ -293,13 +293,20 @@ it('reload status is updated after file operations', function () {
     expect($reloadStatus['boost'])->toHaveKey('last_modified_formatted');
 });
 
-it('sets isPaired to false when no tunnel config exists', function () {
+it('sets isPaired to false when no cloud credential exists', function () {
     $component = Livewire::test(AiAgentConfigs::class);
     $component->assertSet('isPaired', false);
 });
 
-it('sets isPaired to true when tunnel is verified', function () {
-    \App\Models\TunnelConfig::factory()->verified()->create();
+it('sets isPaired to true when cloud credential is paired', function () {
+    \App\Models\CloudCredential::create([
+        'pairing_token_encrypted' => '1|abc123',
+        'cloud_username' => 'testuser',
+        'cloud_email' => 'test@example.com',
+        'cloud_url' => 'https://vibecodepc.com',
+        'is_paired' => true,
+        'paired_at' => now(),
+    ]);
 
     $component = Livewire::test(AiAgentConfigs::class);
     $component->assertSet('isPaired', true);
@@ -341,176 +348,32 @@ it('sets isTunnelRunning to true when tunnel token file exists', function () {
     @rmdir($tunnelDir);
 });
 
-// E8.1: Test tunnel status detection and read-only mode
-describe('tunnel status detection', function () {
+// E8.1: Test read-only mode when pairing is required
+describe('read-only mode when pairing is required', function () {
     beforeEach(function () {
-        // Ensure fresh state for tunnel status tests
-        // Clear any existing tunnel configs
+        config(['vibecodepc.pairing.required' => true]);
         \App\Models\TunnelConfig::query()->delete();
+        \App\Models\CloudCredential::query()->delete();
     });
 
     afterEach(function () {
-        // Clean up tunnel test directories
         $tunnelDir = storage_path('framework/testing/tunnel');
         if (is_dir($tunnelDir)) {
             File::deleteDirectory($tunnelDir);
         }
     });
 
-    it('loads component with tunnel running and paired', function () {
-        // Create verified tunnel config
+    it('shows no read-only notice when paired and tunnel verified', function () {
+        \App\Models\CloudCredential::create([
+            'pairing_token_encrypted' => '1|abc',
+            'cloud_username' => 'user',
+            'cloud_email' => 'u@e.com',
+            'cloud_url' => 'https://vibecodepc.com',
+            'is_paired' => true,
+            'paired_at' => now(),
+        ]);
         \App\Models\TunnelConfig::factory()->verified()->create();
 
-        // Create tunnel token file
-        $tunnelDir = storage_path('framework/testing/tunnel');
-        if (! is_dir($tunnelDir)) {
-            mkdir($tunnelDir, 0755, true);
-        }
-        file_put_contents($tunnelDir.'/token', 'test-token');
-
-        // Override TunnelService
-        $service = new \App\Services\Tunnel\TunnelService(tokenFilePath: $tunnelDir.'/token');
-        app()->instance(\App\Services\Tunnel\TunnelService::class, $service);
-
-        // Mount component
-        $component = Livewire::test(AiAgentConfigs::class);
-
-        // Assert both states are true
-        $component->assertSet('isPaired', true);
-        $component->assertSet('isTunnelRunning', true);
-
-        // View should NOT show read-only notice
-        $component->assertDontSee('Read-Only Mode');
-    });
-
-    it('loads component with tunnel stopped and shows read-only notice', function () {
-        // Clear any existing tunnel config
-        \App\Models\TunnelConfig::query()->delete();
-
-        // Ensure no tunnel token file exists
-        $testTokenPath = storage_path('framework/testing/tunnel-token-test');
-        if (file_exists($testTokenPath)) {
-            @unlink($testTokenPath);
-        }
-
-        // Override TunnelService with non-existent token path
-        $service = new \App\Services\Tunnel\TunnelService(tokenFilePath: $testTokenPath);
-        app()->instance(\App\Services\Tunnel\TunnelService::class, $service);
-
-        $component = Livewire::test(AiAgentConfigs::class);
-
-        // Assert both states are false
-        $component->assertSet('isPaired', false);
-        $component->assertSet('isTunnelRunning', false);
-
-        // View should show read-only notice with combined message
-        $component->assertSee('Read-Only Mode');
-        $component->assertSee('not paired and the tunnel is not running');
-    });
-
-    it('loads component with tunnel stopped but paired', function () {
-        // Create verified tunnel config (paired)
-        \App\Models\TunnelConfig::factory()->verified()->create();
-
-        // Ensure no tunnel token file exists (not running)
-        $testTokenPath = storage_path('framework/testing/tunnel-token-test');
-        if (file_exists($testTokenPath)) {
-            @unlink($testTokenPath);
-        }
-
-        // Override TunnelService with non-existent token path
-        $service = new \App\Services\Tunnel\TunnelService(tokenFilePath: $testTokenPath);
-        app()->instance(\App\Services\Tunnel\TunnelService::class, $service);
-
-        $component = Livewire::test(AiAgentConfigs::class);
-
-        // Assert paired but tunnel not running
-        $component->assertSet('isPaired', true);
-        $component->assertSet('isTunnelRunning', false);
-
-        // View should show read-only notice with tunnel message
-        $component->assertSee('Read-Only Mode');
-        $component->assertSee('tunnel is not running');
-    });
-
-    it('loads component unpaired but with tunnel running', function () {
-        // No tunnel config (not paired)
-
-        // Create tunnel token file
-        $tunnelDir = storage_path('framework/testing/tunnel');
-        if (! is_dir($tunnelDir)) {
-            mkdir($tunnelDir, 0755, true);
-        }
-        file_put_contents($tunnelDir.'/token', 'test-token');
-
-        // Override TunnelService
-        $service = new \App\Services\Tunnel\TunnelService(tokenFilePath: $tunnelDir.'/token');
-        app()->instance(\App\Services\Tunnel\TunnelService::class, $service);
-
-        $component = Livewire::test(AiAgentConfigs::class);
-
-        // Assert not paired but tunnel running
-        $component->assertSet('isPaired', false);
-        $component->assertSet('isTunnelRunning', true);
-
-        // View should show read-only notice with pairing message
-        $component->assertSee('Read-Only Mode');
-        $component->assertSee('device is not paired');
-
-        // Cleanup
-        @unlink($tunnelDir.'/token');
-        @rmdir($tunnelDir);
-    });
-
-    it('enables read-only mode for unpaired device', function () {
-        // Ensure no tunnel token file exists
-        $testTokenPath = storage_path('framework/testing/tunnel-token-test');
-        if (file_exists($testTokenPath)) {
-            @unlink($testTokenPath);
-        }
-
-        // Override TunnelService with non-existent token path
-        $service = new \App\Services\Tunnel\TunnelService(tokenFilePath: $testTokenPath);
-        app()->instance(\App\Services\Tunnel\TunnelService::class, $service);
-
-        // Unpaired device - no tunnel config
-        $component = Livewire::test(AiAgentConfigs::class);
-
-        $component->assertSet('isPaired', false);
-        $component->assertSet('isTunnelRunning', false);
-
-        // Read-only notice should be visible
-        $component->assertSee('Read-Only Mode');
-        $component->assertSee('disabled');
-    });
-
-    it('enables read-only mode when tunnel is not running', function () {
-        // Create verified tunnel config (paired)
-        \App\Models\TunnelConfig::factory()->verified()->create();
-
-        // Ensure no tunnel token file exists
-        $testTokenPath = storage_path('framework/testing/tunnel-token-test');
-        if (file_exists($testTokenPath)) {
-            @unlink($testTokenPath);
-        }
-
-        // Override TunnelService with non-existent token path
-        $service = new \App\Services\Tunnel\TunnelService(tokenFilePath: $testTokenPath);
-        app()->instance(\App\Services\Tunnel\TunnelService::class, $service);
-
-        $component = Livewire::test(AiAgentConfigs::class);
-
-        $component->assertSet('isPaired', true);
-        $component->assertSet('isTunnelRunning', false);
-
-        // Read-only notice should be visible
-        $component->assertSee('Read-Only Mode');
-        $component->assertSee('tunnel is not running');
-    });
-
-    it('passes tunnel status to view', function () {
-        // Create verified tunnel and running tunnel
-        \App\Models\TunnelConfig::factory()->verified()->create();
         $tunnelDir = storage_path('framework/testing/tunnel');
         if (! is_dir($tunnelDir)) {
             mkdir($tunnelDir, 0755, true);
@@ -522,58 +385,113 @@ describe('tunnel status detection', function () {
 
         $component = Livewire::test(AiAgentConfigs::class);
 
-        // Check that both isPaired and isTunnelRunning are passed to view
-        $viewData = $component->viewData('isPaired');
-        expect($viewData)->toBeTrue();
+        $component->assertSet('isPaired', true)
+            ->assertSet('isReadOnly', false)
+            ->assertDontSee('Read-Only Mode');
+    });
 
-        $viewData = $component->viewData('isTunnelRunning');
-        expect($viewData)->toBeTrue();
+    it('shows read-only notice when unpaired', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
 
-        // Cleanup
-        @unlink($tunnelDir.'/token');
-        @rmdir($tunnelDir);
+        $component->assertSet('isPaired', false)
+            ->assertSet('isReadOnly', true)
+            ->assertSee('Read-Only Mode')
+            ->assertSee('not paired');
+    });
+
+    it('shows read-only notice when paired but tunnel not verified', function () {
+        \App\Models\CloudCredential::create([
+            'pairing_token_encrypted' => '1|abc',
+            'cloud_username' => 'user',
+            'cloud_email' => 'u@e.com',
+            'cloud_url' => 'https://vibecodepc.com',
+            'is_paired' => true,
+            'paired_at' => now(),
+        ]);
+
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        $component->assertSet('isPaired', true)
+            ->assertSet('isReadOnly', true)
+            ->assertSee('Read-Only Mode')
+            ->assertSee('tunnel');
     });
 
     it('disables save buttons when in read-only mode', function () {
-        // Ensure no tunnel token file exists (read-only mode)
-        $testTokenPath = storage_path('framework/testing/tunnel-token-test');
-        if (file_exists($testTokenPath)) {
-            @unlink($testTokenPath);
-        }
-
-        // Override TunnelService with non-existent token path
-        $service = new \App\Services\Tunnel\TunnelService(tokenFilePath: $testTokenPath);
-        app()->instance(\App\Services\Tunnel\TunnelService::class, $service);
-
-        // Unpaired device (read-only mode)
         $component = Livewire::test(AiAgentConfigs::class);
 
-        // Verify component is in read-only mode
-        $component->assertSet('isPaired', false);
-        $component->assertSet('isTunnelRunning', false);
+        $component->assertSet('isReadOnly', true)
+            ->assertSee('Read-Only Mode');
 
-        // Read-only notice should be visible in the view
-        $component->assertSee('Read-Only Mode');
-
-        // The dirty flag should be set after editing
         $component->set('fileContent.boost', '{"test": "value"}');
         $component->assertSet('isDirty.boost', true);
+    });
+});
 
-        // Note: The save action doesn't have a backend check for tunnel status,
-        // but the UI prevents save button from being clicked via @disabled attribute.
-        // The component allows saving regardless of tunnel status (backend doesn't enforce it).
-        // The read-only mode is purely a UI feature to prevent accidental edits.
+// E8.2: Test optional pairing mode (default)
+describe('optional pairing mode', function () {
+    beforeEach(function () {
+        config(['vibecodepc.pairing.required' => false]);
+        \App\Models\TunnelConfig::query()->delete();
+        \App\Models\CloudCredential::query()->delete();
     });
 
-    it('allows config viewing but not editing in read-only mode', function () {
-        // Unpaired device (read-only mode)
+    it('does not show read-only notice when unpaired', function () {
         $component = Livewire::test(AiAgentConfigs::class);
 
-        // Config content should still be visible
+        $component->assertSet('isPaired', false)
+            ->assertSet('isReadOnly', false)
+            ->assertDontSee('Read-Only Mode');
+    });
+
+    it('shows unpaired info banner when not paired', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        $component->assertSet('isPairingRequired', false)
+            ->assertSet('isPaired', false)
+            ->assertSee('Running Without Pairing');
+    });
+
+    it('does not show unpaired banner when paired', function () {
+        \App\Models\CloudCredential::create([
+            'pairing_token_encrypted' => '1|abc',
+            'cloud_username' => 'user',
+            'cloud_email' => 'u@e.com',
+            'cloud_url' => 'https://vibecodepc.com',
+            'is_paired' => true,
+            'paired_at' => now(),
+        ]);
+
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        $component->assertSet('isPaired', true)
+            ->assertDontSee('Running Without Pairing');
+    });
+
+    it('allows editing when unpaired', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        $component->assertSet('isReadOnly', false);
+
+        // Can edit and save
+        $component->set('fileContent.boost', '{"agents": ["test"]}');
+        $component->assertSet('isDirty.boost', true)
+            ->assertSet('isValid.boost', true);
+    });
+
+    it('passes isReadOnly and isPairingRequired to view', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
+        expect($component->viewData('isReadOnly'))->toBeFalse();
+        expect($component->viewData('isPairingRequired'))->toBeFalse();
+    });
+
+    it('allows config viewing', function () {
+        $component = Livewire::test(AiAgentConfigs::class);
+
         $content = $component->get('fileContent.boost');
         expect($content)->not->toBeNull();
 
-        // View should show the configs
         $component->assertSee('Boost Configuration');
     });
 });
