@@ -43,6 +43,7 @@ class ProjectDetail extends Component
         $this->project = $project;
         $this->isPaired = $pairingService->isPaired() || $pairingService->isTunnelVerified();
         $this->envVars = $project->env_vars ?? [];
+        $this->envVars = is_array($this->envVars) ? $this->envVars : [];
 
         if ($project->isProvisioning()) {
             $this->loadProvisioningLogs();

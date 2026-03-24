@@ -10,7 +10,7 @@ use App\Services\WizardProgressService;
 use Livewire\Component;
 use VibecodePC\Common\Enums\WizardStep;
 
-class GitHub extends Component
+class Github extends Component
 {
     public string $status = 'idle';
 

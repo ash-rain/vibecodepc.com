@@ -42,10 +42,10 @@ describe('when pairing is required', function () {
         expect(createDeviceStateService()->getMode())->toBe(DeviceStateService::MODE_PAIRING);
     });
 
-    it('getMode returns wizard as default when paired but no mode is stored', function () {
+    it('getMode returns dashboard as default when paired but no mode is stored', function () {
         createCloudCredential();
 
-        expect(createDeviceStateService()->getMode())->toBe(DeviceStateService::MODE_WIZARD);
+        expect(createDeviceStateService()->getMode())->toBe(DeviceStateService::MODE_DASHBOARD);
     });
 
     it('getMode returns stored mode when paired', function () {

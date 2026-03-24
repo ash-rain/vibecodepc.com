@@ -38,6 +38,11 @@ class DeviceStateService
             return $stored;
         }
 
+        // If paired but no stored mode, default to dashboard
+        if ($isPaired) {
+            return self::MODE_DASHBOARD;
+        }
+
         // If not paired and pairing is optional, go straight to wizard
         return self::MODE_WIZARD;
     }
