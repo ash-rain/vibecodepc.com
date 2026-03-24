@@ -767,3 +767,5 @@ This test plan covers the config file editor system including ConfigFileService,
 - Add load testing for concurrent scenarios
 
 - [x] 2026-03-24 fix the flaky unit tests
+
+- [x] 2026-03-24 now after sintall make a button skip paring on the inial page

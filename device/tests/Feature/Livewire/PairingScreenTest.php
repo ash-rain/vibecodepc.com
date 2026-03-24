@@ -2,9 +2,12 @@
 
 use App\Livewire\Pairing\PairingScreen;
 use App\Models\CloudCredential;
+use App\Models\DeviceState;
 use App\Services\DeviceRegistry\DeviceIdentityService;
+use App\Services\DeviceStateService;
 use App\Services\NetworkService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 use VibecodePC\Common\DTOs\DeviceInfo;
@@ -384,4 +387,55 @@ it('handles cloud credential when is_paired defaults to false', function () {
     Livewire::test(PairingScreen::class)
         ->call('checkPairingStatus')
         ->assertNoRedirect();
+});
+
+// Skip Pairing Tests
+
+it('shows skip pairing button', function () {
+    $uuid = (string) Str::uuid();
+    mockDeviceIdentityForLivewire($uuid);
+    mockNetworkService();
+
+    Livewire::test(PairingScreen::class)
+        ->assertSee('Skip Pairing')
+        ->assertSee('Want to set up the device without a cloud account?')
+        ->assertSee('Some features will be limited without pairing.');
+});
+
+it('redirects to wizard when skip pairing is clicked', function () {
+    $uuid = (string) Str::uuid();
+    mockDeviceIdentityForLivewire($uuid);
+    mockNetworkService();
+
+    Livewire::test(PairingScreen::class)
+        ->call('skipPairing')
+        ->assertRedirect('/wizard');
+});
+
+it('sets device mode to wizard when skip pairing is clicked', function () {
+    $uuid = (string) Str::uuid();
+    mockDeviceIdentityForLivewire($uuid);
+    mockNetworkService();
+
+    Livewire::test(PairingScreen::class)
+        ->call('skipPairing');
+
+    expect(DeviceState::getValue(DeviceStateService::MODE_KEY))->toBe(DeviceStateService::MODE_WIZARD);
+});
+
+it('logs skip pairing action', function () {
+    $uuid = (string) Str::uuid();
+    mockDeviceIdentityForLivewire($uuid);
+    mockNetworkService();
+
+    Log::shouldReceive('info')
+        ->once()
+        ->withArgs(function (string $message, array $context) use ($uuid) {
+            return $message === 'pairing.skipped'
+                && $context['device_id'] === $uuid
+                && $context['local_ip'] === '192.168.1.50';
+        });
+
+    Livewire::test(PairingScreen::class)
+        ->call('skipPairing');
 });
