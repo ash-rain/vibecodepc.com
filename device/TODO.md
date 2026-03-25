@@ -792,3 +792,17 @@ This test plan covers the config file editor system including ConfigFileService,
 
 - [x] 2026-03-25 Created comprehensive Dusk browser tests for all admin pages - AdminPagesTest.php with 29 tests covering project management, AI agents config, AI tools config, system settings, tunnel management, containers, code editor, analytics, AI services hub, sidebar navigation, and responsive layout
 - [x] 2026-03-25 fix pint errors - All tests pass, no Pint formatting errors found
+
+- [x] 2026-03-25 Created comprehensive Dusk browser tests for missing pages with JavaScript error detection
+  - Added tests/Browser/MissingPagesTest.php with 17 test cases
+  - Wizard pages: Welcome, AI Services, GitHub, Code Server, Tunnel, Complete
+  - Pairing pages: PairingScreen with skip pairing functionality
+  - Tunnel Login page with form interaction tests
+  - Home page redirect tests for different device modes
+  - JavaScript error detection using Chrome DevTools console logs
+  - Tests verify no SEVERE console errors on page load and interaction
+  - All 17 tests passing, Pint formatting clean
+
+- [x] 2026-03-25 fix the js errors - Disabled Livewire navigation progress bar in config/livewire.php (`'show_progress_bar' => false`) to fix nprogress JavaScript error. Published Livewire assets. All console warning detection tests passing.
+
+- [ ] increate test voerage
