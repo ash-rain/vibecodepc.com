@@ -805,4 +805,4 @@ This test plan covers the config file editor system including ConfigFileService,
 
 - [x] 2026-03-25 fix the js errors - Disabled Livewire navigation progress bar in config/livewire.php (`'show_progress_bar' => false`) to fix nprogress JavaScript error. Published Livewire assets. All console warning detection tests passing.
 
-- [ ] increate test voerage
+- [x] 2026-03-25 increate test voerage - Added 86 new tests covering ConfigAuditLogService (42), AnalyticsEvent model (21), and ConfigAuditLog model (23) with ConfigAuditLogFactory
