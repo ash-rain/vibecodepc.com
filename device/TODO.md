@@ -810,3 +810,23 @@ This test plan covers the config file editor system including ConfigFileService,
 - [x] 2026-03-27 Created comprehensive Dusk browser tests for all pages - Added EdgeCasePagesTest.php with 46 test cases covering wizard step pages, dashboard pages, AI configuration pages, system/infrastructure pages, pairing, tunnel login, home route redirects, schema endpoints, layouts, navigation flows, and responsive rendering - All routes verified: /, /wizard, /pairing, /tunnel/login, /dashboard, /dashboard/projects, /dashboard/ai-agents, /dashboard/ai-tools, /dashboard/ai-services, /dashboard/settings, /dashboard/tunnels, /dashboard/containers, /dashboard/code-editor, /dashboard/analytics
 
 - [x] 2026-03-27 Created Dusk browser tests for settings pages error detection - Added SettingsPagesErrorTest.php with 15 comprehensive test cases covering: System Settings page loading, all tabs display (Network, Storage, Updates, SSH, Backup, Power), tab switching without errors, network configuration display, storage information, SSH toggle, backup section, power management, factory reset section, mobile viewport rendering, mobile tab switching, network information display, Livewire SSH toggle interactions, Livewire updates check interactions, and console warning detection
+
+- [x] 2026-03-27 Created .barx editor for environment variables and PATH configuration
+  - Added `barx` config entry in `config/vibecodepc.php` with path, label, and editable settings
+  - Created `BarxEditor` Livewire component in `app/Livewire/Dashboard/BarxEditor.php`
+    - Supports environment variable management (key-value pairs)
+    - Supports PATH extra directories configuration
+    - Automatic encryption for sensitive keys (API_KEY, TOKEN, SECRET, PASSWORD, AUTH)
+    - Backup and restore functionality
+    - Conflict detection with content hashing
+    - Reset to defaults capability
+    - Read-only mode when tunnel not running/not paired
+    - Audit logging integration
+  - Created Blade view in `resources/views/livewire/dashboard/barx-editor.blade.php`
+    - Similar UI to BashrcEditor with PATH and environment variable sections
+    - Backup restore dropdown
+    - Security notice for sensitive keys
+    - File info display with last modified timestamp
+  - Added route `dashboard.barx` in `routes/web.php`
+  - Added sidebar navigation link for "Barx Config" in sidebar.blade.php
+  - Pint formatting passed, smoke tests passing

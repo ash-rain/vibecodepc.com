@@ -116,6 +116,13 @@ return [
             'editable' => true,
             'scope' => 'global',
         ],
+        'barx' => [
+            'path' => env('VIBECODEPC_BARX_PATH', ($_SERVER['HOME'] ?? '/home/vibecodepc').'/.barx'),
+            'label' => 'Barx Environment Config',
+            'description' => 'Environment variables and PATH configuration for Barx AI tools.',
+            'editable' => true,
+            'scope' => 'global',
+        ],
     ],
 
     'config_editor' => [
