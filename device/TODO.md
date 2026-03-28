@@ -830,3 +830,5 @@ This test plan covers the config file editor system including ConfigFileService,
   - Added route `dashboard.barx` in `routes/web.php`
   - Added sidebar navigation link for "Barx Config" in sidebar.blade.php
   - Pint formatting passed, smoke tests passing
+
+- [x] 2026-03-27 remove the barx we wanc only BashrcEditor
