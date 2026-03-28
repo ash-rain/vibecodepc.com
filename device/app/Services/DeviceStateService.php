@@ -17,21 +17,33 @@ class DeviceStateService
 
     public const MODE_DASHBOARD = 'dashboard';
 
+    public function __construct(
+        private readonly DevicePairingService $pairingService,
+    ) {}
+
     public function getMode(): string
     {
         $credential = CloudCredential::current();
         $isPaired = $credential && $credential->isPaired();
 
-        if (! $isPaired) {
+        // When pairing is not required, skip the pairing screen entirely
+        if (! $isPaired && $this->pairingService->isPairingRequired()) {
             return self::MODE_PAIRING;
         }
 
+        // Device is either paired or pairing is optional — check stored mode
         $stored = DeviceState::getValue(self::MODE_KEY);
 
         if ($stored !== null) {
             return $stored;
         }
 
+        // If paired but no stored mode, default to dashboard
+        if ($isPaired) {
+            return self::MODE_DASHBOARD;
+        }
+
+        // If not paired and pairing is optional, go straight to wizard
         return self::MODE_WIZARD;
     }
 

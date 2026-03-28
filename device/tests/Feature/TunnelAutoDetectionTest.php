@@ -38,6 +38,17 @@ afterEach(function () {
 });
 
 it('shows tunnel available banner when tunnel is available after being skipped', function () {
+    // Use unpaired credential for tunnel auto-detection UI
+    CloudCredential::query()->delete();
+    CloudCredential::create([
+        'pairing_token_encrypted' => 'test-token',
+        'cloud_username' => 'testuser',
+        'cloud_email' => 'test@example.com',
+        'cloud_url' => 'https://vibecodepc.com',
+        'is_paired' => false,
+        'paired_at' => null,
+    ]);
+
     TunnelConfig::factory()->available()->create();
 
     Livewire::test(Overview::class)
@@ -47,6 +58,17 @@ it('shows tunnel available banner when tunnel is available after being skipped',
 });
 
 it('shows tunnel status as Available when tunnel was skipped but token exists', function () {
+    // Use unpaired credential for tunnel auto-detection UI
+    CloudCredential::query()->delete();
+    CloudCredential::create([
+        'pairing_token_encrypted' => 'test-token',
+        'cloud_username' => 'testuser',
+        'cloud_email' => 'test@example.com',
+        'cloud_url' => 'https://vibecodepc.com',
+        'is_paired' => false,
+        'paired_at' => null,
+    ]);
+
     TunnelConfig::factory()->available()->create();
 
     Livewire::test(Overview::class)
@@ -54,6 +76,17 @@ it('shows tunnel status as Available when tunnel was skipped but token exists', 
 });
 
 it('polls for tunnel status when not paired and not available', function () {
+    // Use unpaired credential for the not-paired UI
+    CloudCredential::query()->delete();
+    CloudCredential::create([
+        'pairing_token_encrypted' => 'test-token',
+        'cloud_username' => 'testuser',
+        'cloud_email' => 'test@example.com',
+        'cloud_url' => 'https://vibecodepc.com',
+        'is_paired' => false,
+        'paired_at' => null,
+    ]);
+
     TunnelConfig::factory()->skipped()->create();
 
     $component = Livewire::test(Overview::class)
@@ -113,6 +146,17 @@ it('shows Offline badge when tunnel is skipped and no token exists', function ()
 });
 
 it('shows Available badge when tunnel was skipped but now available', function () {
+    // Use unpaired credential for tunnel auto-detection UI
+    CloudCredential::query()->delete();
+    CloudCredential::create([
+        'pairing_token_encrypted' => 'test-token',
+        'cloud_username' => 'testuser',
+        'cloud_email' => 'test@example.com',
+        'cloud_url' => 'https://vibecodepc.com',
+        'is_paired' => false,
+        'paired_at' => null,
+    ]);
+
     TunnelConfig::factory()->available()->create();
 
     Livewire::test(Overview::class)

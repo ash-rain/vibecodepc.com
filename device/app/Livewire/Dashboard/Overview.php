@@ -7,10 +7,10 @@ namespace App\Livewire\Dashboard;
 use App\Models\AiProviderConfig;
 use App\Models\CloudCredential;
 use App\Models\GitHubCredential;
-use App\Models\Project;
 use App\Models\ProjectLog;
-use App\Models\TunnelConfig;
 use App\Models\WizardProgress;
+use App\Repositories\ProjectRepository;
+use App\Services\DevicePairingService;
 use App\Services\Tunnel\TunnelService;
 use App\Services\WizardProgressService;
 use Livewire\Attributes\Layout;
@@ -43,9 +43,9 @@ class Overview extends Component
 
     public bool $canContinueSetup = false;
 
-    public function mount(TunnelService $tunnelService): void
+    public function mount(TunnelService $tunnelService, ProjectRepository $projectRepository): void
     {
-        $this->refreshStatus($tunnelService);
+        $this->refreshStatus($tunnelService, $projectRepository);
         $this->checkIfSetupCanBeContinued();
     }
 
@@ -75,10 +75,10 @@ class Overview extends Component
      * Poll for tunnel status updates when tunnel was skipped.
      * This allows the UI to auto-refresh when tunnel becomes available.
      */
-    public function poll(TunnelService $tunnelService): void
+    public function poll(TunnelService $tunnelService, ProjectRepository $projectRepository): void
     {
         $wasAvailable = $this->tunnelAvailable;
-        $this->refreshStatus($tunnelService);
+        $this->refreshStatus($tunnelService, $projectRepository);
 
         // If tunnel just became available, dispatch a browser event
         if (! $wasAvailable && $this->tunnelAvailable) {
@@ -86,15 +86,17 @@ class Overview extends Component
         }
     }
 
-    private function refreshStatus(TunnelService $tunnelService): void
+    private function refreshStatus(TunnelService $tunnelService, ProjectRepository $projectRepository): void
     {
         $credential = CloudCredential::current();
         $this->username = $credential?->cloud_username ?? 'User';
 
-        $this->projectCount = Project::count();
-        $this->runningCount = Project::running()->count();
+        $pairingService = app(DevicePairingService::class);
+
+        $this->projectCount = $projectRepository->count();
+        $this->runningCount = $projectRepository->countRunning();
         $this->tunnelRunning = $tunnelService->isRunning();
-        $this->isPaired = TunnelConfig::current()?->verified_at !== null;
+        $this->isPaired = $pairingService->isPaired() || $pairingService->isTunnelVerified();
         // tunnelAvailable is true only when tunnel was skipped but token file now exists
         $this->tunnelAvailable = $tunnelService->wasSkippedButNowAvailable();
         $this->aiProviderCount = AiProviderConfig::whereNotNull('validated_at')->count();

@@ -6,9 +6,11 @@ namespace App\Livewire\Pairing;
 
 use App\Models\CloudCredential;
 use App\Services\DeviceRegistry\DeviceIdentityService;
+use App\Services\DeviceStateService;
 use App\Services\NetworkService;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
 class PairingScreen extends Component
@@ -42,6 +44,18 @@ class PairingScreen extends Component
         if ($credential?->isPaired()) {
             $this->redirect('/wizard');
         }
+    }
+
+    public function skipPairing(DeviceStateService $stateService): void
+    {
+        Log::info('pairing.skipped', [
+            'device_id' => $this->deviceId,
+            'local_ip' => $this->localIp,
+        ]);
+
+        $stateService->setMode(DeviceStateService::MODE_WIZARD);
+
+        $this->redirect('/wizard');
     }
 
     private function generateQrCode(string $url): string

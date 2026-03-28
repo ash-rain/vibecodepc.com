@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Tunnel;
 
+use App\Events\QuickTunnelStarted;
+use App\Events\QuickTunnelUrlDiscovered;
+use App\Jobs\PollTunnelUrlJob;
 use App\Models\QuickTunnel;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
@@ -15,13 +18,9 @@ class QuickTunnelService
 
     private const CLOUDFLARED_IMAGE = 'cloudflare/cloudflared:latest';
 
-    private const URL_WAIT_SECONDS = 10;
-
-    private const URL_POLL_INTERVAL = 2;
-
     /**
      * Start a quick tunnel for the dashboard on the device app port.
-     * Returns the tunnel URL, or null if the URL wasn't captured in time.
+     * Returns the tunnel URL immediately if found, or null (URL will be discovered async).
      */
     public function startForDashboard(): ?string
     {
@@ -76,14 +75,14 @@ class QuickTunnelService
             'started_at' => now(),
         ]);
 
-        $url = $this->waitForUrl($containerName);
+        // Dispatch async polling job and return immediately
+        // This replaces the blocking waitForUrl() call
+        PollTunnelUrlJob::dispatch($tunnel);
 
-        $tunnel->update([
-            'tunnel_url' => $url,
-            'status' => 'running',
-        ]);
+        // Broadcast event for real-time updates
+        event(new QuickTunnelStarted($tunnel));
 
-        return $tunnel->refresh();
+        return $tunnel;
     }
 
     /**
@@ -118,6 +117,8 @@ class QuickTunnelService
 
     /**
      * Try to capture the tunnel URL from container logs if not yet available.
+     * Updates the tunnel model with the URL if found and returns it.
+     * Called synchronously by PollTunnelUrlJob.
      */
     public function refreshUrl(QuickTunnel $tunnel): ?string
     {
@@ -129,6 +130,7 @@ class QuickTunnelService
 
         if ($url) {
             $tunnel->update(['tunnel_url' => $url, 'status' => 'running']);
+            event(new QuickTunnelUrlDiscovered($tunnel->refresh(), $url));
         }
 
         return $url;
@@ -231,13 +233,21 @@ class QuickTunnelService
         ));
     }
 
+    /**
+     * Extract cloudflare tunnel URL from container logs.
+     *
+     * @deprecated This blocking method is replaced by PollTunnelUrlJob
+     *             for async URL discovery. Use refreshUrl() for manual checks.
+     */
     private function waitForUrl(string $containerName): ?string
     {
         $waited = 0;
+        $waitSeconds = 10;
+        $pollInterval = 2;
 
-        while ($waited < self::URL_WAIT_SECONDS) {
-            sleep(self::URL_POLL_INTERVAL);
-            $waited += self::URL_POLL_INTERVAL;
+        while ($waited < $waitSeconds) {
+            sleep($pollInterval);
+            $waited += $pollInterval;
 
             $url = $this->extractUrlFromLogs($containerName);
 
@@ -248,7 +258,7 @@ class QuickTunnelService
 
         Log::warning('Quick tunnel URL not captured within timeout', [
             'container' => $containerName,
-            'timeout' => self::URL_WAIT_SECONDS,
+            'timeout' => $waitSeconds,
         ]);
 
         return null;

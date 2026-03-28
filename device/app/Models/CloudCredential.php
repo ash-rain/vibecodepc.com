@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class CloudCredential extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'pairing_token_encrypted',
         'cloud_username',

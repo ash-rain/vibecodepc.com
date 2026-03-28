@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Livewire\Wizard\GitHub;
+use App\Livewire\Wizard\Github;
 use App\Models\GitHubCredential;
 use App\Services\WizardProgressService;
 use Illuminate\Support\Facades\Http;
@@ -14,7 +14,7 @@ beforeEach(function () {
 });
 
 it('renders the github step', function () {
-    Livewire::test(GitHub::class)
+    Livewire::test(Github::class)
         ->assertStatus(200)
         ->assertSee('Connect GitHub');
 });
@@ -25,7 +25,7 @@ it('shows connected state when credential exists', function () {
         'github_name' => 'Existing User',
     ]);
 
-    Livewire::test(GitHub::class)
+    Livewire::test(Github::class)
         ->assertSet('status', 'connected')
         ->assertSet('githubUsername', 'existinguser');
 });
@@ -41,7 +41,7 @@ it('initiates device flow', function () {
         ]),
     ]);
 
-    Livewire::test(GitHub::class)
+    Livewire::test(Github::class)
         ->call('startDeviceFlow')
         ->assertSet('status', 'polling')
         ->assertSet('userCode', 'ABCD-1234');
@@ -52,7 +52,7 @@ it('handles device flow initiation error', function () {
         'github.com/login/device/code' => Http::response([], 500),
     ]);
 
-    Livewire::test(GitHub::class)
+    Livewire::test(Github::class)
         ->call('startDeviceFlow')
         ->assertSet('error', fn ($value) => str_contains($value, 'Could not start'));
 });
@@ -72,7 +72,7 @@ it('resets to idle on terminal github error', function () {
         ]),
     ]);
 
-    Livewire::test(GitHub::class)
+    Livewire::test(Github::class)
         ->call('startDeviceFlow')
         ->assertSet('status', 'polling')
         ->call('checkAuthStatus')
@@ -97,7 +97,7 @@ it('resets to idle on auth exception', function () {
         'api.github.com/user' => Http::response([], 500),
     ]);
 
-    Livewire::test(GitHub::class)
+    Livewire::test(Github::class)
         ->call('startDeviceFlow')
         ->assertSet('status', 'polling')
         ->call('checkAuthStatus')
@@ -120,7 +120,7 @@ it('backs off poll interval on slow_down', function () {
         ]),
     ]);
 
-    Livewire::test(GitHub::class)
+    Livewire::test(Github::class)
         ->call('startDeviceFlow')
         ->assertSet('pollInterval', 6)
         ->call('checkAuthStatus')
@@ -151,7 +151,7 @@ it('detects copilot access after successful auth', function () {
         ]),
     ]);
 
-    Livewire::test(GitHub::class)
+    Livewire::test(Github::class)
         ->call('startDeviceFlow')
         ->call('checkAuthStatus')
         ->assertSet('status', 'connected')
@@ -163,7 +163,7 @@ it('detects copilot access after successful auth', function () {
 });
 
 it('skips the github step', function () {
-    Livewire::test(GitHub::class)
+    Livewire::test(Github::class)
         ->call('skip')
         ->assertDispatched('step-skipped');
 });
@@ -174,7 +174,7 @@ it('completes the github step when connected', function () {
         'has_copilot' => true,
     ]);
 
-    Livewire::test(GitHub::class)
+    Livewire::test(Github::class)
         ->call('complete')
         ->assertDispatched('step-completed');
 

@@ -25,6 +25,8 @@ class Welcome extends Component
 
     public bool $isPaired = false;
 
+    public bool $isPairingRequired = false;
+
     public string $adminPassword = '';
 
     public string $adminPasswordConfirmation = '';
@@ -38,6 +40,8 @@ class Welcome extends Component
 
     public function mount(SystemService $systemService): void
     {
+        $this->isPairingRequired = (bool) config('vibecodepc.pairing.required', false);
+
         $credential = CloudCredential::current();
 
         if ($credential && $credential->isPaired()) {

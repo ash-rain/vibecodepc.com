@@ -74,5 +74,16 @@
                 Waiting for pairing...
             </div>
         </div>
+
+        {{-- Skip Pairing --}}
+        <div class="text-center pt-2">
+            <p class="mb-3 text-xs text-gray-500">Want to set up the device without a cloud account?</p>
+            <button wire:click="skipPairing" wire:loading.attr="disabled"
+                class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-400 transition border rounded-lg border-white/10 hover:text-white hover:border-white/20 hover:bg-white/5 disabled:opacity-50">
+                <span wire:loading.remove wire:target="skipPairing">Skip Pairing</span>
+                <span wire:loading wire:target="skipPairing">Skipping...</span>
+            </button>
+            <p class="mt-2 text-xs text-gray-600">Some features will be limited without pairing.</p>
+        </div>
     </div>
 </div>

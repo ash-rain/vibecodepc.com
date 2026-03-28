@@ -44,28 +44,29 @@
         </div>
     </div>
 
-    {{-- Storage Tab --}}
-    <div x-show="tab === 'storage'" class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6 space-y-4">
-        <h3 class="text-sm font-medium text-gray-400">Disk Usage</h3>
-        @php $diskPercent = $diskTotalGb > 0 ? ($diskUsedGb / $diskTotalGb) * 100 : 0; @endphp
-        <div>
-            <div class="flex justify-between text-sm mb-2">
-                <span class="text-gray-400">{{ $diskUsedGb }} GB used of {{ $diskTotalGb }} GB</span>
-                <span class="text-gray-400">{{ number_format($diskPercent, 1) }}%</span>
-            </div>
-            <div class="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
-                <div
-                    @class([
-                        'h-full rounded-full transition-all',
-                        'bg-green-500' => $diskPercent < 70,
-                        'bg-amber-500' => $diskPercent >= 70 && $diskPercent < 90,
-                        'bg-red-500' => $diskPercent >= 90,
-                    ])
-                    style="width: {{ min(100, $diskPercent) }}%"
-                ></div>
-            </div>
+{{-- Storage Tab --}}
+<div x-show="tab === 'storage'" class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6 space-y-4" dusk="storage-tab">
+    <h3 class="text-sm font-medium text-gray-400" dusk="disk-usage-heading">Disk Usage</h3>
+    @php $diskPercent = $diskTotalGb > 0 ? ($diskUsedGb / $diskTotalGb) * 100 : 0; @endphp
+    <div>
+        <div class="flex justify-between text-sm mb-2">
+            <span class="text-gray-400" dusk="disk-usage-details">{{ $diskUsedGb }} GB used of {{ $diskTotalGb }} GB</span>
+            <span class="text-gray-400" dusk="disk-percentage">{{ number_format($diskPercent, 1) }}%</span>
+        </div>
+        <div class="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+            <div
+                @class([
+                    'h-full rounded-full transition-all',
+                    'bg-green-500' => $diskPercent < 70,
+                    'bg-amber-500' => $diskPercent >= 70 && $diskPercent < 90,
+                    'bg-red-500' => $diskPercent >= 90,
+                ])
+                style="width: {{ min(100, $diskPercent) }}%"
+                dusk="disk-progress-bar"
+            ></div>
         </div>
     </div>
+</div>
 
     {{-- Updates Tab --}}
     <div x-show="tab === 'updates'" class="bg-white/[0.02] rounded-2xl border border-white/[0.06] p-6 space-y-4">

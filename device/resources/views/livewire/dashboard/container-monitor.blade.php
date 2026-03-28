@@ -217,7 +217,21 @@
                         </div>
                     </div>
                 </div>
-            @endforeach
-        </div>
-    @endif
-</div>
+                @endforeach
+            </div>
+
+            {{-- Load more button --}}
+            @if ($hasMorePages)
+                <div class="flex justify-center pt-4">
+                    <button
+                        wire:click="loadMore"
+                        wire:loading.attr="disabled"
+                        class="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white text-sm rounded-lg transition-colors border border-white/10"
+                    >
+                        <span wire:loading.remove wire:target="loadMore">Load more containers</span>
+                        <span wire:loading wire:target="loadMore">Loading...</span>
+                    </button>
+                </div>
+            @endif
+        @endif
+    </div>

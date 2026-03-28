@@ -4,8 +4,8 @@
         <p class="text-gray-400 text-sm mb-6">Let's get your workstation set up. First, confirm your account and
             configure basic settings.</p>
 
-        @if (!$isPaired)
-            {{-- No Cloud Account — Pairing CTA --}}
+        @if (!$isPaired && $isPairingRequired)
+            {{-- No Cloud Account — Pairing CTA (only shown when pairing is required) --}}
             <div class="text-center py-8">
                 <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-8 mb-6">
                     <svg class="w-16 h-16 mx-auto text-emerald-400 mb-4" fill="none" stroke="currentColor"

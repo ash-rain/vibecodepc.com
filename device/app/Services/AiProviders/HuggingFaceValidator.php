@@ -12,7 +12,7 @@ class HuggingFaceValidator implements AiProviderContract
     {
         try {
             $response = Http::withToken($apiKey)
-                ->timeout(10)
+                ->timeout(config('vibecodepc.http_client.timeout.default'))
                 ->get('https://huggingface.co/api/whoami-v2');
 
             if ($response->successful()) {

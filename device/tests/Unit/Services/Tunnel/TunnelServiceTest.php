@@ -8,6 +8,7 @@ use App\Services\DeviceRegistry\DeviceIdentityService;
 use App\Services\Tunnel\TunnelService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use VibecodePC\Common\DTOs\DeviceInfo;
 
 uses(RefreshDatabase::class);
@@ -37,6 +38,47 @@ it('reports not running when token file is empty', function () {
 
     $service = new TunnelService(tokenFilePath: $tokenFile);
 
+    expect($service->isRunning())->toBeFalse();
+
+    File::deleteDirectory(dirname($tokenFile));
+});
+
+it('reports not running when token file contains only whitespace', function () {
+    $tokenFile = storage_path('app/test-tunnel-whitespace/token');
+    @mkdir(dirname($tokenFile), 0755, true);
+    file_put_contents($tokenFile, "   \n\t  \n   ");
+
+    $service = new TunnelService(tokenFilePath: $tokenFile);
+
+    expect($service->isRunning())->toBeFalse();
+
+    File::deleteDirectory(dirname($tokenFile));
+});
+
+it('reports not running when token file is not readable', function () {
+    $tokenFile = storage_path('app/test-tunnel-unreadable/token');
+    @mkdir(dirname($tokenFile), 0755, true);
+    file_put_contents($tokenFile, 'test-token-value');
+    chmod($tokenFile, 0000);
+
+    $service = new TunnelService(tokenFilePath: $tokenFile);
+
+    expect($service->isRunning())->toBeFalse();
+
+    // Restore permissions for cleanup
+    chmod($tokenFile, 0644);
+    File::deleteDirectory(dirname($tokenFile));
+});
+
+it('handles malformed token file with only newlines and tabs gracefully', function () {
+    $tokenFile = storage_path('app/test-tunnel-malformed/token');
+    @mkdir(dirname($tokenFile), 0755, true);
+    // Create file with only whitespace characters
+    file_put_contents($tokenFile, "\n\r\t\n\r\t");
+
+    $service = new TunnelService(tokenFilePath: $tokenFile);
+
+    // Whitespace-only content should be considered invalid
     expect($service->isRunning())->toBeFalse();
 
     File::deleteDirectory(dirname($tokenFile));
@@ -461,6 +503,195 @@ it('isEffectivelyConfigured returns true when tunnel was skipped but now availab
     $service = new TunnelService(tokenFilePath: $tokenFile);
 
     expect($service->isEffectivelyConfigured())->toBeTrue();
+
+    File::deleteDirectory(dirname($tokenFile));
+});
+
+// Poll status tests
+it('pollStatus returns not detected when no config exists', function () {
+    $service = new TunnelService(tokenFilePath: storage_path('app/test-tunnel/token'));
+    $result = $service->pollStatus();
+
+    expect($result['detected'])->toBeFalse()
+        ->and($result['message'])->toBeNull()
+        ->and($result['error'])->toBeNull();
+});
+
+it('pollStatus returns not detected when tunnel is not skipped', function () {
+    TunnelConfig::factory()->active()->create();
+
+    $service = new TunnelService(tokenFilePath: storage_path('app/test-tunnel/token'));
+    $result = $service->pollStatus();
+
+    expect($result['detected'])->toBeFalse()
+        ->and($result['message'])->toBeNull()
+        ->and($result['error'])->toBeNull();
+});
+
+it('pollStatus returns not detected when tunnel is skipped but token file does not exist', function () {
+    TunnelConfig::factory()->skipped()->create();
+
+    $service = new TunnelService(tokenFilePath: storage_path('app/test-tunnel-poll-missing/token'));
+    $result = $service->pollStatus();
+
+    expect($result['detected'])->toBeFalse()
+        ->and($result['message'])->toBeNull()
+        ->and($result['error'])->toBeNull();
+});
+
+it('pollStatus detects token and updates status when token file appears', function () {
+    $tokenFile = storage_path('app/test-tunnel-poll-detect/token');
+
+    // Clean up first
+    if (is_dir(dirname($tokenFile))) {
+        File::deleteDirectory(dirname($tokenFile));
+    }
+
+    @mkdir(dirname($tokenFile), 0755, true);
+    file_put_contents($tokenFile, 'test-tunnel-token');
+
+    TunnelConfig::factory()->skipped()->create();
+
+    $service = new TunnelService(tokenFilePath: $tokenFile);
+    $result = $service->pollStatus();
+
+    expect($result['detected'])->toBeTrue()
+        ->and($result['message'])->toBe('Tunnel is now available and marked as active')
+        ->and($result['error'])->toBeNull();
+
+    $config = TunnelConfig::current();
+    expect($config->status)->toBe('available')
+        ->and($config->skipped_at)->toBeNull();
+
+    File::deleteDirectory(dirname($tokenFile));
+});
+
+it('returns error when disk is full during start', function () {
+    $tokenFile = storage_path('app/test-tunnel-disk-full/token');
+    $dir = dirname($tokenFile);
+
+    // Clean up any existing test artifacts
+    if (is_dir($dir)) {
+        File::deleteDirectory($dir);
+    }
+
+    @mkdir($dir, 0755, true);
+
+    // Create a token that would require significant space
+    TunnelConfig::factory()->verified()->create([
+        'tunnel_token_encrypted' => str_repeat('x', 1024 * 1024), // 1MB token
+    ]);
+
+    // Mock disk_free_space to return a very small value to simulate disk full
+    $service = new class(tokenFilePath: $tokenFile) extends TunnelService
+    {
+        protected function hasSufficientDiskSpace(int $requiredBytes = 1024): bool
+        {
+            return false;
+        }
+    };
+
+    $error = $service->start();
+
+    expect($error)->toBe('Failed to write tunnel token file: insufficient disk space')
+        ->and(file_exists($tokenFile))->toBeFalse();
+
+    File::deleteDirectory(dirname($tokenFile));
+});
+
+it('returns error when disk is full during stop', function () {
+    $tokenFile = storage_path('app/test-tunnel-disk-full-stop/token');
+    $dir = dirname($tokenFile);
+    @mkdir($dir, 0755, true);
+    file_put_contents($tokenFile, 'test-token-value');
+
+    $service = new class(tokenFilePath: $tokenFile) extends TunnelService
+    {
+        protected function hasSufficientDiskSpace(int $requiredBytes = 1024): bool
+        {
+            return false;
+        }
+    };
+
+    $error = $service->stop();
+
+    expect($error)->toBe('Failed to truncate tunnel token file: insufficient disk space')
+        ->and(file_get_contents($tokenFile))->toBe('test-token-value'); // File should not be modified
+
+    File::deleteDirectory(dirname($tokenFile));
+});
+
+it('logs error when disk is full during cleanup', function () {
+    $tokenFile = storage_path('app/test-tunnel-disk-full-cleanup/token');
+    $dir = dirname($tokenFile);
+    @mkdir($dir, 0755, true);
+    file_put_contents($tokenFile, 'test-token-value');
+
+    TunnelConfig::factory()->verified()->create();
+
+    Log::spy();
+
+    $service = new class(tokenFilePath: $tokenFile) extends TunnelService
+    {
+        protected function hasSufficientDiskSpace(int $requiredBytes = 1024): bool
+        {
+            return false;
+        }
+    };
+
+    $service->cleanup();
+
+    // The file should still exist (not truncated) and config should be marked as error
+    expect(file_get_contents($tokenFile))->toBe('test-token-value')
+        ->and(TunnelConfig::current()->status)->toBe('error');
+
+    Log::shouldHaveReceived('error')->with('Insufficient disk space for tunnel token file cleanup', \Mockery::any());
+
+    File::deleteDirectory(dirname($tokenFile));
+});
+
+it('successfully writes token when disk has sufficient space', function () {
+    $tokenFile = storage_path('app/test-tunnel-disk-ok/token');
+    $dir = dirname($tokenFile);
+    @mkdir($dir, 0755, true);
+
+    TunnelConfig::factory()->verified()->create();
+
+    $service = new TunnelService(tokenFilePath: $tokenFile);
+
+    $error = $service->start();
+
+    expect($error)->toBeNull()
+        ->and(file_exists($tokenFile))->toBeTrue()
+        ->and(file_get_contents($tokenFile))->not->toBeEmpty();
+
+    File::deleteDirectory(dirname($tokenFile));
+});
+
+it('pollStatus handles edge case when config is deleted during execution', function () {
+    $tokenFile = storage_path('app/test-tunnel-poll-race/token');
+
+    // Clean up first
+    if (is_dir(dirname($tokenFile))) {
+        File::deleteDirectory(dirname($tokenFile));
+    }
+
+    @mkdir(dirname($tokenFile), 0755, true);
+    file_put_contents($tokenFile, 'test-token');
+
+    TunnelConfig::factory()->skipped()->create();
+
+    $service = new TunnelService(tokenFilePath: $tokenFile);
+
+    // Delete config after creating service
+    TunnelConfig::query()->delete();
+
+    $result = $service->pollStatus();
+
+    // Should handle gracefully - no config means not detected
+    expect($result['detected'])->toBeFalse()
+        ->and($result['message'])->toBeNull()
+        ->and($result['error'])->toBeNull();
 
     File::deleteDirectory(dirname($tokenFile));
 });

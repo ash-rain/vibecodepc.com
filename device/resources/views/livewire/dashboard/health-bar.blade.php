@@ -1,4 +1,4 @@
-<div wire:poll.10s="poll" class="hidden sm:flex items-center gap-4 text-xs">
+<div wire:poll.10s="poll" class="hidden sm:flex items-center gap-4 text-xs" dusk="health-bar">
     {{-- CPU --}}
     <div class="flex items-center gap-1.5">
         <span class="text-gray-500">CPU</span>
@@ -11,6 +11,7 @@
                     'bg-red-500' => $cpuPercent >= 85,
                 ])
                 style="width: {{ min(100, $cpuPercent) }}%"
+                dusk="cpu-progress-bar"
             ></div>
         </div>
         <span class="text-gray-400 w-8 text-right">{{ $cpuPercent }}%</span>
@@ -29,6 +30,7 @@
                     'bg-red-500' => $ramPercent >= 85,
                 ])
                 style="width: {{ min(100, $ramPercent) }}%"
+                dusk="ram-progress-bar"
             ></div>
         </div>
         <span class="text-gray-400 w-20 text-right">{{ $ramUsedMb }}/{{ $ramTotalMb }}M</span>
@@ -36,7 +38,7 @@
 
     {{-- Disk --}}
     <div class="flex items-center gap-1.5">
-        <span class="text-gray-500">Disk</span>
+        <span class="text-gray-500" dusk="disk-label">Disk</span>
         @php $diskPercent = $diskTotalGb > 0 ? ($diskUsedGb / $diskTotalGb) * 100 : 0; @endphp
         <div class="w-16 h-1.5 bg-gray-800 rounded-full overflow-hidden">
             <div
@@ -47,9 +49,10 @@
                     'bg-red-500' => $diskPercent >= 90,
                 ])
                 style="width: {{ min(100, $diskPercent) }}%"
+                dusk="disk-progress-bar"
             ></div>
         </div>
-        <span class="text-gray-400 w-16 text-right">{{ $diskUsedGb }}/{{ $diskTotalGb }}G</span>
+        <span class="text-gray-400 w-16 text-right" dusk="disk-usage-text">{{ $diskUsedGb }}/{{ $diskTotalGb }}G</span>
     </div>
 
     {{-- Temperature --}}
@@ -60,7 +63,7 @@
                 'text-green-400' => $temperatureC < 60,
                 'text-amber-400' => $temperatureC >= 60 && $temperatureC < 75,
                 'text-red-400' => $temperatureC >= 75,
-            ])>{{ $temperatureC }}&deg;C</span>
+            ]) dusk="temperature-value">{{ $temperatureC }}&deg;C</span>
         </div>
     @endif
 </div>
